@@ -2,10 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'VitroCore';
+  src: url('/fonts/VITRO-CORE-OTF.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'VitroPride';
+  src: url('/fonts/VITRO-PRIDE-OTF.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   color: rgba(255, 255, 255, 0.87);
   background-color: #102a43;
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: vitroPride, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color-scheme: dark;
@@ -18,13 +34,13 @@
 
 .light {
   color: #213547;
-  background-color: #ffffff;
+  background-color: #f3f3f3;
   color-scheme: light;
 }
 
 .light header {
-  background-color: #ffffff; /* 라이트 모드 배경 */
-  color: #213547; /* 라이트 모드 글자색 */
+  background-color: #ffffff;
+  color: #213547;
 }
 
 .light body {
@@ -93,4 +109,9 @@ button:focus-visible {
 
 .animate-blink-caret {
   animation: blink-caret 1s step-end infinite;
+}
+
+.perspective {
+  perspective: 1000px;
+  perspective-origin: center;
 }
