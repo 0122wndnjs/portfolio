@@ -11,8 +11,8 @@ export default function ProjectCard({ project }: ProjectCardProps) {
 
   return (
     <motion.div
-  className="relative w-full max-w-sm h-96 cursor-pointer perspective rounded-xl shadow-lg overflow-hidden bg-white dark:bg-dark-navy border border-transparent"
-          onClick={() => setFlipped(!flipped)}
+      className="relative w-full max-w-sm h-96 cursor-pointer perspective rounded-xl shadow-lg overflow-hidden bg-white dark:bg-dark-navy border border-transparent"
+      onClick={() => setFlipped(!flipped)}
       layout
       whileHover={{ borderColor: "#6366f1" }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -29,13 +29,15 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       >
         {/* 앞면 */}
         <img
-          src={project.image}
+          src={project.image || "https://placehold.co/400x200?text=No+Image"}
           alt={project.title}
-          className="object-cover w-full h-40"
+          className="object-cover w-full h-50"
           draggable={false}
         />
         <div className="p-4">
-          <h3 className="text-xl font-bold mb-2">{project.title}</h3>
+          <h3 className="text-xl font-bold mb-2 whitespace-nowrap overflow-hidden text-ellipsis">
+            {project.title}
+          </h3>
           <p className="text-sm mb-2">{project.description}</p>
           <div className="flex flex-wrap gap-2 mb-2">
             {project.techStack.map((tech) => (
@@ -72,7 +74,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         transition={{ duration: 0.6 }}
       >
         {/* 뒷면 */}
-        <h3 className="text-xl font-bold mb-4">{project.title} 상세</h3>
+        <h3 className="text-xl font-bold mb-4">{project.title}</h3>
         <p className="mb-4 font-semibold">{project.role}</p>
         <ul className="list-disc pl-5 space-y-1 text-sm">
           {project.details?.map((detail, i) => (

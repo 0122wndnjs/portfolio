@@ -9,6 +9,7 @@ const filterOptions: ("All" | ProjectType)[] = [
   "Backend",
   "Fullstack",
   "SmartContract",
+  "Others"
 ];
 
 export default function Projects() {
@@ -22,7 +23,7 @@ export default function Projects() {
   return (
     <section
       id="projects"
-      className="py-20 px-6 bg-gray-50 dark:bg-dark-navy text-black dark:text-white"
+      className="py-20 px-6 bg-gray-100 dark:bg-gray-800 text-black dark:text-white"
     >
       <div className="max-w-7xl mx-auto">
       <h2 className="text-6xl font-bold mb-16 text-center font-vitroCore">PROJECTS</h2>

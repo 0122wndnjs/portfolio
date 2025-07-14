@@ -4,8 +4,8 @@ import { FaRegCalendarAlt } from "react-icons/fa";
 export default function Career() {
   return (
     <section
-      id="experience"
-      className="py-20 px-6 bg-white dark:bg-gray-900 text-black dark:text-white"
+      id="career"
+      className="py-20 px-6 bg-gray-200 dark:bg-gray-900 text-black dark:text-white"
     >
       <h2 className="text-6xl font-bold mb-16 text-center font-vitroCore">
         CAREER
@@ -23,7 +23,7 @@ export default function Career() {
             <div
               className="
                 w-48 h-48 rounded-full overflow-hidden border-4 border-indigo-500 
-                bg-white dark:bg-gray-800 shadow-lg flex-shrink-0
+                bg-gray-200 dark:bg-gray-900 shadow-lg flex-shrink-0
                 mb-6 md:mb-0
                 mx-auto
               "
