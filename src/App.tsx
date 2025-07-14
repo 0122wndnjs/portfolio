@@ -6,8 +6,15 @@ import Home from "./components/Home";
 import Projects from "./components/Projects";
 import Skills from "./components/Skills";
 import DarkModeFloating from "./components/DarkModeFloating";
+import { useEffect } from "react";
 
 function App() {
+  useEffect(() => {
+    document.documentElement.classList.add("dark");
+    if (!localStorage.getItem("theme")) {
+      localStorage.setItem("theme", "dark");
+    }
+  }, []);
   return (
     <div className="scroll-smooth">
       <Header />
