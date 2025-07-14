@@ -7,6 +7,7 @@ import Projects from "./components/Projects";
 import Skills from "./components/Skills";
 import DarkModeFloating from "./components/DarkModeFloating";
 import { useEffect } from "react";
+import Footer from "./components/Footer";
 
 function App() {
   useEffect(() => {
@@ -25,6 +26,7 @@ function App() {
       <Skills />
       <Projects />
       <Career />
+      <Footer />
     </div>
   );
 }
