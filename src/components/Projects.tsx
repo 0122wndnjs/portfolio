@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import ProjectCard from "./ProjectCard";
 import { projects } from "../data/projects";
 import type { ProjectType } from "../data/projects";
@@ -9,16 +9,14 @@ const filterOptions: ("All" | ProjectType)[] = [
   "Backend",
   "Fullstack",
   "SmartContract",
-  "Others"
+  "Others",
 ];
 
 export default function Projects() {
   const [filter, setFilter] = useState<"All" | ProjectType>("All");
 
   const filteredProjects =
-    filter === "All"
-      ? projects
-      : projects.filter((p) => p.type === filter);
+    filter === "All" ? projects : projects.filter((p) => p.type === filter);
 
   return (
     <section
@@ -26,9 +24,9 @@ export default function Projects() {
       className="py-20 px-6 bg-gray-100 dark:bg-gray-800 text-black dark:text-white"
     >
       <div className="max-w-7xl mx-auto">
-      <h2 className="text-6xl font-bold mb-16 text-center font-vitroCore">PROJECTS</h2>
-
-        {/* 필터 버튼 */}
+        <h2 className="text-6xl font-bold mb-16 text-center font-vitroCore">
+          PROJECTS
+        </h2>
         <div className="flex justify-center mb-10 flex-wrap gap-3">
           {filterOptions.map((option) => (
             <button
@@ -45,8 +43,6 @@ export default function Projects() {
             </button>
           ))}
         </div>
-
-        {/* 프로젝트 카드 그리드 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 justify-center">
           {filteredProjects.map((project) => (
             <ProjectCard key={project.title} project={project} />
@@ -56,4 +52,3 @@ export default function Projects() {
     </section>
   );
 }
-
