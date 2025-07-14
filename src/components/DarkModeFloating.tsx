@@ -22,8 +22,8 @@ export default function DarkModeFloating() {
     <button
       onClick={toggleDark}
       className="fixed bottom-6 right-6 z-50 p-3 rounded-full shadow-lg transition
-                 bg-gray-200 text-black hover:bg-gray-300
-                 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                 dark:bg-gray-200 dark:text-black dark:hover:bg-gray-300
+                 bg-gray-700 text-white hover:bg-gray-600"
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
