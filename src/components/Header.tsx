@@ -30,7 +30,7 @@ export default function Header() {
         {/* 모바일 메뉴 버튼 */}
         <div className="md:hidden">
           <button onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <IoClose size={24} /> : <IoMenu size={24} />}
+            {menuOpen ? <IoClose size={24} className="text-white" /> : <IoMenu size={24} className="text-white" />}
           </button>
         </div>
       </div>

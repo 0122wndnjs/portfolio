@@ -51,7 +51,7 @@ export const projects: Project[] = [
   },
   {
     title: "Non-Custodial Wallet",
-    image: "",
+    image: "/images/projects/wallet.png",
     techStack: ["Solidity", "React", "TypeScript", "NestJS", "PostgreSQL"],
     role: "풀스택 지갑 개발 (지갑 UI, 스마트 컨트랙트, 백엔드 기록 및 인증 시스템)",
     type: "Fullstack",
@@ -173,7 +173,7 @@ export const projects: Project[] = [
   },
   {
     title: "eMetalexchange 플랫폼 개발",
-    image: "",
+    image: "/images/projects/emetal.jpg",
     techStack: ["Solidity"],
     role: "eMetalexchange 플랫폼 Smart Contract 개발",
     type: "SmartContract",

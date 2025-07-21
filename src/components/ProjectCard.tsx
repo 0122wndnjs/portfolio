@@ -28,12 +28,14 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         transition={{ duration: 0.6 }}
       >
         {/* 앞면 */}
-        <img
-          src={project.image || "https://placehold.co/400x200?text=No+Image"}
-          alt={project.title}
-          className="object-cover w-full h-50"
-          draggable={false}
-        />
+        <div className="w-full h-48 overflow-hidden">
+          <img
+            src={project.image || "https://placehold.co/400x200?text=No+Image"}
+            alt={project.title}
+            className="w-full h-full object-cover"
+            draggable={false}
+          />
+        </div>
         <div className="p-4">
           <h3 className="text-xl font-bold mb-2 whitespace-nowrap overflow-hidden text-ellipsis">
             {project.title}
