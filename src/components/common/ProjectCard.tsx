@@ -9,7 +9,7 @@ export default function ProjectCard({ project, onClick }: any) {
       whileHover={{ y: -8 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10" />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 border border-white/10" />
 
       <div className="relative z-10 p-6">
         <div className="flex items-center justify-between mb-4">

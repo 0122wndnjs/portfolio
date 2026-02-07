@@ -50,7 +50,7 @@ function ContactCard({ item }: { item: any }) {
       className="group relative rounded-2xl overflow-hidden"
     >
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/10" />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] to-white/[0.02] border border-white/10" />
 
       {/* Glow */}
       <div

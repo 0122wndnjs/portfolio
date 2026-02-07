@@ -38,7 +38,7 @@ export default function CategoryBox({
       <div
         className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${category.color} opacity-10`}
       />
-      <div className="absolute inset-0 rounded-3xl border border-white/10 backdrop-blur-xl bg-white/5" />
+      <div className="absolute inset-0 rounded-3xl border border-white/10 bg-white/5" />
 
       <div className="relative z-10">
         <div

@@ -208,7 +208,7 @@ function ExperienceCard({ item, index }: { item: any; index: number }) {
           transition={{ duration: 0.3 }}
         >
           {/* Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl" />
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-3xl" />
 
           {/* Glow effect */}
           <div

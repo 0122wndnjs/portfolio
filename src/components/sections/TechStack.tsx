@@ -227,7 +227,7 @@ function SkillCard({ skill, delay }: { skill: Skill; delay: number }) {
       <motion.div
         whileHover={{ y: -8, scale: 1.05 }}
         transition={{ type: "spring", stiffness: 400, damping: 20 }}
-        className="relative flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.03] backdrop-blur-xl p-6 overflow-hidden"
+        className="relative flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.03] p-6 overflow-hidden"
       >
         {/* Animated background */}
         <motion.div
@@ -305,7 +305,7 @@ function SkillCard({ skill, delay }: { skill: Skill; delay: number }) {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg bg-black/90 border border-white/20 backdrop-blur-xl whitespace-nowrap z-20"
+          className="absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg bg-black/90 border border-white/20 whitespace-nowrap z-20"
         >
           <p className="text-xs text-white/90">
             {skill.proficiency}% Proficiency
@@ -359,13 +359,7 @@ function SkillGroupCard({
       transition={{ duration: 0.3 }}
     >
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl" />
-
-      {/* Gradient glow */}
-      <div
-        className={`absolute inset-0 bg-gradient-to-br ${group.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl`}
-      />
-
+      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-3xl" />
       {/* Content */}
       <div className="relative z-10 p-8">
         {/* Header */}

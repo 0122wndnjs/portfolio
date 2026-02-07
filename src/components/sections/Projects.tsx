@@ -110,7 +110,7 @@ function FinderWindow({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+      className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/60"
       onClick={onClose}
     >
       <motion.div
@@ -118,7 +118,7 @@ function FinderWindow({
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="relative w-full max-w-5xl max-h-[85vh] rounded-xl overflow-hidden bg-gradient-to-br from-gray-900/95 to-black/95 border border-white/20 shadow-2xl backdrop-blur-xl"
+        className="relative w-full max-w-5xl max-h-[85vh] rounded-xl overflow-hidden bg-gradient-to-br from-gray-900/95 to-black/95 border border-white/20 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* macOS title bar */}
