@@ -75,8 +75,7 @@ function AnimatedGrid() {
     window.addEventListener("resize", resize);
 
     const nodes: { x: number; y: number; vx: number; vy: number }[] = [];
-    const nodeCount = 50;
-
+    const nodeCount = window.innerWidth < 768 ? 12 : 25;
     for (let i = 0; i < nodeCount; i++) {
       nodes.push({
         x: Math.random() * canvas.width,

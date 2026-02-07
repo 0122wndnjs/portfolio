@@ -1,166 +1,8 @@
-import { useEffect, useRef, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Canvas, useFrame } from "@react-three/fiber";
-import * as THREE from "three";
 
 gsap.registerPlugin(ScrollTrigger);
-
-/* =========================
-   macOS-style Mesh Gradient Background
-========================= */
-function MacOSMeshGradient() {
-  const meshRef = useRef<THREE.Mesh>(null!);
-
-  useFrame(({ clock }) => {
-    if (!meshRef.current) return;
-    const time = clock.getElapsedTime();
-
-    const geometry = meshRef.current.geometry;
-    const positions = geometry.attributes.position;
-
-    for (let i = 0; i < positions.count; i++) {
-      const x = positions.getX(i);
-      const y = positions.getY(i);
-      const z =
-        Math.sin(x * 0.3 + time * 0.3) * Math.cos(y * 0.3 + time * 0.2) * 1.5;
-      positions.setZ(i, z);
-    }
-
-    positions.needsUpdate = true;
-  });
-
-  return (
-    <mesh ref={meshRef} position={[0, 0, -10]}>
-      <planeGeometry args={[50, 50, 32, 32]} />
-      <meshStandardMaterial
-        color="#1e293b"
-        wireframe={false}
-        transparent
-        opacity={0.6}
-      />
-    </mesh>
-  );
-}
-
-/* =========================
-   Particle Network
-========================= */
-function ParticleNetwork() {
-  const pointsRef = useRef<THREE.Points>(null!);
-  const linesRef = useRef<THREE.LineSegments>(null!);
-
-  const particles = useMemo(() => {
-    const count = 90;
-    const positions = new Float32Array(count * 3);
-    const velocities: THREE.Vector3[] = [];
-
-    for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 40;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 30;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 30 - 10;
-
-      velocities.push(
-        new THREE.Vector3(
-          (Math.random() - 0.5) * 0.02,
-          (Math.random() - 0.5) * 0.02,
-          (Math.random() - 0.5) * 0.01
-        )
-      );
-    }
-
-    return { positions, velocities };
-  }, []);
-
-  useFrame(({ clock }) => {
-    if (!pointsRef.current) return;
-
-    const positions = pointsRef.current.geometry.attributes.position
-      .array as Float32Array;
-    const count = positions.length / 3;
-
-    for (let i = 0; i < count; i++) {
-      positions[i * 3] += particles.velocities[i].x;
-      positions[i * 3 + 1] += particles.velocities[i].y;
-      positions[i * 3 + 2] += particles.velocities[i].z;
-
-      if (Math.abs(positions[i * 3]) > 20) particles.velocities[i].x *= -1;
-      if (Math.abs(positions[i * 3 + 1]) > 15) particles.velocities[i].y *= -1;
-      if (positions[i * 3 + 2] < -25 || positions[i * 3 + 2] > 5)
-        particles.velocities[i].z *= -1;
-    }
-
-    pointsRef.current.geometry.attributes.position.needsUpdate = true;
-
-    const linePositions: number[] = [];
-    const maxDistance = 3.5;
-
-    for (let i = 0; i < count; i++) {
-      for (let j = i + 1; j < count; j++) {
-        const dx = positions[i * 3] - positions[j * 3];
-        const dy = positions[i * 3 + 1] - positions[j * 3 + 1];
-        const dz = positions[i * 3 + 2] - positions[j * 3 + 2];
-        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-        if (distance < maxDistance) {
-          linePositions.push(
-            positions[i * 3],
-            positions[i * 3 + 1],
-            positions[i * 3 + 2]
-          );
-          linePositions.push(
-            positions[j * 3],
-            positions[j * 3 + 1],
-            positions[j * 3 + 2]
-          );
-        }
-      }
-    }
-
-    if (linesRef.current) {
-      linesRef.current.geometry.setAttribute(
-        "position",
-        new THREE.Float32BufferAttribute(linePositions, 3)
-      );
-    }
-
-    pointsRef.current.rotation.y = clock.getElapsedTime() * 0.05;
-    if (linesRef.current) {
-      linesRef.current.rotation.y = clock.getElapsedTime() * 0.05;
-    }
-  });
-
-  return (
-    <>
-      <points ref={pointsRef}>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[particles.positions, 3]}
-          />
-        </bufferGeometry>
-        <pointsMaterial
-          size={0.15}
-          color="#3b82f6"
-          transparent
-          opacity={0.8}
-          sizeAttenuation
-          blending={THREE.AdditiveBlending}
-        />
-      </points>
-
-      <lineSegments ref={linesRef}>
-        <bufferGeometry />
-        <lineBasicMaterial
-          color="#3b82f6"
-          transparent
-          opacity={0.15}
-          blending={THREE.AdditiveBlending}
-        />
-      </lineSegments>
-    </>
-  );
-}
 
 /* =========================
    Hero
@@ -175,10 +17,15 @@ export default function Hero() {
   const [hasTyped, setHasTyped] = useState(false);
 
   useEffect(() => {
+    let frame = 0;
+
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({
-        x: (e.clientX / window.innerWidth) * 100,
-        y: (e.clientY / window.innerHeight) * 100,
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        setMousePosition({
+          x: (e.clientX / window.innerWidth) * 100,
+          y: (e.clientY / window.innerHeight) * 100,
+        });
       });
     };
 
@@ -426,25 +273,6 @@ export default function Hero() {
         ))}
       </div>
 
-      {/* 3D Background with particles */}
-      <div className="absolute inset-0 z-0">
-        <Canvas camera={{ position: [0, 0, 12], fov: 75 }}>
-          <fog attach="fog" args={["#000000", 25, 80]} />
-
-          <ambientLight intensity={0.1} />
-          <pointLight position={[10, 10, 10]} intensity={0.6} color="#3b82f6" />
-          <pointLight
-            position={[-10, -10, -10]}
-            intensity={0.4}
-            color="#a855f7"
-          />
-          <pointLight position={[0, 10, -10]} intensity={0.3} color="#06b6d4" />
-          <MacOSMeshGradient />
-
-          <ParticleNetwork />
-        </Canvas>
-      </div>
-
       {/* Animated stars layer */}
       <div className="absolute inset-0 opacity-40">
         {[...Array(30)].map((_, i) => (
@@ -500,7 +328,6 @@ export default function Hero() {
             letterSpacing: "-0.02em",
           }}
         >
-
           <span
             className="bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent"
             style={{
