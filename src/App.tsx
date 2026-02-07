@@ -1,34 +1,25 @@
-import "./App.css";
-import AboutMe from "./components/AboutMe";
-import Career from "./components/Career";
-import Header from "./components/Header";
-import Home from "./components/Home";
-import Projects from "./components/Projects";
-import Skills from "./components/Skills";
-import DarkModeFloating from "./components/DarkModeFloating";
-import { useEffect } from "react";
-import Footer from "./components/Footer";
+import Header from "./components/layout/Header";
 
-function App() {
-  useEffect(() => {
-    document.documentElement.classList.add("dark");
-    if (!localStorage.getItem("theme")) {
-      localStorage.setItem("theme", "dark");
-    }
-  }, []);
+import Hero from "./components/sections/Hero";
+import Expertise from "./components/sections/Expertise";
+import Projects from "./components/sections/Projects";
+import Experience from "./components/sections/Experience";
+import TechStack from "./components/sections/TechStack";
+import Contact from "./components/sections/Contact";
+
+export default function App() {
   return (
-    <div className="scroll-smooth">
+    <main className="bg-black text-white">
+      {/* Fixed Header */}
       <Header />
-      <DarkModeFloating />
 
-      <Home />
-      <AboutMe />
-      <Skills />
+      {/* Sections */}
+      <Hero />
+      <Expertise />
       <Projects />
-      <Career />
-      <Footer />
-    </div>
+      <Experience />
+      <TechStack />
+      <Contact />
+    </main>
   );
 }
-
-export default App;
