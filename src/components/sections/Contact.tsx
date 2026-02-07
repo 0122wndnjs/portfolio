@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { FaTelegramPlane, FaGithub, FaLinkedin } from "react-icons/fa";
+import { FaTelegramPlane, FaGithub } from "react-icons/fa";
 import { SiGmail } from "react-icons/si";
 import { FiCreditCard } from "react-icons/fi";
 import BusinessCard from "./BusinessCard";
