@@ -14,7 +14,7 @@ export default function StyledQR({ url }: Props) {
       height: 180,
       data: url,
       dotsOptions: {
-        type: "rounded", // ← 둥근 점
+        type: "rounded",
         color: "#60a5fa",
       },
       backgroundOptions: {
