@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaTelegramPlane, FaGithub, FaPhone } from "react-icons/fa";
 import { SiGmail } from "react-icons/si";
-import { FiDownload, FiShare2, FiImage } from "react-icons/fi";
+import { FiDownload, FiShare2 } from "react-icons/fi";
 import StyledQR from "../common/StyledQR";
 
 interface BusinessCardProps {
