@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>OG Business Card</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+  />
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Inter", sans-serif;
+    }
+
+    body {
+      width: 1200px;
+      height: 630px;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      display: flex;
+    }
+
+    .left,
+    .right {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* LEFT */
+    .left {
+      padding: 80px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 40px;
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 26px;
+    }
+
+    .avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      padding: 3px;
+      background: linear-gradient(135deg, #a855f7, #22d3ee);
+    }
+
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #000;
+    }
+
+    .name {
+      font-size: 54px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      background: linear-gradient(to right, #a855f7, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .title {
+      font-size: 22px;
+      color: rgba(255,255,255,0.65);
+      margin-top: 6px;
+    }
+
+    .contact {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      font-size: 24px;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .contact-item i {
+      width: 32px;
+      text-align: center;
+      font-size: 22px;
+      color: #a855f7;
+    }
+
+    /* RIGHT */
+    .right {
+      position: relative;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .qr {
+      width: 300px;
+      height: 300px;
+    }
+
+    .scan-text {
+      font-size: 18px;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+
+    <!-- LEFT -->
+    <div class="left">
+      <div class="profile">
+        <div class="avatar">
+          <img src="./images/profile.jpg" alt="Profile" />
+        </div>
+        <div>
+          <div class="name">JOOWON KIM</div>
+          <div class="title">Web3 Full-Stack Developer</div>
+        </div>
+      </div>
+
+      <div class="contact">
+        <div class="contact-item">
+          <i class="fa-solid fa-phone"></i>
+          <span>+82 10 6661 4589</span>
+        </div>
+
+        <div class="contact-item">
+          <i class="fa-solid fa-envelope"></i>
+          <span>0122wndnjs@gmail.com</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right">
+      <div class="qr" id="qr-container"></div>
+    </div>
+
+  </div>
+
+  <!-- QR Code Styling Library -->
+  <script src="https://unpkg.com/qr-code-styling@1.6.0/lib/qr-code-styling.js"></script>
+
+  <script>
+    const qr = new QRCodeStyling({
+      width: 300,
+      height: 300,
+      data: "https://joowonkim.pages.dev",
+      dotsOptions: {
+        type: "rounded",
+        color: "#60a5fa",
+      },
+      backgroundOptions: {
+        color: "transparent",
+      },
+      cornersSquareOptions: {
+        type: "extra-rounded",
+        color: "#a855f7",
+      },
+      cornersDotOptions: {
+        type: "dot",
+        color: "#22d3ee",
+      },
+    });
+
+    qr.append(document.getElementById("qr-container"));
+  </script>
+</body>
+</html>

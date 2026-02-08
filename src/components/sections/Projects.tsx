@@ -130,6 +130,34 @@ function FinderWindow({
   const filteredProjects = projects.filter((p) => p.category === category.id);
   const Icon = category.icon;
 
+  const [page, setPage] = useState(0);
+  const [perPage, setPerPage] = useState(8);
+
+  // 반응형 페이지 수
+  useEffect(() => {
+    const updateLayout = () => {
+      if (window.innerWidth < 640) {
+        setPerPage(4); // 모바일 2x2
+      } else {
+        setPerPage(8); // PC 4x2
+      }
+    };
+
+    updateLayout();
+    window.addEventListener("resize", updateLayout);
+    return () => window.removeEventListener("resize", updateLayout);
+  }, []);
+
+  const totalPages = Math.ceil(filteredProjects.length / perPage);
+
+  const pagedProjects = filteredProjects.slice(
+    page * perPage,
+    page * perPage + perPage
+  );
+
+  const goPrev = () => setPage((p) => Math.max(p - 1, 0));
+  const goNext = () => setPage((p) => Math.min(p + 1, totalPages - 1));
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -162,53 +190,43 @@ function FinderWindow({
             <p className="text-sm font-medium text-white">{category.name}</p>
           </div>
 
-          <div className="w-20" />
+          {/* page navigation */}
+          {totalPages > 1 ? (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={goPrev}
+                disabled={page === 0}
+                className="px-2 py-1 text-xs rounded bg-white/10 text-white/80 disabled:opacity-30"
+              >
+                ←
+              </button>
+              <button
+                onClick={goNext}
+                disabled={page === totalPages - 1}
+                className="px-2 py-1 text-xs rounded bg-white/10 text-white/80 disabled:opacity-30"
+              >
+                →
+              </button>
+            </div>
+          ) : (
+            <div className="w-12" />
+          )}
         </div>
 
         {/* Toolbar */}
         <div className="px-6 py-3 bg-gray-800/30 border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button className="text-white/60 hover:text-white transition-colors">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
-            <button className="text-white/60 hover:text-white transition-colors">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-          </div>
-
           <div className="text-xs text-white/50">
             {filteredProjects.length} items
+          </div>
+          <div className="text-xs text-white/40">
+            Page {page + 1} / {Math.max(totalPages, 1)}
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(85vh-100px)]">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredProjects.map((project, index) => (
+        <div className="p-6 overflow-y-auto max-h-[calc(85vh-110px)]">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+            {pagedProjects.map((project, index) => (
               <motion.div
                 key={project.id}
                 initial={{ opacity: 0, scale: 0.8 }}

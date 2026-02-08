@@ -26,7 +26,7 @@ const contacts = [
     value: "@wndnjs0122",
     link: "https://t.me/wndnjs0122",
     color: "#229ED9",
-  }
+  },
 ];
 
 /* =========================
@@ -58,10 +58,10 @@ function ContactCard({ item }: { item: any }) {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center p-8 text-center">
         {/* Icon - changes to white on hover */}
-        <div 
+        <div
           className="text-4xl mb-4 transition-all duration-300"
-          style={{ 
-            color: item.color 
+          style={{
+            color: item.color,
           }}
         >
           <span className="group-hover:text-white group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all duration-300">
@@ -79,10 +79,10 @@ function ContactCard({ item }: { item: any }) {
       </div>
 
       {/* Glow effect on hover */}
-      <div 
+      <div
         className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
         style={{
-          boxShadow: `0 0 30px ${item.color}66, inset 0 0 30px ${item.color}22`
+          boxShadow: `0 0 30px ${item.color}66, inset 0 0 30px ${item.color}22`,
         }}
       />
     </motion.a>
@@ -137,16 +137,17 @@ export default function Contact() {
             ref={titleRef}
             className="mt-4 text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent"
           >
-            Let's Build Something in Web3
+            Get in Touch
           </h2>
 
           <p className="mt-6 text-lg text-white/60 max-w-2xl mx-auto">
-            Open to global Web3 projects, technical consulting, and full-stack
-            development partnerships.
+            Always open to new projects, ideas, and opportunities
+            <br />
+            Let’s connect and see what we can build together
           </p>
 
           <p className="mt-3 text-sm text-white/40">
-            Available for freelance, contract, and long-term collaborations.
+            Open to opportunities, collaborations, and new challenges.
           </p>
         </div>
 
@@ -166,7 +167,7 @@ export default function Contact() {
             className="group relative inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-4 text-white font-semibold text-lg hover:opacity-90 transition overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            
+
             <FiCreditCard className="relative z-10 text-xl" />
             <span className="relative z-10">View Digital Business Card</span>
           </motion.button>
