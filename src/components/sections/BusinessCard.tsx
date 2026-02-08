@@ -233,13 +233,11 @@ END:VCARD`;
 
                 {/* QR */}
                 <AnimatePresence>
-                  {showQR && (
-                    <motion.div className="mb-3">
-                      <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex justify-center">
-                        <StyledQR url={cardData.website} />
-                      </div>
-                    </motion.div>
-                  )}
+                  <div className="mb-3">
+                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex justify-center">
+                      <StyledQR url={cardData.website} />
+                    </div>
+                  </div>
                 </AnimatePresence>
 
                 {/* Buttons */}
