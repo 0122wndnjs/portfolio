@@ -1,13 +1,35 @@
 import { motion } from "framer-motion";
 import { categories } from "../../data/projects";
 
+/* =========================
+   Types
+========================= */
+type Project = {
+  id: number;
+  title: string;
+  category: string;
+  desc: string;
+  tech: string[];
+  year: string;
+  status: string;
+  link?: string | null;
+  images?: string[];
+  details?: string[];
+};
+
 type ProjectModalProps = {
-  project: any;
+  project: Project;
   onClose: () => void;
 };
 
-export default function ProjectModal({ project, onClose }: ProjectModalProps) {
+export default function ProjectModal({
+  project,
+  onClose,
+}: ProjectModalProps) {
   const hasLink = Boolean(project.link);
+  const categoryName =
+    categories.find((c) => c.id === project.category)?.name ||
+    project.category;
 
   return (
     <motion.div
@@ -27,7 +49,8 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* macOS-style title bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/40">
+        <div className="relative flex items-center px-6 py-4 border-b border-white/10 bg-black/40">
+          {/* traffic lights */}
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
@@ -37,7 +60,8 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
             <button className="w-3 h-3 rounded-full bg-green-500" />
           </div>
 
-          <div className="flex-1 text-center">
+          {/* centered title */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <p className="text-sm text-white/60">Project Details</p>
           </div>
         </div>
@@ -46,11 +70,14 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
         <div className="p-8 overflow-y-auto max-h-[calc(85vh-60px)] custom-scrollbar">
           {/* Header */}
           <div className="mb-8">
+            {/* status + category + year */}
             <div className="flex items-center gap-3 mb-4">
               <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-sm border border-blue-500/30">
                 {project.status}
               </span>
-              <span className="text-white/50 text-sm">{project.year}</span>
+              <span className="text-white/40 text-sm">
+                {categoryName} • {project.year}
+              </span>
             </div>
 
             <h2 className="text-4xl font-bold text-white mb-4">
@@ -58,7 +85,7 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
             </h2>
 
             <p className="text-lg text-white/70 leading-relaxed">
-              {project.longDesc}
+              {project.desc}
             </p>
           </div>
 
@@ -109,26 +136,31 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
             </div>
           </div>
 
-          {/* Details Grid */}
-          <div className="grid grid-cols-2 gap-6">
-            <div className="p-6 rounded-xl bg-white/5 border border-white/10">
-              <p className="text-sm text-white/50 mb-2">Category</p>
-              <p className="text-white font-medium">
-                {categories.find((c) => c.id === project.category)?.name}
-              </p>
+          {/* Details List */}
+          {project.details && project.details.length > 0 && (
+            <div className="mb-10">
+              <h3 className="text-xl font-semibold text-white mb-4">
+                Key Contributions
+              </h3>
+              <ul className="space-y-3">
+                {project.details.map((item: string, i: number) => (
+                  <li
+                    key={i}
+                    className="flex items-start gap-3 text-white/80"
+                  >
+                    <span className="mt-2 w-1.5 h-1.5 rounded-full bg-blue-400" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-
-            <div className="p-6 rounded-xl bg-white/5 border border-white/10">
-              <p className="text-sm text-white/50 mb-2">Year</p>
-              <p className="text-white font-medium">{project.year}</p>
-            </div>
-          </div>
+          )}
 
           {/* CTA */}
           <div className="mt-8 pt-8 border-t border-white/10">
             {hasLink ? (
               <a
-                href={project.link}
+                href={project.link as string}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block w-full text-center py-4 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold hover:opacity-90 transition-opacity"

@@ -229,23 +229,28 @@ function SkillCard({ skill, delay }: { skill: Skill; delay: number }) {
         transition={{ type: "spring", stiffness: 400, damping: 20 }}
         className="relative flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.03] p-6 overflow-hidden"
       >
-        {/* Animated background */}
+        {/* Hover fill layer */}
         <motion.div
           className="absolute inset-0 rounded-2xl"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isHovered ? 1 : 0 }}
-          transition={{ duration: 0.3 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{
+            opacity: isHovered ? 1 : 0,
+            scale: isHovered ? 1 : 0.8,
+          }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
           style={{
-            background: `radial-gradient(circle at center, ${skill.color}22, transparent 70%)`,
+            background: `linear-gradient(135deg, ${skill.color}33, ${skill.color}11)`,
           }}
         />
 
-        {/* Rotating border */}
-        <div
-          className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        {/* Soft glow */}
+        <motion.div
+          className="absolute inset-0 rounded-2xl blur-2xl"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isHovered ? 0.6 : 0 }}
+          transition={{ duration: 0.4 }}
           style={{
-            background: `linear-gradient(45deg, transparent, ${skill.color}44, transparent)`,
-            animation: isHovered ? "borderRotate 3s linear infinite" : "none",
+            background: skill.color,
           }}
         />
 
@@ -261,12 +266,6 @@ function SkillCard({ skill, delay }: { skill: Skill; delay: number }) {
           >
             {skill.icon}
           </motion.div>
-
-          {/* Glow */}
-          <div
-            className="absolute inset-0 blur-xl opacity-0 group-hover:opacity-50 transition-opacity"
-            style={{ backgroundColor: skill.color }}
-          />
         </div>
 
         {/* Name */}

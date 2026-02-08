@@ -14,52 +14,52 @@ const experiences = [
     role: "Blockchain Project Lead / Full-Stack Developer",
     period: "May 2025 – Present",
     desc: [
-      "Led end-to-end Web3 project execution including token, wallet, and platform development.",
-      "Developing BSC-based token ecosystem and non-custodial wallet.",
-      "Designed and built corporate Web3 infrastructure websites.",
+      "Leading end-to-end Web3 projects including token, wallet, and platform development.",
+      "Built BSC-based token ecosystem and non-custodial wallet.",
+      "Developed corporate and client websites with React and TailwindCSS.",
     ],
     color: "from-blue-500 to-cyan-500",
-    icon: "⬡",
-    tags: ["Web3", "Solidity", "React", "Node.js"],
+    logo: "/images/company/unideca.png",
+    tags: ["Web3", "Solidity", "React", "NestJS"],
   },
   {
     company: "Trillionslab",
     role: "Senior Blockchain Researcher / PM",
     period: "Aug 2021 – Sep 2024",
     desc: [
-      "Led full-cycle blockchain platform development and consulting.",
-      "Developed NFT dApps, investment platforms, and Web3 OTT prototypes.",
-      "Managed government-funded blockchain R&D projects.",
+      "Led blockchain platform development, consulting, and technical documentation.",
+      "Built NFT dApps, investment platforms, and OTT service prototypes.",
+      "Managed government-funded R&D projects and global BaaS collaborations.",
     ],
     color: "from-purple-500 to-pink-500",
-    icon: "◆",
-    tags: ["NFT", "DeFi", "Project Management"],
+    logo: "/images/company/trillionslab.png",
+    tags: ["NFT", "Web3", "Project Management", "Fullstack"],
   },
   {
     company: "Delta Dental of Michigan",
     role: "Java Backend Developer",
     period: "Feb 2020 – Feb 2021",
     desc: [
-      "Developed Spring Boot APIs for dental insurance systems.",
-      "Implemented data processing and reporting services.",
-      "Collaborated in an enterprise-scale backend team.",
+      "Developed Spring Boot APIs for enterprise dental insurance systems.",
+      "Implemented data processing and internal reporting services.",
+      "Worked within a large-scale backend team environment.",
     ],
     color: "from-cyan-500 to-blue-500",
-    icon: "◈",
-    tags: ["Spring Boot", "Java", "PostgreSQL"],
+    logo: "/images/company/deltadental.jpg",
+    tags: ["Spring Boot", "Java", "REST API"],
   },
   {
     company: "Apolis",
     role: "Java Backend Intern",
     period: "Aug 2019 – Jan 2020",
     desc: [
-      "Worked on microservice-based hotel management system.",
-      "Built RESTful APIs using Spring Boot.",
-      "Practiced unit testing and backend architecture design.",
+      "Built RESTful APIs for a microservice-based hotel management system.",
+      "Practiced backend architecture and unit testing with Spring Boot.",
+      "Gained hands-on experience in enterprise-style development workflows.",
     ],
     color: "from-indigo-500 to-purple-500",
-    icon: "▣",
-    tags: ["Microservices", "REST API", "Testing"],
+    logo: "/images/company/apolis.jpg",
+    tags: ["Microservices", "Spring Boot", "Testing"],
   },
 ];
 
@@ -229,11 +229,16 @@ function ExperienceCard({ item, index }: { item: any; index: number }) {
             {/* Header */}
             <div className="flex items-start justify-between mb-6">
               <div className="flex-1">
-                {/* Icon */}
+                {/* Company Logo */}
                 <div
-                  className={`inline-block text-4xl mb-3 bg-gradient-to-br ${item.color} bg-clip-text text-transparent`}
-                >
-                  {item.icon}
+                  className={`w-14 h-14 mb-4 rounded-full bg-gradient-to-br ${item.color} p-[2px] shadow-lg`}>
+                  <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
+                    <img
+                      src={item.logo}
+                      alt={item.company}
+                      className="w-8 h-8 object-contain"
+                    />
+                  </div>
                 </div>
 
                 {/* Company */}

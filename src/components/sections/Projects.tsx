@@ -9,16 +9,42 @@ import ProjectModal from "../common/ProjectModal";
 gsap.registerPlugin(ScrollTrigger);
 
 /* =========================
+   Types
+========================= */
+type Category = {
+  id: string;
+  name: string;
+  color: string;
+  icon: any;
+};
+
+type Project = {
+  id: number;
+  title: string;
+  category: string;
+  desc: string;
+  tech: string[];
+  year: string;
+  status: string;
+  link?: string | null;
+  images?: string[];
+  details?: string[];
+};
+
+/* =========================
    Folder Icon Component
 ========================= */
 function FolderIcon({
   category,
+  count,
   onClick,
 }: {
-  category: any;
+  category: Category;
+  count: number;
   onClick: () => void;
 }) {
   const folderRef = useRef<HTMLDivElement>(null);
+  const Icon = category.icon;
 
   useEffect(() => {
     if (!folderRef.current) return;
@@ -48,7 +74,6 @@ function FolderIcon({
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
     >
-      {/* Folder */}
       <div className="relative w-32 h-32 mb-3">
         {/* Folder tab */}
         <div
@@ -62,26 +87,25 @@ function FolderIcon({
 
         {/* Folder front */}
         <div
-          className={`absolute top-6 left-0 w-full h-[90%] rounded-2xl bg-gradient-to-br ${category.color} border-2 border-white/20 shadow-2xl group-hover:shadow-3xl transition-all`}
+          className={`absolute top-6 left-0 w-full h-[90%] rounded-2xl bg-gradient-to-br ${category.color} border-2 border-white/20 shadow-2xl transition-all`}
         >
           {/* Icon */}
-          <div className="absolute inset-0 flex items-center justify-center text-5xl text-white/90">
-            {category.icon}
+          <div className="absolute inset-0 flex items-center justify-center text-white/90">
+            <Icon size={44} />
           </div>
 
-          {/* Count badge */}
-          <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-white text-black text-xs font-bold flex items-center justify-center shadow-lg">
-            {category.count}
+          {/* macOS style badge */}
+          <div className="absolute -top-3 -right-3 min-w-[40px] h-10 px-3 rounded-full bg-red-500 text-white text-sm font-semibold flex items-center justify-center shadow-xl">
+            {count}
           </div>
         </div>
 
-        {/* Glow effect */}
+        {/* Glow */}
         <div
           className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${category.color} opacity-0 group-hover:opacity-30 blur-xl transition-opacity`}
         />
       </div>
 
-      {/* Label */}
       <div className="text-center px-2">
         <p className="text-sm font-medium text-white group-hover:text-blue-300 transition-colors">
           {category.name}
@@ -92,18 +116,19 @@ function FolderIcon({
 }
 
 /* =========================
-   Finder Window Component
+   Finder Window
 ========================= */
 function FinderWindow({
   category,
   onClose,
   onProjectClick,
 }: {
-  category: any;
+  category: Category;
   onClose: () => void;
-  onProjectClick: (project: any) => void;
+  onProjectClick: (project: Project) => void;
 }) {
   const filteredProjects = projects.filter((p) => p.category === category.id);
+  const Icon = category.icon;
 
   return (
     <motion.div
@@ -121,23 +146,19 @@ function FinderWindow({
         className="relative w-full max-w-5xl max-h-[85vh] rounded-xl overflow-hidden bg-gradient-to-br from-gray-900/95 to-black/95 border border-white/20 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* macOS title bar */}
+        {/* Title bar */}
         <div className="flex items-center justify-between px-4 py-3 bg-gray-800/50 border-b border-white/10">
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 transition-colors"
+              className="w-3 h-3 rounded-full bg-red-500"
             />
-            <button className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors" />
-            <button className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 transition-colors" />
+            <button className="w-3 h-3 rounded-full bg-yellow-500" />
+            <button className="w-3 h-3 rounded-full bg-green-500" />
           </div>
 
           <div className="flex items-center gap-3">
-            <div
-              className={`text-2xl bg-gradient-to-br ${category.color} bg-clip-text text-transparent`}
-            >
-              {category.icon}
-            </div>
+            <Icon className="text-white" size={20} />
             <p className="text-sm font-medium text-white">{category.name}</p>
           </div>
 
@@ -184,8 +205,8 @@ function FinderWindow({
           </div>
         </div>
 
-        {/* Content area */}
-        <div className="p-6 overflow-y-auto max-h-[calc(85vh-120px)] custom-scrollbar">
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(85vh-100px)]">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredProjects.map((project, index) => (
               <motion.div
@@ -196,33 +217,25 @@ function FinderWindow({
                 onClick={() => onProjectClick(project)}
                 className="group cursor-pointer flex flex-col items-center"
                 whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
               >
-                {/* File icon */}
                 <div className="relative w-24 h-28 mb-3">
-                  <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-white/10 to-white/5 border border-white/20 group-hover:border-blue-400/50 transition-all shadow-lg">
-                    {/* Document lines */}
+                  <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-white/10 to-white/5 border border-white/20 shadow-lg">
                     <div className="absolute top-4 left-3 right-3 space-y-1.5">
                       <div className="h-1 bg-white/20 rounded" />
                       <div className="h-1 bg-white/20 rounded w-3/4" />
                       <div className="h-1 bg-white/20 rounded w-1/2" />
                     </div>
 
-                    {/* Status badge */}
                     <div className="absolute bottom-2 left-2 right-2">
                       <div className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/30 text-blue-200 text-center border border-blue-400/30">
                         {project.status}
                       </div>
                     </div>
                   </div>
-
-                  {/* Glow */}
-                  <div className="absolute inset-0 rounded-lg bg-blue-500/0 group-hover:bg-blue-500/20 blur-xl transition-all" />
                 </div>
 
-                {/* Label */}
                 <div className="text-center px-2 max-w-full">
-                  <p className="text-xs text-white/90 group-hover:text-blue-300 transition-colors truncate">
+                  <p className="text-xs text-white/90 truncate">
                     {project.title}
                   </p>
                   <p className="text-[10px] text-white/40 mt-0.5">
@@ -242,9 +255,9 @@ function FinderWindow({
    Main Section
 ========================= */
 export default function Projects() {
-  const [openCategory, setOpenCategory] = useState<any>(null);
-  const [selectedProject, setSelectedProject] = useState<any>(null);
-  const sectionRef = useRef<HTMLDivElement>(null);
+  const [openCategory, setOpenCategory] = useState<Category | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+
   const titleRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -266,52 +279,40 @@ export default function Projects() {
     );
   }, []);
 
+  /* =========================
+     Auto count calculation
+  ========================= */
+  const categoryCounts = categories.reduce((acc: any, cat: Category) => {
+    acc[cat.id] = projects.filter((p) => p.category === cat.id).length;
+    return acc;
+  }, {});
+
   return (
     <section
       id="projects"
-      ref={sectionRef}
       className="relative w-full bg-black py-32 text-white overflow-hidden"
     >
-      {/* Background effects */}
-      <div className="absolute inset-0">
-        <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-1/3 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] animate-pulse delay-1000" />
-      </div>
-
-      {/* Grid overlay */}
-      <div
-        className="absolute inset-0 opacity-[0.02]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(59, 130, 246, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.3) 1px, transparent 1px)",
-          backgroundSize: "50px 50px",
-        }}
-      />
-
       <div className="relative z-10 mx-auto max-w-7xl px-6">
         {/* Title */}
         <div ref={titleRef} className="text-center mb-16">
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
-            Selected Projects
-          </h2>
-          <p className="text-lg text-white/60 max-w-2xl mx-auto">
-            Browse through project categories and explore my work
-          </p>
+          <h2 className="text-5xl font-bold mb-4">My Works</h2>
+          <p className="text-white/60">Browse through project categories</p>
         </div>
 
         {/* Folder Grid */}
-        <div className="grid grid-cols-2  lg:grid-cols-4 gap-8 lg:gap-12 max-w-5xl mx-auto">
-          {categories.map((category) => (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-12 max-w-5xl mx-auto">
+          {categories.map((category: Category) => (
             <FolderIcon
               key={category.id}
               category={category}
+              count={categoryCounts[category.id] || 0}
               onClick={() => setOpenCategory(category)}
             />
           ))}
         </div>
       </div>
 
-      {/* Finder Window */}
+      {/* Finder */}
       <AnimatePresence>
         {openCategory && (
           <FinderWindow
@@ -325,7 +326,7 @@ export default function Projects() {
         )}
       </AnimatePresence>
 
-      {/* Project Detail Modal */}
+      {/* Modal */}
       <AnimatePresence>
         {selectedProject && (
           <ProjectModal
@@ -334,7 +335,6 @@ export default function Projects() {
           />
         )}
       </AnimatePresence>
-
       {/* Custom scrollbar styles */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {

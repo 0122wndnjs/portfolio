@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { FaTelegramPlane, FaGithub } from "react-icons/fa";
+import { FaTelegramPlane } from "react-icons/fa";
 import { SiGmail } from "react-icons/si";
 import { FiCreditCard } from "react-icons/fi";
 import BusinessCard from "./BusinessCard";
@@ -16,28 +16,21 @@ const contacts = [
   {
     name: "Gmail",
     icon: <SiGmail />,
-    value: "0122wndnjs@email.com",
-    link: "mailto:your@email.com",
+    value: "0122wndnjs@gmail.com",
+    link: "mailto:0122wndnjs@gmail.com",
     color: "#ea4335",
   },
   {
     name: "Telegram",
     icon: <FaTelegramPlane />,
     value: "@wndnjs0122",
-    link: "https://t.me/yourhandle",
+    link: "https://t.me/wndnjs0122",
     color: "#229ED9",
-  },
-  {
-    name: "GitHub",
-    icon: <FaGithub />,
-    value: "github.com/yourname",
-    link: "https://github.com/0122wndnjs",
-    color: "#ffffff",
   }
 ];
 
 /* =========================
-   Contact Card
+   Contact Card with Center Ripple Effect
 ========================= */
 function ContactCard({ item }: { item: any }) {
   return (
@@ -47,28 +40,51 @@ function ContactCard({ item }: { item: any }) {
       rel="noopener noreferrer"
       whileHover={{ y: -8, scale: 1.04 }}
       transition={{ type: "spring", stiffness: 260, damping: 18 }}
-      className="group relative rounded-2xl overflow-hidden"
+      className="group relative rounded-2xl overflow-hidden cursor-pointer"
     >
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] to-white/[0.02] border border-white/10" />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] to-white/[0.02] border border-white/10 group-hover:border-white/20 transition-all duration-300" />
 
-      {/* Glow */}
+      {/* Center ripple effect - spreads from center like curtains opening */}
       <div
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        className="absolute top-1/2 left-1/2 w-0 h-0 rounded-full -translate-x-1/2 -translate-y-1/2 
+                   group-hover:w-[600px] group-hover:h-[600px] 
+                   transition-all duration-700 ease-out pointer-events-none"
         style={{
-          background: `radial-gradient(circle at center, ${item.color}33, transparent 70%)`,
+          background: `radial-gradient(circle, ${item.color} 0%, ${item.color}ee 30%, ${item.color}99 50%, ${item.color}44 70%, transparent 100%)`,
         }}
       />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center p-8 text-center">
-        <div className="text-4xl mb-4" style={{ color: item.color }}>
-          {item.icon}
+        {/* Icon - changes to white on hover */}
+        <div 
+          className="text-4xl mb-4 transition-all duration-300"
+          style={{ 
+            color: item.color 
+          }}
+        >
+          <span className="group-hover:text-white group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all duration-300">
+            {item.icon}
+          </span>
         </div>
 
-        <p className="text-white font-medium">{item.name}</p>
-        <p className="text-sm text-white/60 mt-1">{item.value}</p>
+        {/* Text - brightens on hover */}
+        <p className="text-white font-medium group-hover:drop-shadow-[0_0_4px_rgba(255,255,255,0.3)] transition-all duration-300">
+          {item.name}
+        </p>
+        <p className="text-sm text-white/60 group-hover:text-white/95 group-hover:drop-shadow-[0_0_4px_rgba(255,255,255,0.2)] transition-all duration-300 mt-1">
+          {item.value}
+        </p>
       </div>
+
+      {/* Glow effect on hover */}
+      <div 
+        className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+        style={{
+          boxShadow: `0 0 30px ${item.color}66, inset 0 0 30px ${item.color}22`
+        }}
+      />
     </motion.a>
   );
 }
@@ -135,7 +151,7 @@ export default function Contact() {
         </div>
 
         {/* Contact Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto">
           {contacts.map((item) => (
             <ContactCard key={item.name} item={item} />
           ))}

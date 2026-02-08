@@ -16,11 +16,11 @@ export default function BusinessCard({ isOpen, onClose }: BusinessCardProps) {
   const cardData = {
     name: "JOOWON KIM",
     title: "Full-Stack Developer & Web3 Builder",
-    email: "0122wndnjs@email.com",
+    email: "0122wndnjs@gmail.com",
     telegram: "@wndnjs0122",
     github: "github.com/0122wndnjs",
     phone: "+82 10 6661 4589",
-    website: "https://yourportfolio.com",
+    website: "https://joowonkim.pages.dev",
     location: "Seoul, South Korea",
     photo: "/images/profile.jpg",
   };
