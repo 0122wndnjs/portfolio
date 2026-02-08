@@ -1,196 +1,249 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>OG Business Card</title>
+  <head>
+    <meta charset="UTF-8" />
+    <title>OG Business Card</title>
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap"
+      rel="stylesheet"
+    />
 
-  <!-- Icons -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-  />
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: "Inter", sans-serif;
-    }
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", sans-serif;
+      }
 
-    body {
-      width: 1200px;
-      height: 630px;
-      background: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-    }
+      body {
+        width: 1200px;
+        height: 630px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        background: radial-gradient(
+            circle at 20% 30%,
+            rgba(255, 255, 255, 0.06),
+            transparent 40%
+          ),
+          radial-gradient(
+            circle at 80% 70%,
+            rgba(255, 255, 255, 0.04),
+            transparent 45%
+          ),
+          linear-gradient(135deg, #050505, #0b0b0b 40%, #020202);
+      }
 
-    .card {
-      width: 100%;
-      height: 100%;
-      display: flex;
-    }
+      .card {
+        width: 100%;
+        height: 100%;
+        display: flex;
+      }
 
-    .left,
-    .right {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+      .left,
+      .right {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
 
-    /* LEFT */
-    .left {
-      padding: 80px;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 40px;
-    }
+      /* LEFT */
+      .left {
+        padding: 80px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 40px;
+      }
 
-    .profile {
-      display: flex;
-      align-items: center;
-      gap: 26px;
-    }
+      .profile {
+        display: flex;
+        align-items: center;
+        gap: 26px;
+      }
 
-    .avatar {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      padding: 3px;
-      background: linear-gradient(135deg, #a855f7, #22d3ee);
-    }
+      .avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        padding: 3px;
+        background: linear-gradient(135deg, #a855f7, #22d3ee);
+      }
 
-    .avatar img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-      background: #000;
-    }
+      .avatar img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #000;
+      }
 
-    .name {
-      font-size: 54px;
-      font-weight: 900;
-      letter-spacing: -1px;
-      background: linear-gradient(to right, #a855f7, #60a5fa);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+      .name {
+        font-size: 54px;
+        font-weight: 900;
+        letter-spacing: -1px;
+        background: linear-gradient(to right, #a855f7, #60a5fa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
 
-    .title {
-      font-size: 22px;
-      color: rgba(255,255,255,0.65);
-      margin-top: 6px;
-    }
+      .title {
+        font-size: 22px;
+        color: rgba(255, 255, 255, 0.65);
+        margin-top: 6px;
+      }
 
-    .contact {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      font-size: 24px;
-    }
+      .contact {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        font-size: 24px;
+      }
 
-    .contact-item {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      color: rgba(255,255,255,0.85);
-    }
+      .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        color: rgba(255, 255, 255, 0.9);
+      }
 
-    .contact-item i {
-      width: 32px;
-      text-align: center;
-      font-size: 22px;
-      color: #a855f7;
-    }
+      /* 아이콘 정렬 통일 */
+      .icon {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
 
-    /* RIGHT */
-    .right {
-      position: relative;
-      flex-direction: column;
-      gap: 20px;
-    }
+      .icon i {
+        font-size: 22px;
+      }
 
-    .qr {
-      width: 300px;
-      height: 300px;
-    }
+      .icon svg {
+        width: 22px;
+        height: 22px;
+      }
 
-    .scan-text {
-      font-size: 18px;
-      color: rgba(255,255,255,0.35);
-      letter-spacing: 0.5px;
-    }
-  </style>
-</head>
-<body>
-  <div class="card">
+      .phone i {
+        color: #22c55e;
+      }
 
-    <!-- LEFT -->
-    <div class="left">
-      <div class="profile">
-        <div class="avatar">
-          <img src="./images/profile.jpg" alt="Profile" />
+      .email i {
+        color: #ea4335;
+      }
+
+      /* RIGHT */
+      .right {
+        position: relative;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .qr {
+        width: 300px;
+        height: 300px;
+      }
+
+      .scan-text {
+        font-size: 18px;
+        color: rgba(255, 255, 255, 0.35);
+        letter-spacing: 0.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <!-- LEFT -->
+      <div class="left">
+        <div class="profile">
+          <!-- <div class="avatar">
+            <img src="./images/profile.jpg" alt="Profile" />
+          </div> -->
+          <div>
+            <div class="name">JOOWON KIM</div>
+            <div class="title">Web3 Full-Stack Developer</div>
+          </div>
         </div>
-        <div>
-          <div class="name">JOOWON KIM</div>
-          <div class="title">Web3 Full-Stack Developer</div>
+
+        <div class="contact">
+          <!-- Phone -->
+          <div class="contact-item phone">
+            <div class="icon">
+              <i class="fa-solid fa-phone"></i>
+            </div>
+            <span>+82 10 6661 4589</span>
+          </div>
+
+          <!-- Email -->
+          <div class="contact-item email">
+            <div class="icon">
+              <i class="fa-solid fa-envelope"></i>
+            </div>
+            <span>0122wndnjs@gmail.com</span>
+          </div>
+
+          <!-- Telegram -->
+          <div class="contact-item">
+            <div class="icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="#229ED9"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M9.993 15.23l-.396 5.57c.566 0 .81-.244 1.103-.537l2.644-2.53 5.48 4.01c1.004.554 1.718.263 1.97-.93l3.57-16.73c.297-1.388-.502-1.93-1.49-1.56L1.8 9.72c-1.35.52-1.33 1.27-.23 1.61l5.38 1.68L19.34 5.6c.58-.37 1.11-.17.68.2"
+                />
+              </svg>
+            </div>
+            <span>@wndnjs0122</span>
+          </div>
         </div>
       </div>
 
-      <div class="contact">
-        <div class="contact-item">
-          <i class="fa-solid fa-phone"></i>
-          <span>+82 10 6661 4589</span>
-        </div>
-
-        <div class="contact-item">
-          <i class="fa-solid fa-envelope"></i>
-          <span>0122wndnjs@gmail.com</span>
-        </div>
+      <!-- RIGHT -->
+      <div class="right">
+        <div class="qr" id="qr-container"></div>
       </div>
     </div>
 
-    <!-- RIGHT -->
-    <div class="right">
-      <div class="qr" id="qr-container"></div>
-    </div>
+    <!-- QR Code Styling Library -->
+    <script src="https://unpkg.com/qr-code-styling@1.6.0/lib/qr-code-styling.js"></script>
 
-  </div>
+    <script>
+      const qr = new QRCodeStyling({
+        width: 300,
+        height: 300,
+        data: "https://joowonkim.pages.dev",
+        dotsOptions: {
+          type: "rounded",
+          color: "#60a5fa",
+        },
+        backgroundOptions: {
+          color: "transparent",
+        },
+        cornersSquareOptions: {
+          type: "extra-rounded",
+          color: "#a855f7",
+        },
+        cornersDotOptions: {
+          type: "dot",
+          color: "#22d3ee",
+        },
+      });
 
-  <!-- QR Code Styling Library -->
-  <script src="https://unpkg.com/qr-code-styling@1.6.0/lib/qr-code-styling.js"></script>
-
-  <script>
-    const qr = new QRCodeStyling({
-      width: 300,
-      height: 300,
-      data: "https://joowonkim.pages.dev",
-      dotsOptions: {
-        type: "rounded",
-        color: "#60a5fa",
-      },
-      backgroundOptions: {
-        color: "transparent",
-      },
-      cornersSquareOptions: {
-        type: "extra-rounded",
-        color: "#a855f7",
-      },
-      cornersDotOptions: {
-        type: "dot",
-        color: "#22d3ee",
-      },
-    });
-
-    qr.append(document.getElementById("qr-container"));
-  </script>
-</body>
+      qr.append(document.getElementById("qr-container"));
+    </script>
+  </body>
 </html>
