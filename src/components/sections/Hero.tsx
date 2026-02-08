@@ -117,7 +117,7 @@ export default function Hero() {
           if (entry.isIntersecting && !hasTyped) {
             setHasTyped(true);
 
-            lines.forEach((line, i) => {
+            lines.forEach((line, _i) => {
               setTimeout(() => {
                 setVisibleLines((prev) => [...prev, line]);
               }, line.delay);

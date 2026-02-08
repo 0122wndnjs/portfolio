@@ -15,3 +15,27 @@ body,
 body {
   margin: 0;
 }
+
+/* html2canvas용 단순 색상 */
+.capture-mode {
+  background: #020617 !important;
+}
+
+.capture-mode * {
+  background-image: none !important;
+  backdrop-filter: none !important;
+}
+
+/* html2canvas 안전 캡처 모드 */
+.capture-mode,
+.capture-mode * {
+  background: #020617 !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+.capture-mode img {
+  filter: none !important;
+}
