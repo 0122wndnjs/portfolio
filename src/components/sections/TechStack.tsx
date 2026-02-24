@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 
 import {
@@ -148,7 +148,7 @@ function CategorySection({
 
       {/* Skills Flex Wrap */}
       <div className="flex flex-wrap gap-4 sm:gap-6">
-        {skills.map((skill, i) => (
+        {skills.map((skill, _i) => (
           <SkillBadge 
             key={`${category}-${skill.name}`}
             name={skill.name}

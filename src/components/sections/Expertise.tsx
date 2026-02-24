@@ -78,7 +78,7 @@ function Card({
   index: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [isHovered, setIsHovered] = useState(false);
+  const [_isHovered, setIsHovered] = useState(false);
 
   // Framer Motion values for 3D rotation based on mouse position
   const x = useMotionValue(0);

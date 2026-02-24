@@ -1,5 +1,5 @@
-import { useRef, useState, useEffect } from "react";
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
+import { useRef, useState } from "react";
+import { motion, useScroll, useSpring } from "framer-motion";
 
 /* =========================
    Data
@@ -68,7 +68,7 @@ const experiences = [
 ========================= */
 function ExperienceCard({ item, index }: { item: typeof experiences[0]; index: number }) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [isHovered, setIsHovered] = useState(false);
+  const [_isHovered, setIsHovered] = useState(false);
   const isEven = index % 2 === 0;
 
   return (
