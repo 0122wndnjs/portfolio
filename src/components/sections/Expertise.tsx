@@ -1,10 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useRef, useState, useEffect } from "react";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { SiEthereum, SiReact, SiSolidity, SiWeb3Dotjs } from "react-icons/si";
 import { FaFileAlt, FaWallet } from "react-icons/fa";
-
-gsap.registerPlugin(ScrollTrigger);
 
 /* =========================
    Data
@@ -12,149 +9,63 @@ gsap.registerPlugin(ScrollTrigger);
 const items = [
   {
     title: "Web3 & Corporate Websites",
-    desc: "High-conversion landing pages, token sites, and corporate platforms.",
+    desc: "High-conversion landing pages, token sites, and corporate platforms with interactive 3D elements and modern aesthetics.",
     icon: <SiReact />,
-    color: "from-blue-500 to-cyan-500",
+    color: "from-blue-500/20 to-cyan-500/20",
+    glowColor: "rgba(6, 182, 212, 0.4)",
     iconColor: "text-cyan-400",
   },
   {
-    title: "Token & Smart Contract Development",
-    desc: "Custom token contracts across EVM chains with secure architecture.",
+    title: "Token & Smart Contract",
+    desc: "Custom token contracts across EVM chains with secure architecture, thoroughly tested and optimized for low gas fees.",
     icon: <SiSolidity />,
-    color: "from-purple-500 to-pink-500",
+    color: "from-purple-500/20 to-pink-500/20",
+    glowColor: "rgba(236, 72, 153, 0.4)",
     iconColor: "text-pink-400",
   },
   {
     title: "Tokenomics & Whitepaper",
-    desc: "Technical whitepapers and token economic system design.",
+    desc: "Technical whitepapers and token economic system design, providing clear utility and long-term sustainable models.",
     icon: <FaFileAlt />,
-    color: "from-indigo-500 to-purple-500",
+    color: "from-indigo-500/20 to-purple-500/20",
+    glowColor: "rgba(168, 85, 247, 0.4)",
     iconColor: "text-purple-400",
   },
   {
-    title: "Full-Stack Platform Development",
-    desc: "Production-ready web platforms from frontend to backend systems.",
+    title: "Full-Stack Platforms",
+    desc: "Production-ready web platforms from robust scalable backend architectures to dynamic highly-responsive frontend systems.",
     icon: <SiWeb3Dotjs />,
-    color: "from-cyan-500 to-blue-500",
+    color: "from-cyan-500/20 to-blue-500/20",
+    glowColor: "rgba(59, 130, 246, 0.4)",
     iconColor: "text-blue-400",
   },
   {
     title: "Wallet & Key Management",
-    desc: "Custodial and non-custodial wallet architecture and integrations.",
+    desc: "Custodial and non-custodial wallet architecture, AA (Account Abstraction), and secure external integrations.",
     icon: <FaWallet />,
-    color: "from-blue-500 to-indigo-500",
+    color: "from-blue-500/20 to-indigo-500/20",
+    glowColor: "rgba(99, 102, 241, 0.4)",
     iconColor: "text-indigo-400",
   },
   {
     title: "Blockchain Integration",
-    desc: "Smart contract integration, on-chain data, and Web3 infrastructure.",
+    desc: "Smart contract integration, listening to on-chain data events, and establishing robust Web3 infrastructure.",
     icon: <SiEthereum />,
-    color: "from-cyan-500 to-teal-500",
+    color: "from-cyan-500/20 to-teal-500/20",
+    glowColor: "rgba(45, 212, 191, 0.4)",
     iconColor: "text-teal-400",
   },
 ];
 
 /* =========================
-   Animated Background Grid
-========================= */
-function AnimatedGrid() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    };
-    resize();
-    window.addEventListener("resize", resize);
-
-    const nodes: { x: number; y: number; vx: number; vy: number }[] = [];
-    const nodeCount = window.innerWidth < 768 ? 12 : 25;
-    for (let i = 0; i < nodeCount; i++) {
-      nodes.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-      });
-    }
-
-    let animationId: number;
-    const animate = () => {
-      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Update nodes
-      nodes.forEach((node) => {
-        node.x += node.vx;
-        node.y += node.vy;
-
-        if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
-        if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
-      });
-
-      // Draw connections
-      ctx.strokeStyle = "rgba(59, 130, 246, 0.1)";
-      ctx.lineWidth = 1;
-
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const dx = nodes[i].x - nodes[j].x;
-          const dy = nodes[i].y - nodes[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < 150) {
-            ctx.beginPath();
-            ctx.moveTo(nodes[i].x, nodes[i].y);
-            ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.globalAlpha = 1 - dist / 150;
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Draw nodes
-      ctx.globalAlpha = 1;
-      nodes.forEach((node) => {
-        ctx.fillStyle = "#3b82f6";
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, 2, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      animationId = requestAnimationFrame(animate);
-    };
-
-    animate();
-
-    return () => {
-      window.removeEventListener("resize", resize);
-      cancelAnimationFrame(animationId);
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 w-full h-full opacity-40"
-    />
-  );
-}
-
-/* =========================
-   Card
+   Interactive 3D Card
 ========================= */
 function Card({
   title,
   desc,
   icon,
   color,
+  glowColor,
   iconColor,
   index,
 }: {
@@ -162,236 +73,242 @@ function Card({
   desc: string;
   icon: React.ReactElement;
   color: string;
+  glowColor: string;
   iconColor: string;
   index: number;
 }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const glowRef = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
 
-  const handleMove = (e: React.MouseEvent) => {
-    const el = cardRef.current;
-    const glow = glowRef.current;
-    if (!el || !glow) return;
+  // Framer Motion values for 3D rotation based on mouse position
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
 
-    const rect = el.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+  const mouseXSpring = useSpring(x, { stiffness: 150, damping: 15 });
+  const mouseYSpring = useSpring(y, { stiffness: 150, damping: 15 });
 
-    const rotateX = (y / rect.height - 0.5) * -15;
-    const rotateY = (x / rect.width - 0.5) * 15;
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["10deg", "-10deg"]);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-10deg", "10deg"]);
+  const glareX = useTransform(mouseXSpring, [-0.5, 0.5], ["100%", "0%"]);
+  const glareY = useTransform(mouseYSpring, [-0.5, 0.5], ["100%", "0%"]);
 
-    gsap.to(el, {
-      rotateX,
-      rotateY,
-      duration: 0.3,
-      ease: "power2.out",
-    });
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
 
-    // Move glow to cursor position
-    glow.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(59, 130, 246, 0.3), transparent 50%)`;
+    const xPct = mouseX / width - 0.5;
+    const yPct = mouseY / height - 0.5;
+
+    x.set(xPct);
+    y.set(yPct);
   };
 
-  const handleLeave = () => {
-    const el = cardRef.current;
-    if (!el) return;
-
-    gsap.to(el, {
-      rotateX: 0,
-      rotateY: 0,
-      duration: 0.5,
-      ease: "power2.out",
-    });
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    x.set(0);
+    y.set(0);
   };
-
-  useEffect(() => {
-    if (!cardRef.current) return;
-
-    gsap.fromTo(
-      cardRef.current,
-      {
-        opacity: 0,
-        y: 50,
-        scale: 0.9,
-      },
-      {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.8,
-        delay: index * 0.1,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: cardRef.current,
-          start: "top 85%",
-        },
-      }
-    );
-  }, [index]);
 
   return (
-    <div
-      ref={cardRef}
-      onMouseMove={handleMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        handleLeave();
-      }}
-      className="group relative rounded-2xl overflow-hidden"
-      style={{
-        transformStyle: "preserve-3d",
-        perspective: "1000px",
-      }}
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 0.6, delay: index * 0.1, ease: "easeOut" }}
+      style={{ perspective: 1000 }}
+      className="relative z-10"
     >
-      {/* Card content */}
-      <div className="relative z-10 h-full rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl p-8 transition-all duration-300">
-        {/* Icon with gradient */}
-        {/* Icon */}
-        <div className="relative inline-flex items-center justify-center w-14 h-14 mb-6">
-          <div
-            className={`absolute inset-0 bg-gradient-to-br ${color} opacity-100 blur-xl rounded-full`}
-          />
-          <div className={`relative text-3xl ${iconColor}`}>{icon}</div>{" "}
-        </div>
-
-        {/* Title */}
-        <h3 className="text-xl font-semibold text-white mb-3 transition-colors group-hover:text-blue-300">
-          {title}
-        </h3>
-
-        {/* Description */}
-        <p className="text-sm text-white/60 leading-relaxed group-hover:text-white/80 transition-colors">
-          {desc}
-        </p>
-
-        {/* Animated corner accents */}
-        <div className="absolute top-0 left-0 w-20 h-20 border-t-2 border-l-2 border-blue-500/0 group-hover:border-blue-500/50 transition-all duration-500 rounded-tl-2xl" />
-        <div className="absolute bottom-0 right-0 w-20 h-20 border-b-2 border-r-2 border-cyan-500/0 group-hover:border-cyan-500/50 transition-all duration-500 rounded-br-2xl" />
-
-        {/* Number indicator */}
-        <div className="absolute top-4 right-4 text-6xl font-bold text-white/[0.03] group-hover:text-white/[0.08] transition-all">
-          {String(index + 1).padStart(2, "0")}
-        </div>
-      </div>
-
-      {/* Glow effect */}
-      <div
-        ref={glowRef}
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-      />
-
-      {/* Border glow */}
-      <div
-        className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`}
+      <motion.div
+        ref={ref}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={handleMouseLeave}
         style={{
-          background: `linear-gradient(45deg, transparent, rgba(59, 130, 246, 0.1), transparent)`,
-          animation: isHovered ? "borderRotate 3s linear infinite" : "none",
+          rotateX,
+          rotateY,
+          transformStyle: "preserve-3d",
         }}
-      />
-
-      {/* Scanline effect */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-        <div
-          className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent"
+        className={`relative h-full flex flex-col p-8 sm:p-10 rounded-3xl border border-white/5 bg-gradient-to-br from-white/[0.03] to-white/[0.01] backdrop-blur-xl transition-colors duration-500 overflow-hidden cursor-crosshair group`}
+      >
+        {/* Dynamic Glare Effect */}
+        <motion.div
+          className="absolute inset-0 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
           style={{
-            animation: isHovered ? "scanline 2s linear infinite" : "none",
+            background: `radial-gradient(circle at ${glareX} ${glareY}, ${glowColor}, transparent 40%)`,
+            mixBlendMode: "screen",
           }}
         />
-      </div>
-    </div>
+
+        {/* Dynamic Border Glow */}
+        <div className="absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+          <div className={`absolute inset-0 bg-gradient-to-br ${color} rounded-3xl opacity-20`} />
+        </div>
+
+        {/* Content Container */}
+        <div className="relative z-10 flex flex-col h-full transform-gpu" style={{ transform: "translateZ(40px)" }}>
+          {/* Top part: Icon and Number */}
+          <div className="flex justify-between items-start mb-8">
+            <div className={`relative flex items-center justify-center w-16 h-16 rounded-2xl bg-white/5 border border-white/10 group-hover:scale-110 transition-transform duration-500 ease-out`}>
+              <div className={`absolute inset-0 bg-gradient-to-br ${color} blur-xl rounded-full opacity-50 group-hover:opacity-100 transition-opacity duration-500`} />
+              <div className={`relative text-3xl sm:text-4xl ${iconColor}`}>{icon}</div>
+            </div>
+            
+            <div className="text-5xl font-black text-white/[0.03] group-hover:text-white/[0.1] transition-colors duration-500 group-hover:scale-110 delay-75">
+              {String(index + 1).padStart(2, "0")}
+            </div>
+          </div>
+
+          {/* Bottom part: Text */}
+          <div className="mt-auto">
+            <h3 className="text-xl sm:text-2xl font-bold text-white mb-3 group-hover:text-blue-300 transition-colors duration-300">
+              {title}
+            </h3>
+            <p className="text-sm sm:text-base text-slate-400 leading-relaxed group-hover:text-slate-200 transition-colors duration-300">
+              {desc}
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
 /* =========================
-   Section
+   Animated Background
 ========================= */
-export default function Expertise() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const subtitleRef = useRef<HTMLParagraphElement>(null);
+function GridBackground() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top 70%",
-        },
-      });
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-      tl.from(titleRef.current, {
-        opacity: 0,
-        y: 30,
-        duration: 0.8,
-        ease: "power3.out",
-      }).from(
-        subtitleRef.current,
-        {
-          opacity: 0,
-          y: 20,
-          duration: 0.6,
-          ease: "power3.out",
-        },
-        "-=0.4"
-      );
-    }, sectionRef);
+    let animationFrameId: number;
+    let time = 0;
 
-    return () => ctx.revert();
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener("resize", resize);
+    resize();
+
+    const draw = () => {
+      time += 0.005;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const cellSize = 60;
+      ctx.lineWidth = 1;
+
+      // Draw faint grid base
+      ctx.beginPath();
+      for (let x = 0; x <= canvas.width; x += cellSize) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+      }
+      for (let y = 0; y <= canvas.height; y += cellSize) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+      }
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.02)";
+      ctx.stroke();
+
+      // Draw moving wave grid
+      ctx.beginPath();
+      for (let x = 0; x <= canvas.width; x += cellSize) {
+        for (let y = 0; y <= canvas.height; y += cellSize) {
+          // Calculate wave based on time and position
+          const wave = Math.sin((x * 0.01) + time) * Math.cos((y * 0.01) + time);
+          
+          if (wave > 0.5) {
+            ctx.fillStyle = `rgba(56, 189, 248, ${(wave - 0.5) * 0.15})`; // Sky blue subtle highlight
+            ctx.fillRect(x, y, cellSize, cellSize);
+          }
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      cancelAnimationFrame(animationFrameId);
+    };
   }, []);
 
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />;
+}
+
+/* =========================
+   Section Component
+========================= */
+export default function Expertise() {
   return (
-    <section
-      id="expertise"
-      ref={sectionRef}
-      className="relative w-full bg-black py-32 text-white overflow-hidden"
-    >
-      {/* Animated background */}
-      <div className="absolute inset-0">
-        <AnimatedGrid />
-      </div>
-
-      {/* Gradient orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px] animate-pulse delay-1000" />
-
-      {/* Grid overlay */}
-      <div
-        className="absolute inset-0 opacity-[0.015]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(59, 130, 246, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.3) 1px, transparent 1px)",
-          backgroundSize: "50px 50px",
-        }}
+    <section id="expertise" className="relative w-full bg-black py-32 overflow-hidden selection:bg-cyan-500/30">
+      
+      {/* Backgrounds */}
+      <GridBackground />
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black pointer-events-none z-0" />
+      
+      {/* Ambient Orbs */}
+      <motion.div 
+        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+        transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
+        className="absolute top-1/4 -left-[10%] w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[150px] pointer-events-none" 
+      />
+      <motion.div 
+        animate={{ scale: [1, 1.5, 1], opacity: [0.2, 0.4, 0.2] }}
+        transition={{ repeat: Infinity, duration: 10, ease: "easeInOut", delay: 1 }}
+        className="absolute bottom-1/4 -right-[10%] w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-[180px] pointer-events-none" 
       />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-6">
-        {/* Title */}
-        <div className="text-center mb-20">
-          <h2
-            ref={titleRef}
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent"
+      <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
+        {/* Title Area */}
+        <div className="text-center mb-24 flex flex-col items-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: "backOut" }}
+            className="mb-6 px-4 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-xs font-semibold text-cyan-400 tracking-widest uppercase inline-block"
           >
-            Core Expertise
-          </h2>
-          <p
-            ref={subtitleRef}
-            className="mt-6 text-lg text-blue-100/60 max-w-2xl mx-auto"
-          >
-            End-to-end Web3 development, from smart contracts to full production
-            platforms.
-          </p>
+            Capabilities
+          </motion.div>
 
-          {/* Decorative line */}
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <div className="h-px w-20 bg-gradient-to-r from-transparent to-blue-500/50" />
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-            <div className="h-px w-20 bg-gradient-to-l from-transparent to-blue-500/50" />
-          </div>
+          <motion.h2
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight"
+          >
+            <span className="bg-gradient-to-r from-white via-slate-200 to-slate-500 bg-clip-text text-transparent">
+              Core Expertise
+            </span>
+          </motion.h2>
+          
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="mt-8 text-lg sm:text-xl text-slate-400 font-light max-w-3xl mx-auto"
+          >
+            Delivering robust, end-to-end solutions combining elegant <span className="text-white font-medium">frontend interfaces</span> with powerful <span className="text-white font-medium">Web3 architectures</span>.
+          </motion.p>
         </div>
 
-        {/* Grid */}
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Cards Grid */}
+        <div className="grid gap-6 sm:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {items.map((item, i) => (
             <Card
               key={i}
@@ -399,37 +316,13 @@ export default function Expertise() {
               desc={item.desc}
               icon={item.icon}
               color={item.color}
+              glowColor={item.glowColor}
               iconColor={item.iconColor}
               index={i}
             />
           ))}
         </div>
       </div>
-
-      {/* CSS for animations */}
-      <style>{`
-        @keyframes borderRotate {
-          0% {
-            transform: rotate(0deg);
-          }
-          100% {
-            transform: rotate(360deg);
-          }
-        }
-
-        @keyframes scanline {
-          0% {
-            transform: translateY(-100%);
-          }
-          100% {
-            transform: translateY(100%);
-          }
-        }
-
-        .delay-1000 {
-          animation-delay: 1s;
-        }
-      `}</style>
     </section>
   );
 }

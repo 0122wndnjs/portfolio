@@ -1,12 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { motion, AnimatePresence, useSpring, useTransform, useMotionValue } from "framer-motion";
 
 import { categories, projects } from "../../data/projects";
 import ProjectModal from "../common/ProjectModal";
-
-gsap.registerPlugin(ScrollTrigger);
 
 /* =========================
    Types
@@ -32,82 +28,104 @@ type Project = {
 };
 
 /* =========================
-   Folder Icon Component
+   Animated Folder Icon Component
 ========================= */
 function FolderIcon({
   category,
   count,
+  index,
   onClick,
 }: {
   category: Category;
   count: number;
+  index: number;
   onClick: () => void;
 }) {
-  const folderRef = useRef<HTMLDivElement>(null);
   const Icon = category.icon;
-
-  useEffect(() => {
-    if (!folderRef.current) return;
-
-    gsap.fromTo(
-      folderRef.current,
-      { opacity: 0, y: 30, scale: 0.9 },
-      {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.6,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: folderRef.current,
-          start: "top 85%",
-        },
-      }
-    );
-  }, []);
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <motion.div
-      ref={folderRef}
+      initial={{ opacity: 0, y: 30, scale: 0.9 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.5, delay: index * 0.1, ease: "easeOut" }}
       onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className="group cursor-pointer flex flex-col items-center"
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
     >
-      <div className="relative w-32 h-32 mb-3">
-        {/* Folder tab */}
+      <motion.div 
+        whileHover={{ scale: 1.05, y: -5 }}
+        whileTap={{ scale: 0.95 }}
+        transition={{ type: "spring", stiffness: 400, damping: 15 }}
+        className="relative w-32 h-32 sm:w-40 sm:h-40 mb-4 flex-shrink-0"
+      >
+        {/* Dynamic Shadow / Glow */}
+        <div 
+          className="absolute inset-x-4 -bottom-4 h-1/2 bg-black opacity-30 blur-2xl group-hover:opacity-50 transition-opacity"
+        />
+        
+        {/* Folder Back Tab */}
         <div
-          className={`absolute top-0 left-0 w-16 h-6 rounded-t-lg bg-gradient-to-br ${category.color} opacity-80`}
+          className={`absolute top-0 left-0 w-16 sm:w-20 h-8 sm:h-10 rounded-t-xl bg-gradient-to-br ${category.color} opacity-70`}
+        />
+        <div
+          className={`absolute top-0 left-0 w-16 sm:w-20 h-8 sm:h-10 rounded-t-xl bg-gradient-to-br ${category.color} opacity-90 backdrop-blur-sm`}
         />
 
-        {/* Folder body */}
+        {/* Folder Body (Back) */}
         <div
-          className={`absolute top-4 left-0 w-full h-full rounded-2xl bg-gradient-to-br ${category.color} opacity-70 group-hover:opacity-90 transition-opacity`}
+          className={`absolute top-6 sm:top-8 left-0 w-full h-[calc(100%-24px)] sm:h-[calc(100%-32px)] rounded-2xl sm:rounded-3xl bg-gradient-to-br ${category.color} opacity-60 backdrop-blur-md`}
         />
 
-        {/* Folder front */}
-        <div
-          className={`absolute top-6 left-0 w-full h-[90%] rounded-2xl bg-gradient-to-br ${category.color} border-2 border-white/20 shadow-2xl transition-all`}
+        {/* Paper Inside (Simulated files) */}
+        <motion.div 
+          animate={{ y: isHovered ? -15 : 0, rotate: isHovered ? -2 : 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          className="absolute top-4 left-4 right-4 h-3/4 bg-white/10 rounded-xl border border-white/20"
+        />
+        <motion.div 
+          animate={{ y: isHovered ? -8 : 0, rotate: isHovered ? 2 : 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.05 }}
+          className="absolute top-5 left-3 right-5 h-3/4 bg-white/5 rounded-xl border border-white/10"
+        />
+
+        {/* Folder Front Cover */}
+        <motion.div
+           animate={{ rotateX: isHovered ? -15 : 0 }}
+           style={{ transformOrigin: "bottom" }}
+           transition={{ type: "spring", stiffness: 200, damping: 15 }}
+          className={`absolute top-8 sm:top-10 left-0 w-full h-[calc(100%-32px)] sm:h-[calc(100%-40px)] rounded-2xl sm:rounded-3xl bg-gradient-to-br ${category.color} border-t border-l border-white/30 shadow-[0_-5px_15px_rgba(0,0,0,0.2)] flex items-center justify-center overflow-hidden z-10`}
         >
-          {/* Icon */}
-          <div className="absolute inset-0 flex items-center justify-center text-white/90">
-            <Icon size={44} />
-          </div>
+          {/* Internal gradient shine */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-50" />
+          
+          {/* Main Icon */}
+          <motion.div 
+            animate={{ scale: isHovered ? 1.1 : 1 }}
+            className="text-white drop-shadow-md z-10"
+          >
+            <Icon size={48} className="sm:w-14 sm:h-14" />
+          </motion.div>
+        </motion.div>
 
-          {/* macOS style badge */}
-          <div className="absolute -top-3 -right-3 min-w-[40px] h-10 px-3 rounded-full bg-red-500 text-white text-sm font-semibold flex items-center justify-center shadow-xl">
+        {/* Notification Badge */}
+        {count > 0 && (
+          <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 500, delay: 0.3 }}
+            className="absolute -top-2 -right-2 sm:-top-1 sm:-right-1 min-w-[32px] sm:min-w-[40px] h-8 sm:h-10 px-2 sm:px-3 rounded-full bg-red-500 border-2 border-slate-900 text-white text-xs sm:text-sm font-bold flex items-center justify-center shadow-lg z-20"
+          >
             {count}
-          </div>
-        </div>
+          </motion.div>
+        )}
+      </motion.div>
 
-        {/* Glow */}
-        <div
-          className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${category.color} opacity-0 group-hover:opacity-30 blur-xl transition-opacity`}
-        />
-      </div>
-
-      <div className="text-center px-2">
-        <p className="text-sm font-medium text-white group-hover:text-blue-300 transition-colors">
+      {/* Label Text */}
+      <div className="text-center px-4">
+        <p className="text-sm sm:text-base font-semibold text-white/90 group-hover:text-blue-300 transition-colors drop-shadow-md">
           {category.name}
         </p>
       </div>
@@ -116,7 +134,7 @@ function FolderIcon({
 }
 
 /* =========================
-   Finder Window
+   Finder Window (macOS style)
 ========================= */
 function FinderWindow({
   category,
@@ -133,136 +151,158 @@ function FinderWindow({
   const [page, setPage] = useState(0);
   const [perPage, setPerPage] = useState(8);
 
-  // 반응형 페이지 수
+  // Responsive Layout Setup
   useEffect(() => {
     const updateLayout = () => {
-      if (window.innerWidth < 640) {
-        setPerPage(4); // 모바일 2x2
-      } else {
-        setPerPage(8); // PC 4x2
-      }
+      if (window.innerWidth < 640) setPerPage(4);
+      else if (window.innerWidth < 1024) setPerPage(6);
+      else setPerPage(8);
     };
-
     updateLayout();
     window.addEventListener("resize", updateLayout);
     return () => window.removeEventListener("resize", updateLayout);
   }, []);
 
   const totalPages = Math.ceil(filteredProjects.length / perPage);
-
-  const pagedProjects = filteredProjects.slice(
-    page * perPage,
-    page * perPage + perPage
-  );
+  const pagedProjects = filteredProjects.slice(page * perPage, page * perPage + perPage);
 
   const goPrev = () => setPage((p) => Math.max(p - 1, 0));
   const goNext = () => setPage((p) => Math.min(p + 1, totalPages - 1));
 
+  // 3D Parallax logic for window
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const mouseXSpring = useSpring(x, { stiffness: 100, damping: 20 });
+  const mouseYSpring = useSpring(y, { stiffness: 100, damping: 20 });
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["3deg", "-3deg"]);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-3deg", "3deg"]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    x.set(mouseX / width - 0.5);
+    y.set(mouseY / height - 0.5);
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/60"
+      initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+      animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
+      exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+      transition={{ duration: 0.3 }}
+      className="fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-6 bg-black/40"
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        initial={{ scale: 0.9, opacity: 0, y: 40 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        exit={{ scale: 0.95, opacity: 0, y: 20 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="relative w-full max-w-5xl max-h-[85vh] rounded-xl overflow-hidden bg-gradient-to-br from-gray-900/95 to-black/95 border border-white/20 shadow-2xl"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => { x.set(0); y.set(0); }}
+        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+        className="relative w-full max-w-5xl rounded-2xl overflow-hidden bg-slate-900/80 backdrop-blur-2xl border border-white/20 shadow-[0_30px_100px_rgba(0,0,0,0.8)]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Title bar */}
-        <div className="flex items-center justify-between px-4 py-3 bg-gray-800/50 border-b border-white/10">
+        {/* Inner Glare / Ambient light */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50 pointer-events-none z-0" />
+
+        {/* macOS Title bar */}
+        <div className="relative z-10 flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/10 handle cursor-default">
           <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              className="w-3 h-3 rounded-full bg-red-500"
-            />
-            <button className="w-3 h-3 rounded-full bg-yellow-500" />
-            <button className="w-3 h-3 rounded-full bg-green-500" />
+            <button onClick={onClose} className="w-3.5 h-3.5 rounded-full bg-[#FF5F56] border border-black/10 hover:brightness-75 transition-all shadow-inner flex items-center justify-center group">
+              <span className="opacity-0 group-hover:opacity-100 text-black/50 text-[10px] pb-0.5 leading-none">x</span>
+            </button>
+            <button disabled className="w-3.5 h-3.5 rounded-full bg-[#FFBD2E] border border-black/10 shadow-inner" />
+            <button disabled className="w-3.5 h-3.5 rounded-full bg-[#27C93F] border border-black/10 shadow-inner" />
           </div>
 
-          <div className="flex items-center gap-3">
-            <Icon className="text-white" size={20} />
-            <p className="text-sm font-medium text-white">{category.name}</p>
+          <div className="flex items-center gap-2.5 absolute left-1/2 -translate-x-1/2 px-4">
+            <Icon className="text-white/80" size={16} />
+            <p className="text-sm font-semibold text-white/90 tracking-wide">{category.name}</p>
           </div>
 
-          {/* page navigation */}
+          {/* Pagination Controls */}
           {totalPages > 1 ? (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={goPrev}
-                disabled={page === 0}
-                className="px-2 py-1 text-xs rounded bg-white/10 text-white/80 disabled:opacity-30"
-              >
-                ←
+            <div className="flex items-center gap-1.5 bg-black/20 rounded-md p-1 border border-white/5">
+              <button onClick={goPrev} disabled={page === 0} className="w-7 h-6 flex items-center justify-center rounded bg-white/10 hover:bg-white/20 text-white/90 disabled:opacity-30 disabled:hover:bg-white/10 transition-colors">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
               </button>
-              <button
-                onClick={goNext}
-                disabled={page === totalPages - 1}
-                className="px-2 py-1 text-xs rounded bg-white/10 text-white/80 disabled:opacity-30"
-              >
-                →
+              <button onClick={goNext} disabled={page === totalPages - 1} className="w-7 h-6 flex items-center justify-center rounded bg-white/10 hover:bg-white/20 text-white/90 disabled:opacity-30 disabled:hover:bg-white/10 transition-colors">
+                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
             </div>
           ) : (
-            <div className="w-12" />
+            <div className="w-16" />
           )}
         </div>
 
-        {/* Toolbar */}
-        <div className="px-6 py-3 bg-gray-800/30 border-b border-white/10 flex items-center justify-between">
-          <div className="text-xs text-white/50">
-            {filteredProjects.length} items
-          </div>
-          <div className="text-xs text-white/40">
-            Page {page + 1} / {Math.max(totalPages, 1)}
-          </div>
+        {/* Toolbar Info */}
+        <div className="relative z-10 px-6 py-2 bg-black/20 border-b border-white/5 flex items-center justify-between text-[11px] text-white/50 font-medium tracking-wide font-mono">
+          <div>{filteredProjects.length} items found</div>
+          <div>Page {page + 1} of {Math.max(totalPages, 1)}</div>
         </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(85vh-110px)]">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-            {pagedProjects.map((project, index) => (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.05 }}
-                onClick={() => onProjectClick(project)}
-                className="group cursor-pointer flex flex-col items-center"
-                whileHover={{ scale: 1.05 }}
-              >
-                <div className="relative w-24 h-28 mb-3">
-                  <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-white/10 to-white/5 border border-white/20 shadow-lg">
-                    <div className="absolute top-4 left-3 right-3 space-y-1.5">
-                      <div className="h-1 bg-white/20 rounded" />
-                      <div className="h-1 bg-white/20 rounded w-3/4" />
-                      <div className="h-1 bg-white/20 rounded w-1/2" />
-                    </div>
+        {/* Project Grid Content */}
+        <div className="relative z-10 p-6 sm:p-8 min-h-[40vh] max-h-[60vh] overflow-y-auto [&::-webkit-scrollbar]:hidden">
+          {pagedProjects.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-white/40 mt-10">
+               <Icon size={48} className="opacity-20 mb-4" />
+               <p>No projects in this folder yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
+              {pagedProjects.map((project, index) => (
+                <motion.div
+                  key={project.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 20 }}
+                  onClick={() => onProjectClick(project)}
+                  className="group cursor-pointer flex flex-col items-center"
+                >
+                  <motion.div 
+                    whileHover={{ scale: 1.08, y: -5 }} 
+                    whileTap={{ scale: 0.95 }}
+                    className="relative w-full aspect-[4/5] sm:aspect-square mb-4 rounded-xl sm:rounded-2xl overflow-hidden bg-gradient-to-br from-white/10 to-white/5 border border-white/20 shadow-lg flex items-center justify-center"
+                  >
+                     {/* App Icon Representation */}
+                     <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-20 group-hover:opacity-40 transition-opacity`} />
+                     
+                     {/* Thumbnail or Icon */}
+                     {project.images && project.images.length > 0 ? (
+                       <img src={project.images[0]} alt={project.title} className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                     ) : (
+                       <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-white/20 to-white/5 border border-white/10 shadow-inner flex items-center justify-center z-10 backdrop-blur-sm">
+                          <span className="text-3xl sm:text-4xl text-white font-black opacity-80">
+                            {project.title.charAt(0)}
+                          </span>
+                       </div>
+                     )}
 
-                    <div className="absolute bottom-2 left-2 right-2">
-                      <div className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/30 text-blue-200 text-center border border-blue-400/30">
-                        {project.status}
-                      </div>
-                    </div>
+                     {/* Status Badge */}
+                     <div className="absolute bottom-2 left-2 right-2 flex justify-center z-20">
+                        <span className="text-[9px] sm:text-[10px] px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/20 shadow-lg font-medium whitespace-nowrap">
+                          {project.status}
+                        </span>
+                     </div>
+                  </motion.div>
+
+                  <div className="text-center w-full px-2">
+                    <p className="text-sm font-medium text-white/90 group-hover:text-white truncate drop-shadow-sm transition-colors">
+                      {project.title}
+                    </p>
+                    <p className="text-[11px] text-white/40 mt-1 font-mono">
+                      {project.year}
+                    </p>
                   </div>
-                </div>
-
-                <div className="text-center px-2 max-w-full">
-                  <p className="text-xs text-white/90 truncate">
-                    {project.title}
-                  </p>
-                  <p className="text-[10px] text-white/40 mt-0.5">
-                    {project.year}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </motion.div>
     </motion.div>
@@ -276,61 +316,70 @@ export default function Projects() {
   const [openCategory, setOpenCategory] = useState<Category | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  const titleRef = useRef<HTMLHeadingElement>(null);
-
-  useEffect(() => {
-    if (!titleRef.current) return;
-
-    gsap.fromTo(
-      titleRef.current,
-      { opacity: 0, y: 30 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: titleRef.current,
-          start: "top 80%",
-        },
-      }
-    );
-  }, []);
-
-  /* =========================
-     Auto count calculation
-  ========================= */
+  // Auto count calculation
   const categoryCounts = categories.reduce((acc: any, cat: Category) => {
     acc[cat.id] = projects.filter((p) => p.category === cat.id).length;
     return acc;
   }, {});
 
   return (
-    <section
-      id="projects"
-      className="relative w-full bg-black py-32 text-white overflow-hidden"
-    >
-      <div className="relative z-10 mx-auto max-w-7xl px-6">
-        {/* Title */}
-        <div ref={titleRef} className="text-center mb-16">
-          <h2 className="text-5xl font-bold mb-4">My Works</h2>
-          <p className="text-white/60">Browse through project categories</p>
+    <section id="projects" className="relative w-full bg-black py-32 text-white overflow-hidden selection:bg-purple-500/30">
+      
+      {/* Background Ambience */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-slate-900/20 to-black z-0" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-96 bg-blue-600/10 rounded-[100%] blur-[120px] pointer-events-none" />
+
+      <div className="relative z-10 mx-auto max-w-6xl px-6 lg:px-8">
+        
+        {/* Title Area */}
+        <div className="text-center mb-24 cursor-default">
+           <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-teal-500/30 bg-teal-500/10 mb-6"
+          >
+            <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+            <span className="text-xs font-bold text-teal-300 tracking-[0.2em] uppercase">Showcase</span>
+          </motion.div>
+
+          <motion.h2 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight mb-6"
+          >
+            Selected <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-blue-500">Works</span>
+          </motion.h2>
+
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-lg md:text-xl text-slate-400 font-light max-w-2xl mx-auto"
+          >
+            Explore my portfolio of applications, smart contracts, and full-stack solutions organized by domain.
+          </motion.p>
         </div>
 
         {/* Folder Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-12 max-w-5xl mx-auto">
-          {categories.map((category: Category) => (
-            <FolderIcon
-              key={category.id}
-              category={category}
-              count={categoryCounts[category.id] || 0}
-              onClick={() => setOpenCategory(category)}
-            />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 lg:gap-16 max-w-5xl mx-auto">
+          {categories.map((category: Category, index: number) => (
+             <FolderIcon
+               key={category.id}
+               category={category}
+               count={categoryCounts[category.id] || 0}
+               index={index}
+               onClick={() => setOpenCategory(category)}
+             />
           ))}
         </div>
       </div>
 
-      {/* Finder */}
+      {/* Finder Modal */}
       <AnimatePresence>
         {openCategory && (
           <FinderWindow
@@ -344,7 +393,7 @@ export default function Projects() {
         )}
       </AnimatePresence>
 
-      {/* Modal */}
+      {/* Detail Modal */}
       <AnimatePresence>
         {selectedProject && (
           <ProjectModal
@@ -353,26 +402,6 @@ export default function Projects() {
           />
         )}
       </AnimatePresence>
-      {/* Custom scrollbar styles */}
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(59, 130, 246, 0.5);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(59, 130, 246, 0.7);
-        }
-        .delay-1000 {
-          animation-delay: 1s;
-        }
-      `}</style>
     </section>
   );
 }
