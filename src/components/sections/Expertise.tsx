@@ -1,3 +1,5 @@
+"use client";
+
 import { useRef, useState, useEffect } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { SiEthereum, SiReact, SiSolidity, SiWeb3Dotjs } from "react-icons/si";
