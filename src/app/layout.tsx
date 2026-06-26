@@ -38,6 +38,11 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true },
   },
+  verification: {
+    other: {
+      "naver-site-verification": "3a442c67efc36bb5692ed20d0a1957b320af0ac6",
+    },
+  },
 };
 
 const personSchema = {
