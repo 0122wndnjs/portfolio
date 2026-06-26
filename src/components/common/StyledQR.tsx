@@ -17,18 +17,18 @@ export default function StyledQR({ url }: Props) {
       data: url,
       dotsOptions: {
         type: "rounded",
-        color: "#60a5fa",
+        color: "#0F0E0C",
       },
       backgroundOptions: {
         color: "transparent",
       },
       cornersSquareOptions: {
-        type: "extra-rounded", // 모서리 스타일
-        color: "#a855f7",
+        type: "extra-rounded",
+        color: "#0F0E0C",
       },
       cornersDotOptions: {
         type: "dot",
-        color: "#22d3ee",
+        color: "#0F0E0C",
       },
     });
 

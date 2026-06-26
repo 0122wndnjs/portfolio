@@ -1,275 +1,179 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/context/LanguageContext";
+import { translations } from "@/i18n/translations";
 
-gsap.registerPlugin(ScrollTrigger);
+const stats = [
+  { n: "6+", labelEn: "Years Experience", labelKo: "년 경력" },
+  { n: "50+", labelEn: "Projects Shipped", labelKo: "납품 프로젝트" },
+  { n: "20+", labelEn: "Web3 Projects", labelKo: "Web3 프로젝트" },
+];
 
-type Line = {
-  text: string;
-  delay: number;
-  color: string;
-  cursor?: boolean;
-};
+const ease = [0.16, 1, 0.3, 1] as const;
 
 export default function Hero() {
-  const heroRef = useRef<HTMLDivElement>(null);
-  const nameRef = useRef<HTMLDivElement>(null);
-  const terminalRef = useRef<HTMLDivElement>(null);
+  const { lang } = useLanguage();
+  const t = translations[lang].hero;
 
-  const [hasTyped, setHasTyped] = useState(false);
-  const [visibleLines, setVisibleLines] = useState<Line[]>([]);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-
-  /* =========================
-     Mouse Parallax Effect
-  ========================= */
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePos({
-        x: (e.clientX / window.innerWidth - 0.5) * 30,
-        y: (e.clientY / window.innerHeight - 0.5) * 30,
-      });
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
-
-  /* =========================
-     Scroll Animation (GSAP)
-  ========================= */
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: heroRef.current,
-          start: "top top",
-          end: "+=1500",
-          scrub: 1,
-          pin: true,
-        },
-      });
-
-      tl.to(nameRef.current, {
-        scale: 1.5,
-        opacity: 0,
-        filter: "blur(20px)",
-        duration: 1,
-        ease: "power2.inOut"
-      }).fromTo(
-        terminalRef.current,
-        {
-          opacity: 0,
-          scale: 0.8,
-          y: 100,
-          filter: "blur(10px)"
-        },
-        {
-          opacity: 1,
-          scale: 1,
-          y: 0,
-          filter: "blur(0px)",
-          duration: 1.2,
-          ease: "back.out(1.5)"
-        },
-        0.2
-      );
-    }, heroRef);
-
-    return () => ctx.revert();
-  }, []);
-
-  /* =========================
-     Typing Animation
-  ========================= */
-  useEffect(() => {
-    if (hasTyped) return;
-
-    const lines: Line[] = [
-      { text: "joowon@dev-machine ~ % whoami", delay: 0, color: "text-emerald-400" },
-      { text: "JOOWON KIM", delay: 400, color: "text-white font-bold" },
-      { text: "", delay: 600, color: "" },
-      { text: "joowon@dev-machine ~ % cat profile.json", delay: 1000, color: "text-blue-400" },
-      { text: "{", delay: 1400, color: "text-slate-300" },
-      { text: '  "role": "Full-Stack Developer & Web3 Builder",', delay: 1600, color: "text-yellow-300" },
-      { text: '  "experience": "6+ years",', delay: 1800, color: "text-yellow-300" },
-      { text: '  "specialties": [', delay: 2000, color: "text-slate-300" },
-      { text: '    "Smart Contracts",', delay: 2150, color: "text-cyan-300" },
-      { text: '    "Website Development",', delay: 2300, color: "text-cyan-300" },
-      { text: '    "Web3 Products",', delay: 2450, color: "text-cyan-300" },
-      { text: '    "DeFi & Wallets"', delay: 2600, color: "text-cyan-300" },
-      { text: "  ],", delay: 2700, color: "text-slate-300" },
-      { text: '  "stack": {', delay: 2900, color: "text-slate-300" },
-      { text: '    "frontend": ["React", "TypeScript", "Next.js", "Tailwind"],', delay: 3100, color: "text-pink-400" },
-      { text: '    "backend": ["Node.js", "Python", "Solidity"],', delay: 3300, color: "text-pink-400" },
-      { text: '    "web3": ["Ethers.js", "Web3.js", "Hardhat"]', delay: 3500, color: "text-pink-400" },
-      { text: "  },", delay: 3700, color: "text-slate-300" },
-      { text: '  "status": "● Open to new opportunities"', delay: 3900, color: "text-green-400 font-medium" },
-      { text: "}", delay: 4100, color: "text-slate-300" },
-      { text: "", delay: 4300, color: "" },
-      { text: "joowon@dev-machine ~ % _", delay: 4600, color: "text-white", cursor: true },
-    ];
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && !hasTyped) {
-            setHasTyped(true);
-            lines.forEach((line) => {
-              setTimeout(() => {
-                setVisibleLines((prev) => [...prev, line]);
-                const termInner = document.getElementById("terminal-inner");
-                if (termInner) {
-                  termInner.scrollTop = termInner.scrollHeight;
-                }
-              }, line.delay);
-            });
-          }
-        });
-      },
-      { threshold: 0.5 }
-    );
-
-    if (terminalRef.current) {
-      observer.observe(terminalRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [hasTyped]);
-
-  /* =========================
-     JSX
-  ========================= */
   return (
-    <section ref={heroRef} className="relative h-screen w-full overflow-hidden text-white bg-black">
-      {/* Background Video */}
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-screen"
-      >
-        <source src="/videos/desktop.mov" type="video/mp4" />
-      </video>
-
-      {/* Floating Glowing Orbs (Interactive Setup) */}
-      <motion.div 
-        animate={{ x: mousePos.x * -3, y: mousePos.y * -3 }}
-        transition={{ type: "spring", stiffness: 40, damping: 30 }}
-        className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-cyan-500/10 rounded-full blur-[120px] mix-blend-screen pointer-events-none"
-      />
-      <motion.div 
-        animate={{ x: mousePos.x * 2, y: mousePos.y * 2 }}
-        transition={{ type: "spring", stiffness: 30, damping: 20 }}
-        className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[150px] mix-blend-screen pointer-events-none"
+    <section
+      className="relative min-h-screen w-full overflow-hidden flex items-center"
+      style={{ background: "#0F0E0C" }}
+    >
+      {/* Warm amber radial glow */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 60% at 50% 40%, rgba(245,158,11,0.07) 0%, transparent 70%)",
+        }}
       />
 
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black z-0 pointer-events-none" />
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-8 lg:px-16 pt-32 pb-20">
 
-      <div className="relative z-10 flex h-full flex-col items-center justify-center px-6">
-        {/* Main Title Area */}
-        <div ref={nameRef} className="flex flex-col items-center justify-center w-full">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
+        {/* Label */}
+        <motion.div
+          initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ duration: 0.7, ease }}
+          className="flex items-center gap-3 mb-14"
+        >
+          <motion.span
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 0.5, delay: 0.2, ease }}
+            className="origin-left block w-8 h-px"
+            style={{ background: "rgba(245,158,11,0.7)" }}
+          />
+          <span
+            className="text-xs font-mono tracking-[0.25em] uppercase"
+            style={{ color: "rgba(245,158,11,0.8)" }}
+          >
+            {t.label}
+          </span>
+        </motion.div>
+
+        {/* Hero Name */}
+        <div className="mb-14 overflow-hidden">
+          <motion.h1
+            initial={{ opacity: 0, y: 120 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.2 }}
-            className="mb-6 px-5 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-md text-xs sm:text-sm font-medium text-white/80 tracking-wide"
+            transition={{ duration: 1.0, delay: 0.1, ease }}
+            className="font-bold leading-[0.9] tracking-tighter"
+            style={{ fontSize: "clamp(4.5rem, 13vw, 12rem)", color: "#F5F0E8" }}
           >
-            👋 Welcome to my universe
-          </motion.div>
-          
-          <motion.h1 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.2, ease: "easeOut" }}
-            className="text-[12vw] sm:text-8xl md:text-[140px] lg:text-[180px] font-black tracking-tighter text-center select-none leading-none"
-          >
-            <span className="bg-gradient-to-br from-white via-slate-300 to-slate-600 bg-clip-text text-transparent drop-shadow-2xl">
-              JOOWON KIM
-            </span>
+            JOOWON
           </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
+          <motion.div
+            initial={{ opacity: 0, y: 120 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.5 }}
-            className="mt-6 md:mt-8 text-sm sm:text-xl md:text-2xl text-slate-400 font-light tracking-wide text-center max-w-2xl px-4"
+            transition={{ duration: 1.0, delay: 0.18, ease }}
+            className="flex items-end gap-5"
           >
-            Crafting scalable <span className="text-cyan-400 font-medium">Web3 experiences</span> and modern <span className="text-purple-400 font-medium">frontend applications</span>.
-          </motion.p>
-        </div>
-
-        {/* Terminal Section */}
-        <div
-          ref={terminalRef}
-          className="absolute inset-0 flex items-center justify-center pointer-events-none px-4 sm:px-8"
-        >
-          <div className="w-full max-w-5xl backdrop-blur-3xl bg-black/60 border border-white/20 rounded-2xl sm:rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.8)] overflow-hidden pointer-events-auto transition-transform hover:scale-[1.02] duration-500 will-change-transform">
-            {/* Terminal Header */}
-            <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10 bg-white/5">
-              <div className="flex gap-2 sm:gap-2.5">
-                <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-[#FF5F56] shadow-[0_0_10px_rgba(255,95,86,0.5)]" />
-                <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-[#FFBD2E] shadow-[0_0_10px_rgba(255,189,46,0.5)]" />
-                <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-[#27C93F] shadow-[0_0_10px_rgba(39,201,63,0.5)]" />
-              </div>
-              <span className="text-white/40 text-[10px] sm:text-sm font-mono font-medium tracking-wider">
-                joowon@portfolio ~ zsh
-              </span>
-              <div className="w-10"></div> {/* Spacer for centering */}
-            </div>
-
-            {/* Terminal Body */}
-            <div 
-              id="terminal-inner"
-              className="p-5 sm:p-8 md:p-10 min-h-[300px] sm:min-h-[400px] max-h-[60vh] overflow-y-auto font-mono text-xs sm:text-sm md:text-base lg:text-lg leading-relaxed md:leading-loose [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            <h1
+              className="font-bold leading-[0.9] tracking-tighter"
+              style={{ fontSize: "clamp(4.5rem, 13vw, 12rem)", color: "#F5F0E8" }}
             >
-              {visibleLines.map((line, i) => (
-                <motion.div 
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3 }}
-                  key={i} 
-                  className={`${line.color} whitespace-pre-wrap`}
-                >
-                  {line.cursor ? (
-                    <span className="flex items-center">
-                      {line.text.replace("_", "")}
-                      <motion.div 
-                        animate={{ opacity: [1, 0, 1] }}
-                        transition={{ repeat: Infinity, duration: 1 }}
-                        className="w-2 sm:w-2.5 h-4 sm:h-5 bg-white ml-2 inline-block"
-                      />
-                    </span>
-                  ) : (
-                    line.text
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          </div>
+              KIM
+            </h1>
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.9, delay: 0.55, ease }}
+              className="origin-left mb-4 flex-1 max-w-xs"
+              style={{ height: "3px", background: "#F59E0B" }}
+            />
+          </motion.div>
         </div>
 
-        {/* Scroll indicator */}
-        <motion.div 
+        {/* Description + CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.5, ease }}
+          className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-10 max-w-5xl"
+        >
+          <div className="flex flex-col gap-1.5 max-w-lg">
+            <p className="text-lg font-semibold tracking-tight" style={{ color: "#F5F0E8" }}>
+              {t.line1}
+            </p>
+            <p className="text-base font-light leading-relaxed" style={{ color: "rgba(245,240,232,0.5)" }}>
+              {t.line2}
+            </p>
+            <p className="text-base font-light leading-relaxed" style={{ color: "rgba(245,240,232,0.28)" }}>
+              {t.line3}
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <motion.a
+              href="#projects"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              className="px-7 py-3 rounded-full text-sm font-semibold"
+              style={{ background: "#F59E0B", color: "#0F0E0C" }}
+            >
+              {t.cta1}
+            </motion.a>
+            <motion.a
+              href="#contact"
+              whileHover={{ scale: 1.04, borderColor: "rgba(245,240,232,0.45)" }}
+              whileTap={{ scale: 0.97 }}
+              className="px-7 py-3 rounded-full text-sm font-semibold border"
+              style={{ borderColor: "rgba(245,240,232,0.18)", color: "#F5F0E8" }}
+            >
+              {t.cta2}
+            </motion.a>
+          </div>
+        </motion.div>
+
+        {/* Stats */}
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 1 }}
-          className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 sm:gap-4 pointer-events-none"
+          transition={{ delay: 1.0, duration: 0.6 }}
+          className="mt-20 pt-8 flex gap-14"
+          style={{ borderTop: "1px solid rgba(245,240,232,0.07)" }}
         >
-          <span className="text-[10px] sm:text-xs text-white/40 tracking-[0.3em] font-medium uppercase">
-            Scroll to explore
-          </span>
-          <motion.div 
-            animate={{ y: [0, 10, 0] }}
-            transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-            className="w-[1px] h-12 sm:h-16 bg-gradient-to-b from-white/60 to-transparent" 
-          />
+          {stats.map((s, i) => (
+            <motion.div
+              key={s.labelEn}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.05 + i * 0.08, duration: 0.55, ease }}
+            >
+              <div className="text-3xl font-bold" style={{ color: "#F59E0B" }}>{s.n}</div>
+              <div className="text-xs tracking-wider mt-1" style={{ color: "rgba(245,240,232,0.3)" }}>
+                {lang === "en" ? s.labelEn : s.labelKo}
+              </div>
+            </motion.div>
+          ))}
         </motion.div>
       </div>
+
+      {/* Scroll indicator */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.5, duration: 0.6 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+      >
+        <div
+          className="relative flex justify-center"
+          style={{ width: 22, height: 34, borderRadius: 11, border: "1.5px solid rgba(245,240,232,0.2)" }}
+        >
+          <motion.div
+            animate={{ y: [2, 10, 2], opacity: [1, 0, 1] }}
+            transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+            style={{ width: 3, height: 3, borderRadius: "50%", background: "#F59E0B", marginTop: 5 }}
+          />
+        </div>
+        <span className="text-[9px] font-mono tracking-[0.2em] uppercase" style={{ color: "rgba(245,240,232,0.18)" }}>
+          Scroll
+        </span>
+      </motion.div>
     </section>
   );
 }

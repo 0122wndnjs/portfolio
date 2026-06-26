@@ -18,6 +18,7 @@ export type ResearchDoc = {
   publishedAt: string | null;
   updatedAt: string | null;
   coverGradient: string;
+  cover?: string;
   body: string;
 };
 
@@ -35,6 +36,7 @@ type Frontmatter = {
   author?: string;
   readingTime?: string;
   status?: ResearchStatus;
+  cover?: string;
 };
 
 const gradients = [
@@ -75,8 +77,8 @@ function parseFrontmatter(raw: string): { frontmatter: Frontmatter; body: string
   return { frontmatter, body };
 }
 
-function slugFromName(fileName: string): string {
-  return fileName.replace(/\.md$/, "");
+function slugFromName(name: string): string {
+  return name.replace(/\.md$/, "");
 }
 
 function normalizeDate(value: string | undefined): string | null {
@@ -130,18 +132,24 @@ function stripLeadingTitle(markdown: string, title: string, subtitle: string): s
 }
 
 function loadResearchDocs(): ResearchDoc[] {
-  const docsDir = path.join(process.cwd(), "docs", "research");
+  const postsDir = path.join(process.cwd(), "content", "posts");
 
-  if (!fs.existsSync(docsDir)) return [];
+  if (!fs.existsSync(postsDir)) return [];
 
-  const files = fs.readdirSync(docsDir).filter((f) => f.endsWith(".md"));
+  // Each subfolder is a post: content/posts/<slug>/index.md
+  const entries = fs.readdirSync(postsDir, { withFileTypes: true });
+  const postDirs = entries
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+    .filter((name) => !name.startsWith("_") && !name.startsWith("."));
 
-  return files
-    .map((fileName) => {
-      const baseName = slugFromName(fileName);
-      if (baseName.toLowerCase() === "readme" || baseName.startsWith("_")) return null;
+  return postDirs
+    .map((dirName) => {
+      const indexPath = path.join(postsDir, dirName, "index.md");
+      if (!fs.existsSync(indexPath)) return null;
 
-      const raw = fs.readFileSync(path.join(docsDir, fileName), "utf-8");
+      const baseName = dirName;
+      const raw = fs.readFileSync(indexPath, "utf-8");
       const { frontmatter, body } = parseFrontmatter(raw);
 
       const slug = frontmatter.slug || baseName;
@@ -173,10 +181,11 @@ function loadResearchDocs(): ResearchDoc[] {
         publishedAt: date,
         updatedAt,
         coverGradient: pickGradient(slug),
+        cover: frontmatter.cover,
         body: stripLeadingTitle(body, title, subtitle),
       };
     })
-    .filter((doc): doc is ResearchDoc => doc !== null)
+    .filter((doc): doc is NonNullable<typeof doc> => doc !== null)
     .sort((a, b) => {
       const aDate = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
       const bDate = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
