@@ -1,8 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
+import { useState, useEffect } from "react";
 
 const stats = [
   { n: "6+", labelEn: "Years Experience", labelKo: "년 경력" },
@@ -15,6 +16,15 @@ const ease = [0.16, 1, 0.3, 1] as const;
 export default function Hero() {
   const { lang } = useLanguage();
   const t = translations[lang].hero;
+  const paragraphs = [t.line1, t.line2, t.line3];
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((i) => (i + 1) % paragraphs.length);
+    }, 3500);
+    return () => clearInterval(timer);
+  }, [paragraphs.length]);
 
   return (
     <section
@@ -95,16 +105,36 @@ export default function Hero() {
           transition={{ duration: 0.9, delay: 0.5, ease }}
           className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-10 max-w-5xl"
         >
-          <div className="flex flex-col gap-1.5 max-w-lg">
-            <p className="text-lg font-semibold tracking-tight" style={{ color: "#F5F0E8" }}>
-              {t.line1}
-            </p>
-            <p className="text-base font-light leading-relaxed" style={{ color: "rgba(245,240,232,0.5)" }}>
-              {t.line2}
-            </p>
-            <p className="text-base font-light leading-relaxed" style={{ color: "rgba(245,240,232,0.28)" }}>
-              {t.line3}
-            </p>
+          <div className="flex flex-col gap-4 max-w-lg">
+            <div style={{ minHeight: "5rem" }}>
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={index}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="text-base font-light leading-relaxed"
+                  style={{ color: "rgba(245,240,232,0.65)" }}
+                >
+                  {paragraphs[index]}
+                </motion.p>
+              </AnimatePresence>
+            </div>
+            <div className="flex gap-1.5">
+              {paragraphs.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setIndex(i)}
+                  className="rounded-full transition-all duration-300"
+                  style={{
+                    width: i === index ? 16 : 4,
+                    height: 4,
+                    background: i === index ? "#F59E0B" : "rgba(245,240,232,0.2)",
+                  }}
+                />
+              ))}
+            </div>
           </div>
 
           <div className="flex gap-3">

@@ -2,9 +2,9 @@ export const translations = {
   en: {
     hero: {
       label: "Full-Stack Developer · Web3 Builder",
-      line1: "I build the full stack. I own the outcome.",
-      line2: "Web3 products from smart contract to exchange listing — end-to-end, solo.",
-      line3: "Ranked on Google. Answered by AI. Ready for whatever search becomes.",
+      line1: "I'm a full-stack developer and Web3 builder focused on creating practical digital products.",
+      line2: "I enjoy turning ideas into working services, from planning and UI development to backend architecture, deployment, and product iteration.",
+      line3: "I'm especially interested in web platforms, business automation, Web3 ecosystems, and products that connect technology with real business value.",
       cta1: "View Work",
       cta2: "Contact",
     },
@@ -100,9 +100,9 @@ export const translations = {
   ko: {
     hero: {
       label: "풀스택 개발자 · Web3 빌더",
-      line1: "풀스택 개발을 담당하고, 결과를 만듭니다.",
-      line2: "스마트 컨트랙트 부터 거래소 상장까지, 웹3 제품 개발을 처음부터 끝까지 혼자서 진행합니다.",
-      line3: "구글 검색 순위 상위권에 랭크시키고, AI 기반 답변을 제공합니다. 앞으로 변화할 검색 환경에도 대비되어 있습니다.",
+      line1: "실용적인 디지털 제품 개발에 집중하는 풀스택 개발자이자 Web3 빌더입니다.",
+      line2: "기획과 UI 개발부터 백엔드 아키텍처, 배포, 제품 반복 개선까지 아이디어를 실제 서비스로 만드는 전 과정을 즐깁니다.",
+      line3: "웹 플랫폼, 업무 자동화, Web3 생태계, 그리고 기술과 실제 비즈니스 가치를 연결하는 제품에 특히 관심이 많습니다.",
       cta1: "프로젝트 보기",
       cta2: "연락하기",
     },
