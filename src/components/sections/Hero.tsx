@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
 import { useState, useEffect } from "react";
+import HeroCanvas from "./HeroCanvas";
+import ChainTicker from "./ChainTicker";
 
 const stats = [
   { n: "6+", labelEn: "Years Experience", labelKo: "년 경력" },
@@ -40,28 +42,34 @@ export default function Hero() {
         }}
       />
 
+      {/* Cursor-reactive dot grid */}
+      <HeroCanvas />
+
       <div className="relative z-10 w-full max-w-7xl mx-auto px-8 lg:px-16 pt-32 pb-20">
 
-        {/* Label */}
+        {/* Label + live chain ticker */}
         <motion.div
           initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.7, ease }}
-          className="flex items-center gap-3 mb-14"
+          className="flex items-center justify-between gap-3 mb-14"
         >
-          <motion.span
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ duration: 0.5, delay: 0.2, ease }}
-            className="origin-left block w-8 h-px"
-            style={{ background: "rgba(245,158,11,0.7)" }}
-          />
-          <span
-            className="text-xs font-mono tracking-[0.25em] uppercase"
-            style={{ color: "rgba(245,158,11,0.8)" }}
-          >
-            {t.label}
-          </span>
+          <div className="flex items-center gap-3">
+            <motion.span
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.5, delay: 0.2, ease }}
+              className="origin-left block w-8 h-px"
+              style={{ background: "rgba(245,158,11,0.7)" }}
+            />
+            <span
+              className="text-xs font-mono tracking-[0.25em] uppercase"
+              style={{ color: "rgba(245,158,11,0.8)" }}
+            >
+              {t.label}
+            </span>
+          </div>
+          <ChainTicker />
         </motion.div>
 
         {/* Hero Name */}

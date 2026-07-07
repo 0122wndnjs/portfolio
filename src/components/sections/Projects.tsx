@@ -1,77 +1,38 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useSpring,
+  useVelocity,
+  useTransform,
+} from "framer-motion";
 import { projects, type Project } from "../../data/projects";
 import { projectTranslationsEn } from "../../data/projectTranslations";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
 
+const easeOut = [0.16, 1, 0.3, 1] as const;
+
 /* =========================
-   Category config
+   Filter config
 ========================= */
-const categories = [
-  {
-    id: "web3",
-    domain: "DOMAIN / 01",
-    name: "Web3 & Blockchain",
-    desc: "Smart contracts, token launches, exchange listing support, Web3 dApps and corporate blockchain sites.",
-    tags: ["Solidity", "Rust", "Ethers.js"],
-    glow: true,
-    layout: "featured",
-    bg: "#161412",
-    bgHover: "#1C1916",
-    border: "rgba(245,240,232,0.1)",
-    borderHover: "rgba(245,240,232,0.18)",
-  },
-  {
-    id: "website",
-    domain: "DOMAIN / 02",
-    name: "Web Development",
-    desc: "Corporate sites, token project landing pages, and brand websites built with React and Next.js.",
-    tags: ["React", "Next.js", "TailwindCSS"],
-    glow: false,
-    layout: "normal",
-    bg: "#161412",
-    bgHover: "#1C1916",
-    border: "rgba(245,240,232,0.1)",
-    borderHover: "rgba(245,240,232,0.18)",
-  },
-  {
-    id: "platforms",
-    domain: "DOMAIN / 03",
-    name: "Platforms & Products",
-    desc: "Web3 wallets, token platforms, SaaS tools, event systems, and full-stack product development.",
-    tags: ["NestJS", "Supabase", "Cloudflare"],
-    glow: false,
-    layout: "normal",
-    bg: "#161412",
-    bgHover: "#1C1916",
-    border: "rgba(245,240,232,0.1)",
-    borderHover: "rgba(245,240,232,0.18)",
-  },
-  {
-    id: "systems",
-    domain: "DOMAIN / 04",
-    name: "Operations & Strategy",
-    desc: "SEO/AEO/GEO optimization, Web3 marketing campaigns, pitch deck production, and event operations.",
-    tags: ["SEO", "Web3 Marketing", "Pitch Deck"],
-    glow: false,
-    layout: "wide",
-    bg: "#161412",
-    bgHover: "#1C1916",
-    border: "rgba(245,240,232,0.1)",
-    borderHover: "rgba(245,240,232,0.18)",
-  },
+const filters = [
+  { id: "featured", label: "Featured" },
+  { id: "web3", label: "Web3" },
+  { id: "website", label: "Web" },
+  { id: "platforms", label: "Platforms" },
+  { id: "systems", label: "Ops" },
 ];
 
-function getCount(catId: string) {
-  return projects.filter((p) => p.category === catId).length;
-}
-
-function getProjects(catId: string) {
+function getFiltered(filterId: string): Project[] {
+  if (filterId === "featured") {
+    return projects.filter((p) => p.featured);
+  }
   return projects
-    .filter((p) => p.category === catId)
+    .filter((p) => p.category === filterId)
     .sort((a, b) => Number(b.featured) - Number(a.featured));
 }
 
@@ -80,6 +41,13 @@ function statusStyle(status: string) {
   if (status === "In Progress") return { color: "#F59E0B", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.2)" };
   return { color: "rgba(245,240,232,0.4)", bg: "rgba(245,240,232,0.04)", border: "rgba(245,240,232,0.1)" };
 }
+
+const categoryLabel: Record<string, string> = {
+  web3: "Web3",
+  website: "Web",
+  platforms: "Platform",
+  systems: "Ops",
+};
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -93,142 +61,192 @@ function useIsMobile() {
 }
 
 /* =========================
-   Category Card
+   Floating cursor preview
 ========================= */
-function CategoryCard({ cat, onClick }: { cat: typeof categories[0]; onClick: () => void }) {
-  const [hovered, setHovered] = useState(false);
-  const count = getCount(cat.id);
-  const isWide = cat.layout === "wide";
-  const isFeatured = cat.layout === "featured";
+function FloatingPreview({ project }: { project: Project | null }) {
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const x = useSpring(mx, { stiffness: 260, damping: 28, mass: 0.6 });
+  const y = useSpring(my, { stiffness: 260, damping: 28, mass: 0.6 });
+  const vx = useVelocity(x);
+  const rotate = useTransform(vx, [-2400, 2400], [-14, 14]);
+  const skewX = useTransform(vx, [-2400, 2400], [6, -6]);
+
+  useEffect(() => {
+    const move = (e: MouseEvent) => {
+      // keep preview inside viewport (preview is 340x215, offset 28 right of cursor)
+      mx.set(Math.min(e.clientX, window.innerWidth - 340 - 28 - 16));
+      my.set(Math.min(Math.max(e.clientY, 124), window.innerHeight - 124));
+    };
+    window.addEventListener("mousemove", move);
+    return () => window.removeEventListener("mousemove", move);
+  }, [mx, my]);
+
+  const hasImg = project?.images && project.images.length > 0;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 56 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onClick={onClick}
-      className={`relative cursor-pointer overflow-hidden transition-all duration-300 ${
-        isWide
-          ? "flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-10 px-6 sm:px-8 py-7"
-          : "flex flex-col p-7"
-      } ${isFeatured ? "h-full" : ""}`}
-      style={{
-        background: hovered ? cat.bgHover : cat.bg,
-        borderTop: "1px solid rgba(245,240,232,0.07)",
-        borderRight: "1px solid rgba(245,240,232,0.07)",
-        borderBottom: "1px solid rgba(245,240,232,0.07)",
-        borderLeft: `3px solid ${hovered ? "#F59E0B" : "rgba(245,158,11,0.25)"}`,
-        minHeight: isWide ? undefined : isFeatured ? 340 : 200,
-        transition: "border-color 0.2s ease, background 0.2s ease",
-      }}
+      className="fixed top-0 left-0 z-30 pointer-events-none hidden md:block"
+      style={{ x, y, rotate, skewX, perspective: 800 }}
     >
-      {/* Arrow */}
-      <motion.div
-        animate={{ opacity: hovered ? 1 : 0.2, x: hovered ? 0 : -4 }}
-        transition={{ duration: 0.2 }}
-        className="absolute top-5 right-5 text-lg"
-        style={{ color: "#F59E0B" }}
-      >
-        ↗
-      </motion.div>
-
-      {isWide ? (
-        <>
-          <div className="shrink-0">
-            <p className="text-[10px] font-mono tracking-[0.25em] uppercase mb-3 transition-colors duration-200"
-              style={{ color: hovered ? "rgba(245,158,11,0.9)" : "rgba(245,158,11,0.5)" }}>
-              {cat.domain}
-            </p>
-            <div className="flex items-baseline gap-2.5">
-              <span className="font-black transition-colors duration-200"
-                style={{ fontSize: "4rem", lineHeight: 1, color: hovered ? "#F5F0E8" : "rgba(245,240,232,0.75)" }}>
-                {count}
-              </span>
-              <span className="text-xs font-mono tracking-widest uppercase" style={{ color: "rgba(245,240,232,0.3)" }}>
-                Projects
-              </span>
-            </div>
-          </div>
-          <div className="hidden sm:block w-px self-stretch shrink-0" style={{ background: "rgba(245,240,232,0.07)" }} />
-          <div className="flex-1 min-w-0">
-            <h3 className="font-bold mb-2 transition-colors duration-200"
-              style={{ fontSize: "1.4rem", color: hovered ? "#F5F0E8" : "rgba(245,240,232,0.85)" }}>
-              {cat.name}
-            </h3>
-            <p className="text-sm font-light leading-relaxed transition-colors duration-200"
-              style={{ color: hovered ? "rgba(245,240,232,0.55)" : "rgba(245,240,232,0.35)" }}>
-              {cat.desc}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0 flex-wrap sm:justify-end">
-            {cat.tags.map((t) => (
-              <span key={t} className="text-[11px] font-mono px-2.5 py-1 rounded transition-all duration-200"
+      <AnimatePresence mode="popLayout">
+        {project && (
+          <motion.div
+            key={project.id}
+            initial={{ opacity: 0, scale: 0.8, rotateX: 18 }}
+            animate={{ opacity: 1, scale: 1, rotateX: 0 }}
+            exit={{ opacity: 0, scale: 0.85, rotateX: -12 }}
+            transition={{ duration: 0.3, ease: easeOut }}
+            className="relative overflow-hidden rounded-xl"
+            style={{
+              width: 340,
+              height: 215,
+              marginLeft: 28,
+              marginTop: -108,
+              border: "1px solid rgba(245,240,232,0.12)",
+              background: "#161412",
+              boxShadow: "0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(245,158,11,0.06)",
+            }}
+          >
+            {hasImg ? (
+              <img
+                src={project.images[0]}
+                alt={project.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div
+                className="w-full h-full flex flex-col items-start justify-end p-5"
                 style={{
-                  color: hovered ? "rgba(245,158,11,0.85)" : "rgba(245,240,232,0.4)",
-                  border: `1px solid ${hovered ? "rgba(245,158,11,0.25)" : "rgba(245,240,232,0.1)"}`,
-                  background: hovered ? "rgba(245,158,11,0.07)" : "transparent",
-                }}>
-                {t}
-              </span>
-            ))}
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="mb-auto">
-            <p className="text-[10px] font-mono tracking-[0.25em] uppercase transition-colors duration-200"
-              style={{ color: hovered ? "rgba(245,158,11,0.9)" : "rgba(245,158,11,0.5)" }}>
-              {cat.domain}
-            </p>
-          </div>
-          <div className="mt-auto">
-            <div className="flex items-baseline gap-2 mb-4">
-              <span className="font-black transition-colors duration-200"
-                style={{
-                  fontSize: isFeatured ? "clamp(5rem, 8vw, 7rem)" : "4rem",
-                  lineHeight: 1,
-                  color: hovered ? "#F5F0E8" : "rgba(245,240,232,0.8)",
-                }}>
-                {count}
-              </span>
-              <span className="text-xs font-mono tracking-widest uppercase" style={{ color: "rgba(245,240,232,0.3)" }}>
-                Projects
-              </span>
-            </div>
-            <h3 className="font-bold mb-3 transition-colors duration-200"
-              style={{ fontSize: isFeatured ? "1.5rem" : "1.1rem", color: hovered ? "#F5F0E8" : "rgba(245,240,232,0.85)" }}>
-              {cat.name}
-            </h3>
-            <p className="text-sm font-light leading-relaxed mb-5 transition-colors duration-200"
-              style={{ color: hovered ? "rgba(245,240,232,0.55)" : "rgba(245,240,232,0.35)" }}>
-              {cat.desc}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {cat.tags.map((t) => (
-                <span key={t} className="text-[11px] font-mono px-2.5 py-1 rounded transition-all duration-200"
-                  style={{
-                    color: hovered ? "rgba(245,158,11,0.85)" : "rgba(245,240,232,0.4)",
-                    border: `1px solid ${hovered ? "rgba(245,158,11,0.25)" : "rgba(245,240,232,0.1)"}`,
-                    background: hovered ? "rgba(245,158,11,0.07)" : "transparent",
-                  }}>
-                  {t}
+                  background:
+                    "radial-gradient(ellipse 120% 90% at 20% 0%, rgba(245,158,11,0.16) 0%, #161412 65%)",
+                }}
+              >
+                <span
+                  className="font-black select-none leading-none"
+                  style={{ fontSize: "4.5rem", color: "rgba(245,158,11,0.18)" }}
+                >
+                  {project.title.charAt(0)}
                 </span>
-              ))}
+                <span className="mt-3 text-[11px] font-mono tracking-wider" style={{ color: "rgba(245,240,232,0.45)" }}>
+                  {project.tech.slice(0, 3).join(" · ")}
+                </span>
+              </div>
+            )}
+            {/* bottom gradient + status */}
+            <div
+              className="absolute inset-x-0 bottom-0 flex items-center justify-between px-4 py-2.5"
+              style={{ background: "linear-gradient(transparent, rgba(10,9,8,0.85))" }}
+            >
+              <span className="text-[10px] font-mono tracking-widest uppercase" style={{ color: "rgba(245,240,232,0.7)" }}>
+                {project.period}
+              </span>
+              <span className="text-[10px] font-mono" style={{ color: statusStyle(project.status).color }}>
+                {project.status}
+              </span>
             </div>
-          </div>
-        </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
 
 /* =========================
-   Detail Content (shared)
+   List row
 ========================= */
-function DetailContent({ project, onClose, isMobile }: { project: Project; onClose: () => void; isMobile: boolean }) {
+function ListRow({ project, index, onClick, onHover }: {
+  project: Project;
+  index: number;
+  onClick: () => void;
+  onHover: (p: Project | null) => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 32 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.6, delay: Math.min(index * 0.05, 0.4), ease: easeOut }}
+      onMouseEnter={() => { setHovered(true); onHover(project); }}
+      onMouseLeave={() => { setHovered(false); onHover(null); }}
+      onClick={onClick}
+      className="group relative cursor-pointer"
+      style={{ borderBottom: "1px solid rgba(245,240,232,0.07)" }}
+    >
+      {/* hover fill sweep */}
+      <motion.div
+        animate={{ scaleY: hovered ? 1 : 0 }}
+        transition={{ duration: 0.3, ease: easeOut }}
+        className="absolute inset-0 origin-bottom pointer-events-none"
+        style={{ background: "rgba(245,158,11,0.04)" }}
+      />
+      {/* amber left bar */}
+      <motion.div
+        animate={{ scaleY: hovered ? 1 : 0, opacity: hovered ? 1 : 0 }}
+        transition={{ duration: 0.2 }}
+        className="absolute left-0 top-0 bottom-0 w-[3px] origin-top"
+        style={{ background: "#F59E0B" }}
+      />
+
+      <div className="relative flex items-baseline gap-4 sm:gap-8 py-6 sm:py-8 pl-5 sm:pl-8 pr-2">
+        <span
+          className="text-xs font-mono shrink-0 transition-colors duration-200"
+          style={{ color: hovered ? "#F59E0B" : "rgba(245,240,232,0.22)" }}
+        >
+          {String(index + 1).padStart(2, "0")}
+        </span>
+
+        <motion.h3
+          animate={{ x: hovered ? 10 : 0, color: hovered ? "#F5F0E8" : "rgba(245,240,232,0.55)" }}
+          transition={{ duration: 0.3, ease: easeOut }}
+          className="flex-1 min-w-0 font-bold tracking-tight leading-[1.1] truncate"
+          style={{ fontSize: "clamp(1.5rem, 3.6vw, 3rem)" }}
+        >
+          {project.title}
+        </motion.h3>
+
+        <div className="hidden sm:flex items-center gap-4 shrink-0">
+          <span
+            className="text-[10px] font-mono tracking-[0.2em] uppercase px-2.5 py-1 rounded-full transition-all duration-200"
+            style={{
+              color: hovered ? "rgba(245,158,11,0.9)" : "rgba(245,240,232,0.3)",
+              border: `1px solid ${hovered ? "rgba(245,158,11,0.3)" : "rgba(245,240,232,0.1)"}`,
+            }}
+          >
+            {categoryLabel[project.category]}
+          </span>
+          <span className="text-xs font-mono w-24 text-right" style={{ color: "rgba(245,240,232,0.25)" }}>
+            {project.period.split("~")[0].trim()}
+          </span>
+          <motion.span
+            animate={{ x: hovered ? 0 : -8, opacity: hovered ? 1 : 0.15, rotate: hovered ? 0 : -45 }}
+            transition={{ duration: 0.25, ease: easeOut }}
+            className="text-xl"
+            style={{ color: "#F59E0B" }}
+          >
+            ↗
+          </motion.span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* =========================
+   Full-screen case-study overlay
+========================= */
+const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.25 } },
+};
+const fadeUp = {
+  hidden: { opacity: 0, y: 28 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
+};
+
+function ProjectOverlay({ project, onClose }: { project: Project; onClose: () => void }) {
   const s = statusStyle(project.status);
   const { lang } = useLanguage();
   const tp = translations[lang].projects;
@@ -238,398 +256,218 @@ function DetailContent({ project, onClose, isMobile }: { project: Project; onClo
   const tasks = tr?.tasks ?? project.tasks;
   const features = tr?.features ?? project.features;
   const impact = tr?.impact ?? project.impact;
-
-  return (
-    <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden pb-12">
-      {/* Mobile handle */}
-      {isMobile && (
-        <div className="flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-9 h-1 rounded-full" style={{ background: "rgba(245,240,232,0.12)" }} />
-        </div>
-      )}
-
-      <div className="px-6 md:px-8 pt-6 md:pt-8 pb-6">
-        {/* Mobile header with back button */}
-        {isMobile && (
-          <button
-            onClick={onClose}
-            className="flex items-center gap-2 mb-5 text-xs font-mono"
-            style={{ color: "rgba(245,240,232,0.35)" }}
-          >
-            {tp.backToList}
-          </button>
-        )}
-
-        {/* Meta */}
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-xs font-mono px-2.5 py-1 rounded-full"
-            style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}>
-            {project.status}
-          </span>
-          <span className="text-xs font-mono" style={{ color: "rgba(245,240,232,0.2)" }}>{project.period}</span>
-        </div>
-
-        {/* Title */}
-        <h2
-          className="font-bold tracking-tight leading-tight mb-4"
-          style={{ fontSize: "clamp(1.4rem, 3vw, 2.4rem)", color: "#F5F0E8" }}
-        >
-          {project.title}
-        </h2>
-
-        {/* Role */}
-        <p className="text-xs font-mono leading-relaxed mb-5" style={{ color: "rgba(245,158,11,0.65)" }}>
-          {role}
-        </p>
-
-        {/* Description */}
-        <p className="text-sm font-light leading-relaxed" style={{ color: "rgba(245,240,232,0.45)" }}>
-          {desc}
-        </p>
-
-        {/* Metrics */}
-        {project.metrics && (
-          <div className="mt-5 px-4 py-3 rounded-lg" style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.12)" }}>
-            <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-1" style={{ color: "rgba(245,158,11,0.5)" }}>{tp.results}</p>
-            <p className="text-sm font-medium" style={{ color: "rgba(245,158,11,0.85)" }}>{project.metrics}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Images */}
-      {project.images && project.images.length > 0 && (
-        <div className="w-full mb-8">
-          <div className="flex gap-4 overflow-x-auto px-6 md:px-8 pb-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden">
-            {project.images.map((img, i) => (
-              <div
-                key={i}
-                className="shrink-0 snap-center rounded-xl overflow-hidden border border-[rgba(245,240,232,0.08)] bg-[rgba(10,9,8,0.5)] flex items-center justify-center"
-                style={{ height: "240px", maxWidth: "85vw" }}
-              >
-                <img
-                  src={img}
-                  alt={`${project.title} ${i + 1}`}
-                  className="h-full w-auto object-contain"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {(!project.images || project.images.length === 0) && (
-        <div className="mx-6 md:mx-8 mb-8 h-28 rounded-xl flex items-center justify-center" style={{ background: "rgba(245,240,232,0.02)", border: "1px dashed rgba(245,240,232,0.08)" }}>
-          <span className="font-black select-none" style={{ fontSize: "3rem", color: "rgba(245,158,11,0.05)", lineHeight: 1 }}>
-            {project.title.charAt(0)}
-          </span>
-        </div>
-      )}
-
-      <div className="px-6 md:px-8">
-        {/* Tech Stack */}
-        <div className="mb-8">
-          <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-3" style={{ color: "rgba(245,240,232,0.2)" }}>{tp.stack}</p>
-          <div className="flex flex-wrap gap-2">
-            {project.tech.map((t) => (
-              <span key={t} className="text-xs font-mono px-3 py-1.5 rounded-lg"
-                style={{ color: "rgba(245,158,11,0.85)", background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.15)" }}>
-                {t}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* What I Did */}
-        {tasks && tasks.length > 0 && (
-          <div className="mb-8">
-            <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-4" style={{ color: "rgba(245,240,232,0.2)" }}>{tp.whatIDid}</p>
-            <ul className="space-y-3">
-              {tasks.map((item, i) => (
-                <li key={i} className="flex items-start gap-4">
-                  <div className="mt-[9px] h-px w-4 shrink-0" style={{ background: "rgba(245,158,11,0.4)" }} />
-                  <span className="text-sm font-light leading-relaxed" style={{ color: "rgba(245,240,232,0.5)" }}>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Features */}
-        {features && features.length > 0 && (
-          <div className="mb-8">
-            <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-4" style={{ color: "rgba(245,240,232,0.2)" }}>{tp.keyFeatures}</p>
-            <ul className="space-y-2">
-              {features.map((item, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <span className="mt-1.5 shrink-0 w-1 h-1 rounded-full" style={{ background: "rgba(245,158,11,0.5)" }} />
-                  <span className="text-sm font-light leading-relaxed" style={{ color: "rgba(245,240,232,0.45)" }}>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Impact */}
-        {impact && impact.length > 0 && (
-          <div className="mb-8">
-            <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-4" style={{ color: "rgba(245,240,232,0.2)" }}>{tp.impact}</p>
-            <ul className="space-y-3">
-              {impact.map((item, i) => (
-                <li key={i} className="flex items-start gap-4">
-                  <div className="mt-[9px] h-px w-4 shrink-0" style={{ background: "rgba(74,222,128,0.4)" }} />
-                  <span className="text-sm font-light leading-relaxed" style={{ color: "rgba(245,240,232,0.45)" }}>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* CTA */}
-        <div className="pt-6" style={{ borderTop: "1px solid rgba(245,240,232,0.06)" }}>
-          {project.url ? (
-            <a
-              href={project.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all duration-200"
-              style={{ background: "#F59E0B", color: "#0F0E0C" }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#FBBF24")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "#F59E0B")}
-            >
-              {tp.visitProject}
-            </a>
-          ) : (
-            <span className="inline-flex items-center px-6 py-3 rounded-full text-sm font-medium"
-              style={{ color: "rgba(245,240,232,0.25)", border: "1px solid rgba(245,240,232,0.07)" }}>
-              {tp.privateNDA}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* =========================
-   Project Detail — Desktop left panel
-========================= */
-function ProjectDetailPanel({ project, onClose }: { project: Project; onClose: () => void }) {
-  return (
-    <motion.div
-      initial={{ x: "-100%", opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: "-100%", opacity: 0 }}
-      transition={{ type: "spring", damping: 28, stiffness: 260 }}
-      className="fixed left-0 top-16 bottom-0 z-[55] flex flex-col overflow-hidden"
-      style={{
-        right: 0,
-        maxWidth: "calc(100vw - 520px)",
-        minWidth: 320,
-        background: "#0F0E0C",
-        borderRight: "1px solid rgba(245,240,232,0.07)",
-      }}
-    >
-      <DetailContent project={project} onClose={onClose} isMobile={false} />
-    </motion.div>
-  );
-}
-
-/* =========================
-   Project Detail — Mobile bottom sheet
-========================= */
-function ProjectDetailSheet({ project, onClose }: { project: Project; onClose: () => void }) {
-  return (
-    <>
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[65]"
-        style={{ background: "rgba(10,9,8,0.7)", backdropFilter: "blur(4px)" }}
-        onClick={onClose}
-      />
-      {/* Sheet */}
-      <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 30, stiffness: 280 }}
-        className="fixed left-0 right-0 bottom-0 z-[70] flex flex-col rounded-t-2xl overflow-hidden"
-        style={{
-          height: "75vh",
-          background: "#0F0E0C",
-          borderTop: "1px solid rgba(245,240,232,0.1)",
-        }}
-      >
-        <DetailContent project={project} onClose={onClose} isMobile={true} />
-      </motion.div>
-    </>
-  );
-}
-
-/* =========================
-   Project Row inside Drawer
-========================= */
-function ProjectRow({ project, index, onClick, isActive }: {
-  project: Project;
-  index: number;
-  onClick: () => void;
-  isActive: boolean;
-}) {
-  const [hovered, setHovered] = useState(false);
   const hasImg = project.images && project.images.length > 0;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.35, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onClick={onClick}
-      className="group cursor-pointer flex items-center gap-4 p-3 rounded-xl transition-colors duration-200"
-      style={{
-        background: isActive
-          ? "rgba(245,158,11,0.07)"
-          : hovered ? "rgba(245,240,232,0.05)" : "transparent",
-        border: `1px solid ${isActive ? "rgba(245,158,11,0.15)" : "transparent"}`,
-      }}
-    >
-      <div
-        className="w-14 h-14 rounded-lg overflow-hidden shrink-0 flex items-center justify-center"
-        style={{ background: "rgba(245,240,232,0.04)", border: "1px solid rgba(245,240,232,0.07)" }}
-      >
-        {hasImg ? (
-          <img src={project.images![0]} alt={project.title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
-        ) : (
-          <span className="font-black text-xl" style={{ color: "rgba(245,158,11,0.25)" }}>
-            {project.title.charAt(0)}
-          </span>
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <p className="text-sm font-semibold truncate transition-colors duration-200"
-            style={{ color: isActive ? "#F59E0B" : hovered ? "#F5F0E8" : "rgba(245,240,232,0.75)" }}>
-            {project.title}
-          </p>
-          {project.featured && (
-            <span
-              className="shrink-0 text-[9px] font-mono tracking-[0.15em] uppercase px-1.5 py-0.5"
-              style={{ color: "rgba(245,158,11,0.8)", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}
-            >
-              Featured
-            </span>
-          )}
-        </div>
-        <p className="text-[11px] font-mono" style={{ color: "rgba(245,240,232,0.2)" }}>
-          {project.tech.slice(0, 3).join(" · ")}
-        </p>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="hidden sm:block text-xs font-mono" style={{ color: "rgba(245,240,232,0.2)" }}>{project.period}</span>
-        <motion.span
-          animate={{ opacity: hovered || isActive ? 1 : 0, x: hovered || isActive ? 0 : -6 }}
-          transition={{ duration: 0.2 }}
-          style={{ color: "#F59E0B" }}
-        >
-          ↗
-        </motion.span>
-      </div>
-    </motion.div>
-  );
-}
-
-/* =========================
-   Category Drawer
-========================= */
-function CategoryDrawer({ cat, selectedProject, isMobile, onClose, onProjectClick }: {
-  cat: typeof categories[0];
-  selectedProject: Project | null;
-  isMobile: boolean;
-  onClose: () => void;
-  onProjectClick: (p: Project | null) => void;
-}) {
-  const items = getProjects(cat.id);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
-  }, []);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
 
   return (
-    <AnimatePresence>
-      <>
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
-          className="fixed inset-0 z-40"
-          style={{ background: "rgba(10,9,8,0.6)", backdropFilter: "blur(4px)" }}
-          onClick={onClose}
-        />
+    <motion.div
+      initial={{ y: "100%" }}
+      animate={{ y: 0 }}
+      exit={{ y: "100%" }}
+      transition={{ duration: 0.65, ease: easeOut }}
+      className="fixed inset-0 z-[1100] overflow-y-auto [&::-webkit-scrollbar]:hidden"
+      style={{ background: "#0F0E0C" }}
+    >
+      {/* faint amber glow */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[60vh]"
+        style={{ background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(245,158,11,0.06) 0%, transparent 70%)" }}
+      />
 
-        {/* Drawer */}
-        <motion.div
-          initial={{ x: "100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: "100%" }}
-          transition={{ type: "spring", damping: 28, stiffness: 260 }}
-          className="fixed right-0 top-16 bottom-0 z-50 flex flex-col overflow-hidden"
-          style={{
-            width: isMobile ? "100vw" : "min(520px, 100vw)",
-            background: "#141210",
-            borderLeft: isMobile ? "none" : "1px solid rgba(245,240,232,0.08)",
-            borderTop: isMobile ? "1px solid rgba(245,240,232,0.08)" : "none",
+      {/* Top bar */}
+      <div
+        className="sticky top-0 z-10 flex items-center justify-between px-6 md:px-12 py-4"
+        style={{ background: "rgba(15,14,12,0.85)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(245,240,232,0.06)" }}
+      >
+        <span className="text-[10px] font-mono tracking-[0.25em] uppercase" style={{ color: "rgba(245,158,11,0.7)" }}>
+          {categoryLabel[project.category]} / Case
+        </span>
+        <button
+          onClick={onClose}
+          className="flex items-center gap-2 text-xs font-mono px-4 py-2 rounded-full transition-colors duration-200"
+          style={{ color: "rgba(245,240,232,0.6)", border: "1px solid rgba(245,240,232,0.12)" }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = "rgba(245,158,11,0.5)";
+            (e.currentTarget as HTMLElement).style.color = "#F5F0E8";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = "rgba(245,240,232,0.12)";
+            (e.currentTarget as HTMLElement).style.color = "rgba(245,240,232,0.6)";
           }}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 md:px-8 py-5 shrink-0"
-            style={{ borderBottom: "1px solid rgba(245,240,232,0.07)" }}>
-            <div>
-              <p className="text-[10px] font-mono tracking-widest uppercase mb-1" style={{ color: "rgba(245,158,11,0.7)" }}>
-                {cat.domain}
-              </p>
-              <h3 className="text-lg md:text-xl font-bold" style={{ color: "#F5F0E8" }}>{cat.name}</h3>
-            </div>
-            <button
-              onClick={onClose}
-              className="w-9 h-9 flex items-center justify-center rounded-full transition-colors duration-200"
-              style={{ background: "rgba(245,240,232,0.06)", color: "rgba(245,240,232,0.5)" }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "rgba(245,240,232,0.12)";
-                (e.currentTarget as HTMLElement).style.color = "#F5F0E8";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "rgba(245,240,232,0.06)";
-                (e.currentTarget as HTMLElement).style.color = "rgba(245,240,232,0.5)";
-              }}
-            >
-              ✕
-            </button>
-          </div>
+          ✕ <span className="hidden sm:inline">ESC</span>
+        </button>
+      </div>
 
-          <div className="flex-1 overflow-y-auto px-6 md:px-8 py-5 [&::-webkit-scrollbar]:hidden">
-            <div className="flex flex-col gap-2">
-              {items.map((p, i) => (
-                <ProjectRow
-                  key={p.id}
-                  project={p}
-                  index={i}
-                  isActive={!isMobile && selectedProject?.id === p.id}
-                  onClick={() => onProjectClick(selectedProject?.id === p.id && !isMobile ? null as any : p)}
-                />
+      <motion.div
+        variants={stagger}
+        initial="hidden"
+        animate="show"
+        className="relative max-w-6xl mx-auto px-6 md:px-12 pt-14 md:pt-20 pb-28"
+      >
+        {/* Meta */}
+        <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-3 mb-6">
+          <span className="text-xs font-mono px-2.5 py-1 rounded-full"
+            style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}>
+            {project.status}
+          </span>
+          <span className="text-xs font-mono" style={{ color: "rgba(245,240,232,0.25)" }}>{project.period}</span>
+        </motion.div>
+
+        {/* Title */}
+        <motion.h1
+          variants={fadeUp}
+          className="font-bold tracking-tight leading-[1.02] mb-6"
+          style={{ fontSize: "clamp(2.2rem, 6vw, 5rem)", color: "#F5F0E8" }}
+        >
+          {project.title}
+        </motion.h1>
+
+        {/* Role */}
+        <motion.p variants={fadeUp} className="text-sm font-mono leading-relaxed mb-5" style={{ color: "rgba(245,158,11,0.7)" }}>
+          {role}
+        </motion.p>
+
+        {/* Description */}
+        <motion.p variants={fadeUp} className="text-base font-light leading-relaxed max-w-2xl" style={{ color: "rgba(245,240,232,0.5)" }}>
+          {desc}
+        </motion.p>
+
+        {/* Metrics band */}
+        {project.metrics && (
+          <motion.div
+            variants={fadeUp}
+            className="mt-8 inline-flex flex-col gap-1 px-5 py-4 rounded-xl"
+            style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.14)" }}
+          >
+            <span className="text-[10px] font-mono tracking-[0.2em] uppercase" style={{ color: "rgba(245,158,11,0.5)" }}>{tp.results}</span>
+            <span className="text-base font-medium" style={{ color: "rgba(245,158,11,0.9)" }}>{project.metrics}</span>
+          </motion.div>
+        )}
+
+        {/* Images strip */}
+        {hasImg && (
+          <motion.div variants={fadeUp} className="mt-14 -mx-6 md:mx-0">
+            <div className="flex gap-5 overflow-x-auto px-6 md:px-0 pb-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden">
+              {project.images.map((img, i) => (
+                <div
+                  key={i}
+                  className="shrink-0 snap-center rounded-2xl overflow-hidden flex items-center justify-center"
+                  style={{
+                    height: "min(52vh, 420px)",
+                    maxWidth: "88vw",
+                    border: "1px solid rgba(245,240,232,0.09)",
+                    background: "rgba(10,9,8,0.5)",
+                  }}
+                >
+                  <img
+                    src={img}
+                    alt={`${project.title} ${i + 1}`}
+                    className="h-full w-auto object-contain"
+                  />
+                </div>
               ))}
             </div>
+          </motion.div>
+        )}
+
+        {/* Body: 2-col */}
+        <motion.div variants={fadeUp} className="mt-16 grid grid-cols-1 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-12 md:gap-16">
+          {/* Left: stack + CTA (sticky on desktop) */}
+          <div className="md:sticky md:top-24 self-start flex flex-col gap-10">
+            <div>
+              <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-4" style={{ color: "rgba(245,240,232,0.22)" }}>{tp.stack}</p>
+              <div className="flex flex-wrap gap-2">
+                {project.tech.map((t) => (
+                  <span key={t} className="text-xs font-mono px-3 py-1.5 rounded-lg"
+                    style={{ color: "rgba(245,158,11,0.85)", background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.15)" }}>
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              {project.url ? (
+                <a
+                  href={project.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all duration-200"
+                  style={{ background: "#F59E0B", color: "#0F0E0C" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#FBBF24")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "#F59E0B")}
+                >
+                  {tp.visitProject}
+                </a>
+              ) : (
+                <span className="inline-flex items-center px-6 py-3 rounded-full text-sm font-medium"
+                  style={{ color: "rgba(245,240,232,0.25)", border: "1px solid rgba(245,240,232,0.07)" }}>
+                  {tp.privateNDA}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Right: narrative */}
+          <div className="flex flex-col gap-12">
+            {tasks && tasks.length > 0 && (
+              <div>
+                <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-5" style={{ color: "rgba(245,240,232,0.22)" }}>{tp.whatIDid}</p>
+                <ul className="space-y-4">
+                  {tasks.map((item, i) => (
+                    <li key={i} className="flex items-start gap-4">
+                      <div className="mt-[10px] h-px w-5 shrink-0" style={{ background: "rgba(245,158,11,0.4)" }} />
+                      <span className="text-sm font-light leading-relaxed" style={{ color: "rgba(245,240,232,0.55)" }}>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {features && features.length > 0 && (
+              <div>
+                <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-5" style={{ color: "rgba(245,240,232,0.22)" }}>{tp.keyFeatures}</p>
+                <ul className="space-y-3">
+                  {features.map((item, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <span className="mt-1.5 shrink-0 w-1 h-1 rounded-full" style={{ background: "rgba(245,158,11,0.5)" }} />
+                      <span className="text-sm font-light leading-relaxed" style={{ color: "rgba(245,240,232,0.5)" }}>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {impact && impact.length > 0 && (
+              <div>
+                <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-5" style={{ color: "rgba(245,240,232,0.22)" }}>{tp.impact}</p>
+                <ul className="space-y-4">
+                  {impact.map((item, i) => (
+                    <li key={i} className="flex items-start gap-4">
+                      <div className="mt-[10px] h-px w-5 shrink-0" style={{ background: "rgba(74,222,128,0.4)" }} />
+                      <span className="text-sm font-light leading-relaxed" style={{ color: "rgba(245,240,232,0.5)" }}>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </motion.div>
-      </>
-    </AnimatePresence>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -637,20 +475,13 @@ function CategoryDrawer({ cat, selectedProject, isMobile, onClose, onProjectClic
    Main Section
 ========================= */
 export default function Projects() {
-  const [openCat, setOpenCat] = useState<typeof categories[0] | null>(null);
+  const [filter, setFilter] = useState("featured");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [hoveredProject, setHoveredProject] = useState<Project | null>(null);
   const isMobile = useIsMobile();
-  const { lang } = useLanguage();
-  const tCats = translations[lang].projects.categories;
-  const localizedCategories = categories.map((cat) => ({
-    ...cat,
-    desc: tCats[cat.id as keyof typeof tCats] ?? cat.desc,
-  }));
+  const items = getFiltered(filter);
 
-  const handleClose = () => {
-    setOpenCat(null);
-    setSelectedProject(null);
-  };
+  const handleHover = useCallback((p: Project | null) => setHoveredProject(p), []);
 
   return (
     <section id="projects" className="relative w-full overflow-hidden" style={{ background: "#0F0E0C" }}>
@@ -658,7 +489,7 @@ export default function Projects() {
 
       <div className="mx-auto max-w-6xl px-8 lg:px-12 pt-28 pb-28">
         {/* Header */}
-        <div className="mb-14">
+        <div className="mb-10">
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -684,59 +515,79 @@ export default function Projects() {
           </motion.h2>
         </div>
 
-        {/* Bento Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-          <div className="lg:col-span-3 lg:row-span-2 lg:h-full">
-            <CategoryCard cat={localizedCategories[0]} onClick={() => { setOpenCat(localizedCategories[0]); setSelectedProject(null); }} />
-          </div>
-          <div className="lg:col-span-2">
-            <CategoryCard cat={localizedCategories[1]} onClick={() => { setOpenCat(localizedCategories[1]); setSelectedProject(null); }} />
-          </div>
-          <div className="lg:col-span-2">
-            <CategoryCard cat={localizedCategories[2]} onClick={() => { setOpenCat(localizedCategories[2]); setSelectedProject(null); }} />
-          </div>
-          <div className="lg:col-span-5">
-            <CategoryCard cat={localizedCategories[3]} onClick={() => { setOpenCat(localizedCategories[3]); setSelectedProject(null); }} />
-          </div>
+        {/* Filter tabs */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="flex flex-wrap gap-2 mb-12"
+        >
+          {filters.map((f) => {
+            const active = filter === f.id;
+            const count = getFiltered(f.id).length;
+            return (
+              <button
+                key={f.id}
+                onClick={() => { setFilter(f.id); setHoveredProject(null); }}
+                className="relative px-4 py-2 rounded-full text-xs font-mono tracking-wider transition-colors duration-200"
+                style={{
+                  color: active ? "#0F0E0C" : "rgba(245,240,232,0.4)",
+                  border: `1px solid ${active ? "#F59E0B" : "rgba(245,240,232,0.12)"}`,
+                }}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="filter-pill"
+                    className="absolute inset-0 rounded-full"
+                    style={{ background: "#F59E0B" }}
+                    transition={{ type: "spring", damping: 30, stiffness: 350 }}
+                  />
+                )}
+                <span className="relative z-10">
+                  {f.label} <span style={{ opacity: 0.55 }}>{count}</span>
+                </span>
+              </button>
+            );
+          })}
+        </motion.div>
+
+        {/* Project list */}
+        <div style={{ borderTop: "1px solid rgba(245,240,232,0.07)" }}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={filter}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              {items.map((p, i) => (
+                <ListRow
+                  key={p.id}
+                  project={p}
+                  index={i}
+                  onClick={() => { setSelectedProject(p); setHoveredProject(null); }}
+                  onHover={handleHover}
+                />
+              ))}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
 
-      {/* Drawer */}
+      {/* Floating cursor preview */}
+      {!isMobile && <FloatingPreview project={selectedProject ? null : hoveredProject} />}
+
+      {/* Full-screen case-study overlay */}
       <AnimatePresence>
-        {openCat && (
-          <CategoryDrawer
-            cat={openCat}
-            selectedProject={selectedProject}
-            isMobile={isMobile}
-            onClose={handleClose}
-            onProjectClick={(p) => setSelectedProject(p)}
+        {selectedProject && (
+          <ProjectOverlay
+            project={selectedProject}
+            onClose={() => setSelectedProject(null)}
           />
         )}
       </AnimatePresence>
-
-      {/* Detail — desktop left panel */}
-      {!isMobile && (
-        <AnimatePresence>
-          {selectedProject && (
-            <ProjectDetailPanel
-              project={selectedProject}
-              onClose={() => setSelectedProject(null)}
-            />
-          )}
-        </AnimatePresence>
-      )}
-
-      {/* Detail — mobile bottom sheet */}
-      {isMobile && (
-        <AnimatePresence>
-          {selectedProject && (
-            <ProjectDetailSheet
-              project={selectedProject}
-              onClose={() => setSelectedProject(null)}
-            />
-          )}
-        </AnimatePresence>
-      )}
     </section>
   );
 }
