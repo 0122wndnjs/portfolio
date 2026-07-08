@@ -3,26 +3,39 @@
   <head>
     <meta charset="UTF-8" />
     <title>OG Business Card</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Inter", sans-serif; }
 
       body {
         width: 1800px;
         height: 1000px;
-        background: #0F0E0C;
+        background:
+          radial-gradient(ellipse at 14% -6%, rgba(91,77,255,0.10) 0%, transparent 34%),
+          radial-gradient(ellipse at 90% 0%, rgba(20,200,235,0.09) 0%, transparent 30%),
+          linear-gradient(180deg, #fafaff 0%, #f4f5fb 50%, #edeef8 100%);
         display: flex;
         overflow: hidden;
         position: relative;
       }
 
-      /* Subtle warm vignette */
+      /* iris hairline across the top edge */
+      body::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 6px;
+        background: linear-gradient(90deg, #5b4dff, #14c8eb, #59f0c0);
+        z-index: 2;
+      }
+
+      /* faint dot grid — echoes the hero canvas */
       body::after {
         content: "";
         position: absolute;
         inset: 0;
-        background: radial-gradient(ellipse at 30% 50%, rgba(245,158,11,0.03) 0%, transparent 60%),
-                    radial-gradient(ellipse at 80% 50%, rgba(245,240,232,0.015) 0%, transparent 50%);
+        background-image: radial-gradient(rgba(91,77,255,0.10) 1.5px, transparent 1.5px);
+        background-size: 44px 44px;
         pointer-events: none;
         z-index: 0;
       }
@@ -41,26 +54,36 @@
         flex-direction: column;
         justify-content: center;
         padding: 0 120px 0 140px;
-        border-right: 1px solid rgba(245,240,232,0.06);
+        border-right: 1px solid rgba(14,13,31,0.07);
       }
 
       .name-block { margin-bottom: 20px; }
 
       .name {
-        font-size: 100px;
-        font-weight: 900;
+        font-family: "Space Grotesk", "Inter", sans-serif;
+        font-size: 104px;
+        font-weight: 700;
         letter-spacing: -4px;
         line-height: 0.95;
-        color: #F5F0E8;
+        color: #0e0d1f;
         display: block;
       }
 
+      .name .outline {
+        /* paint-order: fill covers the stroke's inner half, hiding the
+           self-overlap artifacts glyph contours leave inside K/M joints */
+        color: #f6f7fc;
+        -webkit-text-stroke: 5px #0e0d1f;
+        paint-order: stroke fill;
+      }
+
       .role {
-        font-size: 22px;
-        font-weight: 300;
-        color: rgba(245,240,232,0.3);
-        letter-spacing: 0.05em;
-        margin-top: 22px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 20px;
+        font-weight: 400;
+        color: rgba(14,13,31,0.4);
+        letter-spacing: 0.18em;
+        margin-top: 26px;
         text-transform: uppercase;
       }
 
@@ -72,16 +95,10 @@
       }
 
       .sep-line {
-        width: 32px;
-        height: 1px;
-        background: rgba(245,158,11,0.5);
-      }
-
-      .sep-dot {
-        width: 4px;
-        height: 4px;
-        border-radius: 50%;
-        background: rgba(245,158,11,0.4);
+        width: 120px;
+        height: 3px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, #5b4dff, #14c8eb, #59f0c0);
       }
 
       .contact {
@@ -109,13 +126,14 @@
       .contact-icon svg { width: 28px; height: 28px; }
 
       .contact-label {
-        font-size: 24px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 23px;
         font-weight: 400;
-        color: rgba(245,240,232,0.45);
+        color: rgba(14,13,31,0.55);
         letter-spacing: -0.01em;
       }
 
-      .contact-label.amber { color: rgba(245,158,11,0.85); }
+      .contact-label .accent { color: #5b4dff; }
 
       /* ── RIGHT ── */
       .right {
@@ -125,22 +143,24 @@
         align-items: center;
         justify-content: center;
         gap: 28px;
-        background: rgba(245,240,232,0.01);
+        background: rgba(255,255,255,0.4);
         padding: 0 110px;
       }
 
       .qr-wrap {
         padding: 20px;
-        background: #F5F0E8;
-        box-shadow: 0 0 0 1px rgba(245,240,232,0.06), 0 32px 64px rgba(0,0,0,0.5);
+        background: #ffffff;
+        border-radius: 24px;
+        box-shadow: 0 0 0 1px rgba(91,77,255,0.14), 0 32px 64px rgba(45,35,160,0.14);
       }
 
       .scan-label {
-        font-size: 11px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
         font-weight: 500;
-        letter-spacing: 0.25em;
+        letter-spacing: 0.3em;
         text-transform: uppercase;
-        color: rgba(245,240,232,0.15);
+        color: rgba(14,13,31,0.3);
       }
     </style>
   </head>
@@ -149,21 +169,20 @@
       <!-- LEFT -->
       <div class="left">
         <div class="name-block">
-          <span class="name">JOOWON KIM</span>
+          <span class="name">JOOWON <span class="outline">KIM</span></span>
           <div class="role">Full-Stack Developer & Web3 Builder</div>
         </div>
 
         <div class="sep">
           <div class="sep-line"></div>
-          <div class="sep-dot"></div>
         </div>
 
         <div class="contact">
           <div class="contact-item">
             <div class="contact-icon">
               <svg viewBox="0 0 24 24" fill="none">
-                <rect x="2" y="4" width="20" height="16" rx="2" stroke="#EA4335" stroke-width="1.5"/>
-                <path d="M2 7l10 7 10-7" stroke="#EA4335" stroke-width="1.5" stroke-linecap="round"/>
+                <rect x="2" y="4" width="20" height="16" rx="2" stroke="#5b4dff" stroke-width="1.5"/>
+                <path d="M2 7l10 7 10-7" stroke="#5b4dff" stroke-width="1.5" stroke-linecap="round"/>
               </svg>
             </div>
             <span class="contact-label">0122wndnjs@gmail.com</span>
@@ -171,7 +190,7 @@
 
           <div class="contact-item">
             <div class="contact-icon">
-              <svg viewBox="0 0 24 24" fill="#229ED9">
+              <svg viewBox="0 0 24 24" fill="#14c8eb">
                 <path d="M9.993 15.23l-.396 5.57c.566 0 .81-.244 1.103-.537l2.644-2.53 5.48 4.01c1.004.554 1.718.263 1.97-.93l3.57-16.73c.297-1.388-.502-1.93-1.49-1.56L1.8 9.72c-1.35.52-1.33 1.27-.23 1.61l5.38 1.68L19.34 5.6c.58-.37 1.11-.17.68.2"/>
               </svg>
             </div>
@@ -181,7 +200,7 @@
           <div class="contact-item">
             <div class="contact-icon">
               <svg viewBox="0 0 24 24" fill="none">
-                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke="rgba(245,240,232,0.35)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke="rgba(14,13,31,0.45)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
             <span class="contact-label">github.com/0122wndnjs</span>
@@ -190,11 +209,11 @@
           <div class="contact-item">
             <div class="contact-icon">
               <svg viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="#F59E0B" stroke-width="1.5"/>
-                <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="#F59E0B" stroke-width="1.5"/>
+                <circle cx="12" cy="12" r="10" stroke="#5b4dff" stroke-width="1.5"/>
+                <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="#5b4dff" stroke-width="1.5"/>
               </svg>
             </div>
-            <span class="contact-label">joowonkim<span style="color:#F59E0B;">.me</span></span>
+            <span class="contact-label">joowonkim<span class="accent">.me</span></span>
           </div>
         </div>
       </div>
@@ -213,10 +232,10 @@
       new QRCodeStyling({
         width: 360, height: 360,
         data: "https://joowonkim.me",
-        dotsOptions:          { type: "dots",          color: "#0F0E0C" },
-        backgroundOptions:    { color: "#F5F0E8" },
-        cornersSquareOptions: { type: "extra-rounded", color: "#0F0E0C" },
-        cornersDotOptions:    { type: "dot",           color: "#F59E0B" },
+        dotsOptions:          { type: "rounded",       color: "#0e0d1f" },
+        backgroundOptions:    { color: "#ffffff" },
+        cornersSquareOptions: { type: "extra-rounded", color: "#5b4dff" },
+        cornersDotOptions:    { type: "dot",           color: "#5b4dff" },
       }).append(document.getElementById("qr-container"));
     </script>
   </body>
