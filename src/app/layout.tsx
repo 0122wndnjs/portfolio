@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Inter, Space_Grotesk, JetBrains_Mono, Noto_Serif_KR } from "next/font/google";
 import "katex/dist/katex.min.css";
 import "./globals.css";
 import Header from "@/components/layout/Header";
@@ -8,6 +8,7 @@ import Providers from "@/components/Providers";
 const inter = Inter({ subsets: ["latin"] });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-display", weight: ["400", "500", "600", "700"] });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500", "600"] });
+const notoSerifKr = Noto_Serif_KR({ subsets: ["latin"], variable: "--font-serif", weight: ["400", "600"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://joowonkim.me"),
@@ -84,7 +85,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
         />
       </head>
-      <body className={`${inter.className} ${spaceGrotesk.variable} ${jetbrainsMono.variable} min-h-screen`} style={{ background: "transparent", color: "#0e0d1f" }}>
+      <body className={`${inter.className} ${spaceGrotesk.variable} ${jetbrainsMono.variable} ${notoSerifKr.variable} min-h-screen`} style={{ background: "transparent", color: "#0e0d1f" }}>
         <Providers>
           <Header />
           {children}

@@ -1,13 +1,17 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { FiArrowLeft, FiClock } from "react-icons/fi";
+import { FiArrowLeft, FiArrowRight, FiClock } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import type { ReactNode } from "react";
 
 import { researchDocs } from "@/lib/research";
+import { extractHeadings, slugifyHeading } from "@/lib/slugify";
+import ArticleToc from "@/components/insights/ArticleToc";
+import CopyLinkButton from "@/components/insights/CopyLinkButton";
 
 export async function generateStaticParams() {
   return researchDocs.map((doc) => ({ slug: doc.slug }));
@@ -28,6 +32,23 @@ export async function generateMetadata({
   };
 }
 
+function childrenToText(children: ReactNode): string {
+  if (typeof children === "string") return children;
+  if (typeof children === "number") return String(children);
+  if (Array.isArray(children)) return children.map(childrenToText).join("");
+  if (children && typeof children === "object" && "props" in children) {
+    return childrenToText((children as { props: { children?: ReactNode } }).props.children);
+  }
+  return "";
+}
+
+function headingWithId(Tag: "h2" | "h3") {
+  return function Heading({ children }: { children?: ReactNode }) {
+    const id = slugifyHeading(childrenToText(children));
+    return <Tag id={id}>{children}</Tag>;
+  };
+}
+
 export default async function InsightPostPage({
   params,
 }: {
@@ -37,28 +58,27 @@ export default async function InsightPostPage({
   const post = researchDocs.find((doc) => doc.slug === slug);
   if (!post) notFound();
 
+  const headings = extractHeadings(post.body);
+
+  const published = researchDocs.filter((doc) => doc.status === "published");
+  const index = published.findIndex((doc) => doc.slug === slug);
+  const prev = index > 0 ? published[index - 1] : null;
+  const next = index >= 0 && index < published.length - 1 ? published[index + 1] : null;
+
   return (
-    <div className="min-h-screen" style={{ background: "#f4f5fb" }}>
+    <div className="min-h-screen">
 
       {/* Cover image or gradient header */}
       {post.cover ? (
         <div className="relative w-full" style={{ height: "clamp(280px, 45vh, 520px)" }}>
-          <Image
-            src={post.cover}
-            alt={post.title}
-            fill
-            className="object-cover"
-            priority
-          />
-          {/* Dark overlay gradient */}
+          <Image src={post.cover} alt={post.title} fill className="object-cover" priority />
           <div
             className="absolute inset-0"
             style={{
               background: "linear-gradient(to bottom, rgba(244,245,251,0.3) 0%, rgba(244,245,251,0.6) 60%, rgba(244,245,251,1) 100%)",
             }}
           />
-          {/* Back link over image */}
-          <div className="absolute top-8 left-0 right-0 mx-auto max-w-4xl px-8 lg:px-12">
+          <div className="absolute top-8 left-0 right-0 mx-auto max-w-6xl px-8 lg:px-12">
             <Link href="/insights" className="insight-back inline-flex items-center gap-2 text-xs font-mono tracking-widest uppercase">
               <FiArrowLeft size={12} />
               Insights
@@ -66,116 +86,150 @@ export default async function InsightPostPage({
           </div>
         </div>
       ) : (
-        /* No cover — spacer for header */
         <div className="pt-28" />
       )}
 
-      <div className="mx-auto max-w-4xl px-8 lg:px-12">
+      <div className="mx-auto max-w-6xl px-8 lg:px-12">
 
-        {/* Back link (no cover case) */}
         {!post.cover && (
-          <Link href="/insights" className="insight-back inline-flex items-center gap-2 text-xs font-mono tracking-widest uppercase mb-12">
+          <Link href="/insights" className="insight-back mb-12 inline-flex items-center gap-2 text-xs font-mono tracking-widest uppercase">
             <FiArrowLeft size={12} />
             Insights
           </Link>
         )}
 
         {/* Post header */}
-        <header className={post.cover ? "pt-0 pb-12" : "pb-12"} style={{ borderBottom: "1px solid rgba(14,13,31,0.07)" }}>
-
-          {/* Topic + date row */}
-          <div className="flex flex-wrap items-center gap-4 mb-6">
-            <span
-              className="text-[10px] font-mono tracking-[0.25em] uppercase px-2.5 py-1"
-              style={{
-                color: "rgba(91,77,255,0.85)",
-                background: "rgba(91,77,255,0.08)",
-                border: "1px solid rgba(91,77,255,0.18)",
-              }}
-            >
+        <header className="pb-12" style={{ borderBottom: "1px solid rgba(14,13,31,0.07)" }}>
+          {/* single mono meta line */}
+          <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-mono uppercase tracking-[0.2em]">
+            <span className="relative pb-1" style={{ color: "#5b4dff" }}>
               {post.topic}
+              <span
+                className="absolute bottom-0 left-0 right-0 h-[2px]"
+                style={{ background: "linear-gradient(90deg, #5b4dff, #14c8eb, #59f0c0)" }}
+              />
             </span>
-            <span className="text-xs font-mono" style={{ color: "rgba(14,13,31,0.22)" }}>
-              {post.publishedAt || post.updatedAt || "—"}
-            </span>
-            <span className="flex items-center gap-1.5 text-xs font-mono" style={{ color: "rgba(14,13,31,0.22)" }}>
+            <span style={{ color: "rgba(14,13,31,0.2)" }}>—</span>
+            <span style={{ color: "rgba(14,13,31,0.35)" }}>{post.publishedAt || post.updatedAt || "—"}</span>
+            <span style={{ color: "rgba(14,13,31,0.2)" }}>—</span>
+            <span className="flex items-center gap-1.5" style={{ color: "rgba(14,13,31,0.35)" }}>
               <FiClock size={10} />
               {post.readingTime}
             </span>
           </div>
 
-          {/* Title */}
           <h1
-            className="font-black tracking-tight leading-[1.08] mb-5"
-            style={{ fontSize: "clamp(2rem, 5vw, 3.2rem)", color: "#0e0d1f" }}
+            className="mb-5 font-black tracking-tight leading-[1.08]"
+            style={{ fontSize: "clamp(2rem, 5vw, 3.4rem)", color: "#0e0d1f", maxWidth: "22ch" }}
           >
             {post.title}
           </h1>
 
-          {/* Subtitle */}
           {post.subtitle && (
-            <p className="text-xl font-light leading-relaxed mb-4" style={{ color: "rgba(14,13,31,0.5)" }}>
+            <p className="mb-4 text-xl font-light leading-relaxed" style={{ color: "rgba(14,13,31,0.5)", maxWidth: "48ch" }}>
               {post.subtitle}
             </p>
           )}
 
-          {/* Summary */}
           <p className="text-base font-light leading-relaxed" style={{ color: "rgba(14,13,31,0.35)", maxWidth: "58ch" }}>
             {post.summary}
           </p>
 
-          {/* Author */}
-          <div className="flex items-center gap-3 mt-8">
-            <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-              style={{ background: "rgba(91,77,255,0.15)", color: "#5b4dff" }}
-            >
-              J
+          <div className="mt-8 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div
+                className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold"
+                style={{ background: "rgba(91,77,255,0.15)", color: "#5b4dff" }}
+              >
+                J
+              </div>
+              <span className="text-sm font-medium" style={{ color: "rgba(14,13,31,0.45)" }}>
+                {post.author}
+              </span>
             </div>
-            <span className="text-sm font-medium" style={{ color: "rgba(14,13,31,0.45)" }}>
-              {post.author}
-            </span>
+            <CopyLinkButton />
           </div>
         </header>
 
-        {/* Article body */}
-        <article className="research-markdown py-14">
-          <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
-            {post.body}
-          </ReactMarkdown>
-        </article>
+        {/* Body + sticky TOC */}
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_220px]">
+          <article className="research-markdown max-w-3xl py-14">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkMath]}
+              rehypePlugins={[rehypeKatex]}
+              components={{ h2: headingWithId("h2"), h3: headingWithId("h3") }}
+            >
+              {post.body}
+            </ReactMarkdown>
+          </article>
+
+          <aside className="hidden lg:block">
+            <div className="sticky top-28 py-14">
+              <ArticleToc headings={headings} />
+            </div>
+          </aside>
+        </div>
 
         {/* Tags */}
         {post.tags.length > 0 && (
-          <footer className="pb-24 pt-2" style={{ borderTop: "1px solid rgba(14,13,31,0.07)" }}>
-            <p className="text-[10px] font-mono tracking-widest uppercase mb-4 mt-8" style={{ color: "rgba(14,13,31,0.2)" }}>
+          <div className="pt-2" style={{ borderTop: "1px solid rgba(14,13,31,0.07)" }}>
+            <p className="mb-4 mt-8 text-[10px] font-mono uppercase tracking-widest" style={{ color: "rgba(14,13,31,0.2)" }}>
               Tags
             </p>
             <div className="flex flex-wrap gap-2">
               {post.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="text-xs font-mono px-3 py-1.5"
-                  style={{
-                    color: "rgba(14,13,31,0.4)",
-                    background: "rgba(14,13,31,0.04)",
-                    border: "1px solid rgba(14,13,31,0.08)",
-                  }}
+                  className="px-3 py-1.5 text-xs font-mono"
+                  style={{ color: "rgba(14,13,31,0.4)", background: "rgba(14,13,31,0.04)", border: "1px solid rgba(14,13,31,0.08)" }}
                 >
                   {tag}
                 </span>
               ))}
             </div>
-
-            {/* Back to list */}
-            <div className="mt-14">
-              <Link href="/insights" className="insight-back inline-flex items-center gap-2 text-sm font-medium">
-                <FiArrowLeft size={13} />
-                Back to Insights
-              </Link>
-            </div>
-          </footer>
+          </div>
         )}
+
+        {/* Prev / next navigation */}
+        <footer className="grid grid-cols-1 gap-4 pb-24 pt-14 sm:grid-cols-2">
+          {prev ? (
+            <Link href={`/insights/${prev.slug}`} className="card-iris group flex flex-col gap-3 p-6">
+              <span className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.25em]" style={{ color: "rgba(14,13,31,0.3)" }}>
+                <FiArrowLeft size={11} className="transition-transform duration-200 group-hover:-translate-x-1" />
+                Previous
+              </span>
+              <span className="font-semibold leading-snug transition-colors duration-200 group-hover:text-[#5b4dff]" style={{ color: "rgba(14,13,31,0.7)" }}>
+                {prev.title}
+              </span>
+            </Link>
+          ) : (
+            <Link href="/insights" className="group flex flex-col justify-center gap-3 rounded-3xl border border-dashed p-6" style={{ borderColor: "rgba(14,13,31,0.12)" }}>
+              <span className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.25em]" style={{ color: "rgba(14,13,31,0.3)" }}>
+                <FiArrowLeft size={11} className="transition-transform duration-200 group-hover:-translate-x-1" />
+                All insights
+              </span>
+            </Link>
+          )}
+
+          {next ? (
+            <Link href={`/insights/${next.slug}`} className="card-iris group flex flex-col items-end gap-3 p-6 text-right">
+              <span className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.25em]" style={{ color: "rgba(14,13,31,0.3)" }}>
+                Next
+                <FiArrowRight size={11} className="transition-transform duration-200 group-hover:translate-x-1" />
+              </span>
+              <span className="font-semibold leading-snug transition-colors duration-200 group-hover:text-[#5b4dff]" style={{ color: "rgba(14,13,31,0.7)" }}>
+                {next.title}
+              </span>
+            </Link>
+          ) : (
+            <Link href="/insights" className="group flex flex-col items-end justify-center gap-3 rounded-3xl border border-dashed p-6 text-right" style={{ borderColor: "rgba(14,13,31,0.12)" }}>
+              <span className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.25em]" style={{ color: "rgba(14,13,31,0.3)" }}>
+                All insights
+                <FiArrowRight size={11} className="transition-transform duration-200 group-hover:translate-x-1" />
+              </span>
+            </Link>
+          )}
+        </footer>
       </div>
     </div>
   );
