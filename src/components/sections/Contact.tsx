@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { SiGithub } from "react-icons/si";
 import { FaTelegramPlane } from "react-icons/fa";
 import { FiCreditCard, FiMail, FiMessageCircle } from "react-icons/fi";
@@ -18,38 +18,61 @@ const socials = [
   },
 ];
 
+const EMAIL = "0122wndnjs@gmail.com";
+
 export default function Contact() {
   const [cardOpen, setCardOpen] = useState(false);
   const [emailHovered, setEmailHovered] = useState(false);
   const [telegramHovered, setTelegramHovered] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { lang } = useLanguage();
   const t = translations[lang].contact;
   const tf = translations[lang].footer;
+
+  useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
+
+  const copyEmail = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      await navigator.clipboard.writeText(EMAIL);
+      setCopied(true);
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+      copyTimer.current = setTimeout(() => setCopied(false), 1800);
+    } catch {
+      window.location.href = `mailto:${EMAIL}`;
+    }
+  };
 
   return (
     <section
       id="contact"
       className="relative w-full overflow-hidden flex flex-col"
-      style={{ background: "#0F0E0C" }}
+     
     >
-      <div className="w-full" style={{ height: "1px", background: "rgba(245,240,232,0.06)" }} />
+      <div className="w-full" style={{ height: "1px", background: "rgba(14,13,31,0.06)" }} />
 
-      {/* Background: faint name watermark */}
+      {/* Background: low-contrast infinite marquee */}
       <div
-        className="absolute inset-0 flex items-end justify-center pointer-events-none select-none overflow-hidden"
+        className="absolute inset-x-0 bottom-0 pointer-events-none select-none overflow-hidden"
         aria-hidden
       >
-        <span
-          className="font-black tracking-tighter leading-none"
-          style={{
-            fontSize: "clamp(6rem, 22vw, 22rem)",
-            color: "rgba(245,240,232,0.025)",
-            whiteSpace: "nowrap",
-            transform: "translateY(10%)",
-          }}
+        <motion.div
+          animate={{ x: ["0%", "-50%"] }}
+          transition={{ repeat: Infinity, duration: 40, ease: "linear" }}
+          className="flex w-fit"
+          style={{ transform: "translateY(12%)" }}
         >
-          JOOWON KIM
-        </span>
+          {[0, 1].map((copy) => (
+            <span
+              key={copy}
+              className="font-display block font-black tracking-tighter leading-none whitespace-nowrap"
+              style={{ fontSize: "clamp(6rem, 18vw, 18rem)", color: "rgba(14,13,31,0.03)" }}
+            >
+              AVAILABLE FOR WORK — SEOUL — REMOTE — JOOWON KIM —&nbsp;
+            </span>
+          ))}
+        </motion.div>
       </div>
 
       {/* Amber glow — bottom center */}
@@ -58,7 +81,7 @@ export default function Contact() {
         style={{
           width: "700px",
           height: "320px",
-          background: "radial-gradient(ellipse at bottom, rgba(245,158,11,0.09), transparent 72%)",
+          background: "radial-gradient(ellipse at bottom, rgba(91,77,255,0.09), transparent 72%)",
         }}
       />
 
@@ -71,13 +94,13 @@ export default function Contact() {
           viewport={{ once: true }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="inline-flex items-center gap-2.5 mb-10 px-4 py-2 rounded-full"
-          style={{ border: "1px solid rgba(74,222,128,0.2)", background: "rgba(74,222,128,0.05)" }}
+          style={{ border: "1px solid rgba(16,185,129,0.2)", background: "rgba(16,185,129,0.05)" }}
         >
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-50" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
           </span>
-          <span className="text-xs font-mono tracking-widest" style={{ color: "rgba(74,222,128,0.85)" }}>
+          <span className="text-xs font-mono tracking-widest" style={{ color: "rgba(16,185,129,0.85)" }}>
             {t.badge}
           </span>
         </motion.div>
@@ -96,7 +119,7 @@ export default function Contact() {
                 className="block font-black tracking-tighter leading-[0.92]"
                 style={{
                   fontSize: "clamp(4rem, 11vw, 10rem)",
-                  color: i === 2 ? "rgba(245,240,232,0.22)" : "#F5F0E8",
+                  color: i === 2 ? "rgba(14,13,31,0.22)" : "#0e0d1f",
                 }}
               >
                 {word}
@@ -116,7 +139,7 @@ export default function Contact() {
               viewport={{ once: true }}
               transition={{ duration: 0.7, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
               className="font-light leading-relaxed mb-3"
-              style={{ fontSize: "clamp(1.05rem, 1.6vw, 1.25rem)", color: "rgba(245,240,232,0.55)", maxWidth: "34ch" }}
+              style={{ fontSize: "clamp(1.05rem, 1.6vw, 1.25rem)", color: "rgba(14,13,31,0.55)", maxWidth: "34ch" }}
             >
               {t.line1}
             </motion.p>
@@ -126,7 +149,7 @@ export default function Contact() {
               viewport={{ once: true }}
               transition={{ duration: 0.7, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="font-light leading-relaxed mb-12"
-              style={{ fontSize: "clamp(1.05rem, 1.6vw, 1.25rem)", color: "rgba(245,240,232,0.28)", maxWidth: "34ch" }}
+              style={{ fontSize: "clamp(1.05rem, 1.6vw, 1.25rem)", color: "rgba(14,13,31,0.28)", maxWidth: "34ch" }}
             >
               {t.line2}
             </motion.p>
@@ -146,19 +169,19 @@ export default function Contact() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-mono transition-all duration-150 group"
                   style={{
-                    color: "rgba(245,240,232,0.55)",
-                    background: "rgba(245,240,232,0.05)",
-                    border: "1px solid rgba(245,240,232,0.09)",
+                    color: "rgba(14,13,31,0.55)",
+                    background: "rgba(14,13,31,0.05)",
+                    border: "1px solid rgba(14,13,31,0.09)",
                   }}
                   onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.color = "#F5F0E8";
-                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(245,240,232,0.2)";
-                    (e.currentTarget as HTMLElement).style.background = "rgba(245,240,232,0.09)";
+                    (e.currentTarget as HTMLElement).style.color = "#0e0d1f";
+                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(14,13,31,0.2)";
+                    (e.currentTarget as HTMLElement).style.background = "rgba(14,13,31,0.09)";
                   }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.color = "rgba(245,240,232,0.55)";
-                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(245,240,232,0.09)";
-                    (e.currentTarget as HTMLElement).style.background = "rgba(245,240,232,0.05)";
+                    (e.currentTarget as HTMLElement).style.color = "rgba(14,13,31,0.55)";
+                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(14,13,31,0.09)";
+                    (e.currentTarget as HTMLElement).style.background = "rgba(14,13,31,0.05)";
                   }}
                 >
                   <span className="text-base">{s.icon}</span>
@@ -166,8 +189,8 @@ export default function Contact() {
                   <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-xs">↗</span>
                 </a>
               ))}
-              <span className="text-xs font-mono" style={{ color: "rgba(245,240,232,0.1)" }}>·</span>
-              <span className="text-sm font-mono" style={{ color: "rgba(245,240,232,0.18)" }}>
+              <span className="text-xs font-mono" style={{ color: "rgba(14,13,31,0.1)" }}>·</span>
+              <span className="text-sm font-mono" style={{ color: "rgba(14,13,31,0.18)" }}>
                 {t.location}
               </span>
             </motion.div>
@@ -181,32 +204,35 @@ export default function Contact() {
             transition={{ duration: 0.75, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-col gap-3"
           >
-            <p className="text-[10px] font-mono tracking-[0.25em] uppercase mb-1" style={{ color: "rgba(245,240,232,0.2)" }}>
+            <p className="text-[10px] font-mono tracking-[0.25em] uppercase mb-1" style={{ color: "rgba(14,13,31,0.2)" }}>
               {t.getInTouch}
             </p>
 
-            {/* Email */}
+            {/* Email — click copies address */}
             <a
-              href="mailto:0122wndnjs@gmail.com"
+              href={`mailto:${EMAIL}`}
+              onClick={copyEmail}
               onMouseEnter={() => setEmailHovered(true)}
               onMouseLeave={() => setEmailHovered(false)}
               className="group flex items-center gap-4 transition-all duration-300"
             >
               <motion.div
                 animate={{
-                  background: emailHovered ? "#F59E0B" : "rgba(245,158,11,0.07)",
-                  borderColor: emailHovered ? "#F59E0B" : "rgba(245,158,11,0.18)",
+                  background: emailHovered ? "#5b4dff" : "rgba(91,77,255,0.07)",
+                  borderColor: emailHovered ? "#5b4dff" : "rgba(91,77,255,0.18)",
                 }}
                 transition={{ duration: 0.15 }}
                 className="flex items-center gap-3 px-7 py-4 rounded-2xl border font-medium tracking-wide w-full transition-colors duration-150"
                 style={{
                   fontSize: "clamp(0.85rem, 1.3vw, 1rem)",
-                  color: emailHovered ? "#0F0E0C" : "#F59E0B",
+                  color: emailHovered ? "#f4f5fb" : "#5b4dff",
                 }}
               >
                 <FiMail size={16} />
                 Email Me
-                <span className="ml-auto text-xs font-mono opacity-60">0122wndnjs@gmail.com</span>
+                <span className="ml-auto text-xs font-mono opacity-60">
+                  {copied ? "copied ✓" : EMAIL}
+                </span>
               </motion.div>
             </a>
 
@@ -248,24 +274,44 @@ export default function Contact() {
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
         className="relative z-10 mx-auto max-w-6xl w-full px-8 lg:px-12 py-6 flex items-center justify-between"
-        style={{ borderTop: "1px solid rgba(245,240,232,0.05)" }}
+        style={{ borderTop: "1px solid rgba(14,13,31,0.05)" }}
       >
-        <p className="text-xs font-mono" style={{ color: "rgba(245,240,232,0.15)" }}>
+        <p className="text-xs font-mono" style={{ color: "rgba(14,13,31,0.15)" }}>
           {tf.built}{" "}
-          <span style={{ color: "rgba(245,240,232,0.32)" }}>Joowon Kim</span> © 2026
+          <span style={{ color: "rgba(14,13,31,0.32)" }}>Joowon Kim</span> © 2026
         </p>
 
         <button
           onClick={() => setCardOpen(true)}
           className="flex items-center gap-1.5 text-xs font-mono transition-colors duration-200"
-          style={{ color: "rgba(245,240,232,0.18)" }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(245,240,232,0.5)")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(245,240,232,0.18)")}
+          style={{ color: "rgba(14,13,31,0.18)" }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(14,13,31,0.5)")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(14,13,31,0.18)")}
         >
           <FiCreditCard />
           {tf.businessCard}
         </button>
       </motion.div>
+
+      {/* copy toast */}
+      <AnimatePresence>
+        {copied && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.98 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed bottom-8 left-1/2 z-[120] -translate-x-1/2 rounded-full px-5 py-2.5 text-xs font-mono"
+            style={{
+              background: "#0e0d1f",
+              color: "#f4f5fb",
+              boxShadow: "0 16px 40px rgba(14,13,31,0.25)",
+            }}
+          >
+            {EMAIL} <span style={{ color: "#59f0c0" }}>copied ✓</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <BusinessCard isOpen={cardOpen} onClose={() => setCardOpen(false)} />
     </section>

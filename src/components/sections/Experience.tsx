@@ -10,6 +10,8 @@ const experiences = [
     company: "UNIDECA",
     role: "Full-Stack Developer & Web3 Project Lead",
     period: "May 2025 – Present",
+    startYear: 2025,
+    months: 15,
     current: true,
     logo: "/images/company/unideca.png",
     desc: [
@@ -23,6 +25,8 @@ const experiences = [
     company: "Trillionslab",
     role: "Senior Blockchain Researcher & Product Manager",
     period: "Aug 2021 – Sep 2024",
+    startYear: 2021,
+    months: 38,
     current: false,
     logo: "/images/company/trillionslab.png",
     desc: [
@@ -36,6 +40,8 @@ const experiences = [
     company: "Delta Dental",
     role: "Java Backend Developer",
     period: "Feb 2020 – Feb 2021",
+    startYear: 2020,
+    months: 13,
     current: false,
     logo: "/images/company/deltadental.jpg",
     desc: [
@@ -49,6 +55,8 @@ const experiences = [
     company: "Apolis",
     role: "Java Backend Intern",
     period: "Aug 2019 – Jan 2020",
+    startYear: 2019,
+    months: 6,
     current: false,
     logo: "/images/company/apolis.jpg",
     desc: [
@@ -87,7 +95,7 @@ function DetailContent({ item, index }: { item: typeof experiences[0]; index: nu
       <div className="flex items-center gap-4 mb-7">
         <div
           className="w-11 h-11 rounded-xl overflow-hidden shrink-0 flex items-center justify-center"
-          style={{ background: "rgba(245,240,232,0.06)", border: "1px solid rgba(245,240,232,0.09)" }}
+          style={{ background: "rgba(14,13,31,0.06)", border: "1px solid rgba(14,13,31,0.09)" }}
         >
           <img
             src={item.logo}
@@ -96,7 +104,7 @@ function DetailContent({ item, index }: { item: typeof experiences[0]; index: nu
             onError={(e) => {
               const el = e.currentTarget as HTMLImageElement;
               el.style.display = "none";
-              el.parentElement!.innerHTML = `<span style="font-size:1.1rem;font-weight:900;color:rgba(245,158,11,0.4)">${item.company.charAt(0)}</span>`;
+              el.parentElement!.innerHTML = `<span style="font-size:1.1rem;font-weight:900;color:rgba(91,77,255,0.4)">${item.company.charAt(0)}</span>`;
             }}
           />
         </div>
@@ -104,12 +112,12 @@ function DetailContent({ item, index }: { item: typeof experiences[0]; index: nu
           {item.current && (
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-[10px] font-mono tracking-widest uppercase" style={{ color: "rgba(74,222,128,0.75)" }}>
+              <span className="text-[10px] font-mono tracking-widest uppercase" style={{ color: "rgba(16,185,129,0.75)" }}>
                 Current
               </span>
             </div>
           )}
-          <p className="text-xs font-mono" style={{ color: "rgba(245,158,11,0.65)" }}>
+          <p className="text-xs font-mono" style={{ color: "rgba(91,77,255,0.65)" }}>
             {item.period}
           </p>
         </div>
@@ -118,10 +126,11 @@ function DetailContent({ item, index }: { item: typeof experiences[0]; index: nu
       {/* Role */}
       <motion.h3
         initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
         transition={{ delay: 0.1, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="font-bold tracking-tight leading-[1.15] mb-9"
-        style={{ fontSize: "clamp(1.2rem, 2.2vw, 1.9rem)", color: "#F5F0E8" }}
+        style={{ fontSize: "clamp(1.2rem, 2.2vw, 1.9rem)", color: "#0e0d1f" }}
       >
         {item.role}
       </motion.h3>
@@ -132,18 +141,20 @@ function DetailContent({ item, index }: { item: typeof experiences[0]; index: nu
           <motion.li
             key={i}
             initial={{ opacity: 0, x: -24 }}
-            animate={{ opacity: 1, x: 0 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
             transition={{ delay: 0.18 + i * 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="flex items-start gap-4"
           >
             <motion.div
               initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
+              whileInView={{ scaleX: 1 }}
+              viewport={{ once: true }}
               transition={{ delay: 0.18 + i * 0.1, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="mt-[10px] h-px w-5 origin-left shrink-0"
-              style={{ background: "rgba(245,158,11,0.55)" }}
+              style={{ background: "rgba(91,77,255,0.55)" }}
             />
-            <span className="text-sm font-light leading-relaxed" style={{ color: "rgba(245,240,232,0.48)" }}>
+            <span className="text-sm font-light leading-relaxed" style={{ color: "rgba(14,13,31,0.48)" }}>
               {d}
             </span>
           </motion.li>
@@ -153,7 +164,8 @@ function DetailContent({ item, index }: { item: typeof experiences[0]; index: nu
       {/* Tags */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
         transition={{ delay: 0.35, duration: 0.35 }}
         className="flex flex-wrap gap-2"
       >
@@ -162,9 +174,9 @@ function DetailContent({ item, index }: { item: typeof experiences[0]; index: nu
             key={t}
             className="text-[11px] font-mono px-3 py-1.5 rounded-lg"
             style={{
-              color: "rgba(245,158,11,0.8)",
-              background: "rgba(245,158,11,0.07)",
-              border: "1px solid rgba(245,158,11,0.15)",
+              color: "rgba(91,77,255,0.8)",
+              background: "rgba(91,77,255,0.07)",
+              border: "1px solid rgba(91,77,255,0.15)",
             }}
           >
             {t}
@@ -194,19 +206,19 @@ function CompanyButton({
       transition={{ duration: 0.65, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
       onClick={onClick}
       className="group text-left py-6 w-full relative"
-      style={{ borderBottom: "1px solid rgba(245,240,232,0.06)" }}
+      style={{ borderBottom: "1px solid rgba(14,13,31,0.06)" }}
     >
       <span
         className="text-[10px] font-mono tracking-widest block mb-2 transition-colors duration-300"
-        style={{ color: isActive ? "rgba(245,158,11,0.7)" : "rgba(245,240,232,0.15)" }}
+        style={{ color: isActive ? "rgba(91,77,255,0.7)" : "rgba(14,13,31,0.15)" }}
       >
         {String(index + 1).padStart(2, "0")}
       </span>
 
       <div className="flex items-center justify-between gap-4">
         <motion.span
-          animate={{ color: isActive ? "#F5F0E8" : "rgba(245,240,232,0.18)" }}
-          whileHover={{ color: isActive ? "#F5F0E8" : "rgba(245,240,232,0.45)" }}
+          animate={{ color: isActive ? "#0e0d1f" : "rgba(14,13,31,0.18)" }}
+          whileHover={{ color: isActive ? "#0e0d1f" : "rgba(14,13,31,0.45)" }}
           transition={{ duration: 0.22 }}
           className="block font-bold tracking-tight"
           style={{ fontSize: "clamp(1.4rem, 3vw, 2.4rem)" }}
@@ -216,7 +228,7 @@ function CompanyButton({
 
         {/* Mobile chevron */}
         <motion.span
-          animate={{ rotate: isActive ? 180 : 0, color: isActive ? "#F59E0B" : "rgba(245,240,232,0.2)" }}
+          animate={{ rotate: isActive ? 180 : 0, color: isActive ? "#5b4dff" : "rgba(14,13,31,0.2)" }}
           transition={{ duration: 0.25 }}
           className="lg:hidden text-sm shrink-0"
         >
@@ -232,7 +244,7 @@ function CompanyButton({
             exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.25 }}
             className="block text-xs font-mono mt-1.5"
-            style={{ color: "rgba(245,240,232,0.28)" }}
+            style={{ color: "rgba(14,13,31,0.28)" }}
           >
             {item.period}
           </motion.span>
@@ -244,7 +256,7 @@ function CompanyButton({
         animate={{ scaleX: isActive ? 1 : 0, opacity: isActive ? 1 : 0 }}
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
         className="absolute left-0 bottom-0 h-px w-10 origin-left"
-        style={{ background: "#F59E0B" }}
+        style={{ background: "#5b4dff" }}
       />
     </motion.button>
   );
@@ -267,10 +279,9 @@ export default function Experience() {
   return (
     <section
       id="experience"
-      className="relative w-full overflow-hidden"
-      style={{ background: "#0F0E0C" }}
+      className="relative w-full overflow-x-clip"
     >
-      <div className="w-full" style={{ height: "1px", background: "rgba(245,240,232,0.06)" }} />
+      <div className="w-full" style={{ height: "1px", background: "rgba(14,13,31,0.06)" }} />
 
       <div className="mx-auto max-w-6xl px-8 lg:px-12 pt-28 pb-28">
 
@@ -283,8 +294,8 @@ export default function Experience() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="flex items-center gap-3 mb-5"
           >
-            <span className="w-6 h-px" style={{ background: "rgba(245,158,11,0.7)" }} />
-            <span className="text-xs font-mono tracking-[0.25em] uppercase" style={{ color: "rgba(245,158,11,0.8)" }}>
+            <span className="w-6 h-px" style={{ background: "rgba(91,77,255,0.7)" }} />
+            <span className="text-xs font-mono tracking-[0.25em] uppercase" style={{ color: "rgba(91,77,255,0.8)" }}>
               Experience
             </span>
           </motion.div>
@@ -296,10 +307,10 @@ export default function Experience() {
               viewport={{ once: true }}
               transition={{ duration: 0.85, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
               className="font-bold tracking-tight leading-[1.0]"
-              style={{ fontSize: "clamp(3rem, 7vw, 6rem)", color: "#F5F0E8" }}
+              style={{ fontSize: "clamp(3rem, 7vw, 6rem)", color: "#0e0d1f" }}
             >
               Where I've<br />
-              <span style={{ color: "rgba(245,240,232,0.3)" }}>worked.</span>
+              <span style={{ color: "rgba(14,13,31,0.3)" }}>worked.</span>
             </motion.h2>
           </div>
         </div>
@@ -327,7 +338,7 @@ export default function Experience() {
                     >
                       <div
                         className="py-7 px-5 mb-2 rounded-xl"
-                        style={{ background: "rgba(245,240,232,0.025)", border: "1px solid rgba(245,240,232,0.06)" }}
+                        style={{ background: "rgba(14,13,31,0.025)", border: "1px solid rgba(14,13,31,0.06)" }}
                       >
                         <DetailContent item={item} index={i} />
                       </div>
@@ -338,26 +349,96 @@ export default function Experience() {
             ))}
           </div>
         ) : (
-          /* ── Desktop: 2-column ── */
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start">
-            {/* Left — company list */}
-            <div className="flex flex-col">
-              {localizedExperiences.map((item, i) => (
-                <CompanyButton
-                  key={i}
-                  item={item}
-                  index={i}
-                  isActive={active === i}
-                  onClick={() => setActive(i)}
-                />
-              ))}
+          /* ── Desktop: sticky year + scroll timeline ── */
+          <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-16 lg:gap-24 items-start">
+            {/* Left — sticky giant year */}
+            <div className="relative h-full">
+              <div className="sticky top-32 flex flex-col gap-6">
+                <div className="overflow-hidden" style={{ height: "clamp(6rem, 11vw, 10rem)" }}>
+                  <AnimatePresence mode="popLayout">
+                    <motion.p
+                      key={localizedExperiences[active].startYear}
+                      initial={{ y: "70%", opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: "-70%", opacity: 0 }}
+                      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                      className="font-display font-bold leading-none select-none"
+                      style={{
+                        fontSize: "clamp(6rem, 11vw, 10rem)",
+                        color: "transparent",
+                        WebkitTextStroke: "2px rgba(14,13,31,0.85)",
+                        fontVariantNumeric: "tabular-nums",
+                        letterSpacing: "-0.03em",
+                      }}
+                    >
+                      {localizedExperiences[active].startYear}
+                    </motion.p>
+                  </AnimatePresence>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-mono" style={{ color: "rgba(91,77,255,0.8)" }}>
+                    [{String(active + 1).padStart(2, "0")} / {String(localizedExperiences.length).padStart(2, "0")}]
+                  </span>
+                  <span className="text-xs font-mono" style={{ color: "rgba(14,13,31,0.3)" }}>
+                    {localizedExperiences[active].period}
+                  </span>
+                </div>
+
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={active}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.3 }}
+                    className="font-bold tracking-tight"
+                    style={{ fontSize: "clamp(1.6rem, 2.6vw, 2.4rem)", color: "#0e0d1f" }}
+                  >
+                    {localizedExperiences[active].company}
+                  </motion.p>
+                </AnimatePresence>
+
+                {/* tenure gauge — width relative to longest stint */}
+                <div className="flex flex-col gap-2 max-w-[240px]">
+                  <div className="h-[3px] w-full rounded-full overflow-hidden" style={{ background: "rgba(14,13,31,0.07)" }}>
+                    <motion.div
+                      key={active}
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: localizedExperiences[active].months / Math.max(...experiences.map((e) => e.months)) }}
+                      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                      className="h-full origin-left rounded-full"
+                      style={{ background: "linear-gradient(90deg, #5b4dff, #14c8eb, #59f0c0)" }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: "rgba(14,13,31,0.25)" }}>
+                    {localizedExperiences[active].months} months
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {/* Right — detail */}
-            <div className="lg:pt-2">
-              <AnimatePresence mode="wait">
-                <DetailContent key={active} item={localizedExperiences[active]} index={active} />
-              </AnimatePresence>
+            {/* Right — stacked job cards; crossing the viewport midline drives the year */}
+            <div className="flex flex-col gap-8 lg:py-[8vh]">
+              {localizedExperiences.map((item, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                  className="card-iris relative p-8 lg:p-10"
+                >
+                  {/* invisible card-center sensor: entering the viewport midline band drives the sticky year */}
+                  <motion.div
+                    aria-hidden
+                    onViewportEnter={() => setActive(i)}
+                    viewport={{ margin: "-40% 0px -40% 0px" }}
+                    className="pointer-events-none absolute inset-x-0 top-1/3 bottom-1/3"
+                  />
+                  <DetailContent item={item} index={i} />
+                </motion.div>
+              ))}
             </div>
           </div>
         )}

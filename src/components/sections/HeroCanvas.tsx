@@ -40,7 +40,7 @@ export default function HeroCanvas() {
 
     const drawStatic = () => {
       ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = `rgba(245,158,11,${BASE_ALPHA})`;
+      ctx.fillStyle = `rgba(91,77,255,${BASE_ALPHA})`;
       for (let x = SPACING / 2; x < width; x += SPACING) {
         for (let y = SPACING / 2; y < height; y += SPACING) {
           ctx.beginPath();
@@ -73,12 +73,12 @@ export default function HeroCanvas() {
             const push = eased * 6;
             const px = x + (dx / (dist || 1)) * push;
             const py = y + (dy / (dist || 1)) * push;
-            ctx.fillStyle = `rgba(245,158,11,${alpha})`;
+            ctx.fillStyle = `rgba(91,77,255,${alpha})`;
             ctx.beginPath();
             ctx.arc(px, py, r, 0, Math.PI * 2);
             ctx.fill();
           } else {
-            ctx.fillStyle = `rgba(245,158,11,${BASE_ALPHA})`;
+            ctx.fillStyle = `rgba(91,77,255,${BASE_ALPHA})`;
             ctx.beginPath();
             ctx.arc(x, y, 1, 0, Math.PI * 2);
             ctx.fill();

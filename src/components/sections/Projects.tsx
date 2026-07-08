@@ -37,9 +37,9 @@ function getFiltered(filterId: string): Project[] {
 }
 
 function statusStyle(status: string) {
-  if (status === "Live") return { color: "#4ade80", bg: "rgba(74,222,128,0.08)", border: "rgba(74,222,128,0.2)" };
-  if (status === "In Progress") return { color: "#F59E0B", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.2)" };
-  return { color: "rgba(245,240,232,0.4)", bg: "rgba(245,240,232,0.04)", border: "rgba(245,240,232,0.1)" };
+  if (status === "Live") return { color: "#10b981", bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.2)" };
+  if (status === "In Progress") return { color: "#5b4dff", bg: "rgba(91,77,255,0.08)", border: "rgba(91,77,255,0.2)" };
+  return { color: "rgba(14,13,31,0.4)", bg: "rgba(14,13,31,0.04)", border: "rgba(14,13,31,0.1)" };
 }
 
 const categoryLabel: Record<string, string> = {
@@ -103,9 +103,9 @@ function FloatingPreview({ project }: { project: Project | null }) {
               height: 215,
               marginLeft: 28,
               marginTop: -108,
-              border: "1px solid rgba(245,240,232,0.12)",
-              background: "#161412",
-              boxShadow: "0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(245,158,11,0.06)",
+              border: "1px solid rgba(14,13,31,0.12)",
+              background: "#eceaf7",
+              boxShadow: "0 24px 60px rgba(45,35,160,0.14), 0 0 0 1px rgba(91,77,255,0.10)",
             }}
           >
             {hasImg ? (
@@ -119,16 +119,16 @@ function FloatingPreview({ project }: { project: Project | null }) {
                 className="w-full h-full flex flex-col items-start justify-end p-5"
                 style={{
                   background:
-                    "radial-gradient(ellipse 120% 90% at 20% 0%, rgba(245,158,11,0.16) 0%, #161412 65%)",
+                    "radial-gradient(ellipse 120% 90% at 20% 0%, rgba(91,77,255,0.16) 0%, #eceaf7 65%)",
                 }}
               >
                 <span
                   className="font-black select-none leading-none"
-                  style={{ fontSize: "4.5rem", color: "rgba(245,158,11,0.18)" }}
+                  style={{ fontSize: "4.5rem", color: "rgba(91,77,255,0.18)" }}
                 >
                   {project.title.charAt(0)}
                 </span>
-                <span className="mt-3 text-[11px] font-mono tracking-wider" style={{ color: "rgba(245,240,232,0.45)" }}>
+                <span className="mt-3 text-[11px] font-mono tracking-wider" style={{ color: "rgba(14,13,31,0.45)" }}>
                   {project.tech.slice(0, 3).join(" · ")}
                 </span>
               </div>
@@ -136,9 +136,9 @@ function FloatingPreview({ project }: { project: Project | null }) {
             {/* bottom gradient + status */}
             <div
               className="absolute inset-x-0 bottom-0 flex items-center justify-between px-4 py-2.5"
-              style={{ background: "linear-gradient(transparent, rgba(10,9,8,0.85))" }}
+              style={{ background: "linear-gradient(transparent, rgba(250,250,253,0.85))" }}
             >
-              <span className="text-[10px] font-mono tracking-widest uppercase" style={{ color: "rgba(245,240,232,0.7)" }}>
+              <span className="text-[10px] font-mono tracking-widest uppercase" style={{ color: "rgba(14,13,31,0.7)" }}>
                 {project.period}
               </span>
               <span className="text-[10px] font-mono" style={{ color: statusStyle(project.status).color }}>
@@ -173,58 +173,67 @@ function ListRow({ project, index, onClick, onHover }: {
       onMouseLeave={() => { setHovered(false); onHover(null); }}
       onClick={onClick}
       className="group relative cursor-pointer"
-      style={{ borderBottom: "1px solid rgba(245,240,232,0.07)" }}
+      style={{ borderBottom: "1px solid rgba(14,13,31,0.07)" }}
     >
       {/* hover fill sweep */}
       <motion.div
         animate={{ scaleY: hovered ? 1 : 0 }}
         transition={{ duration: 0.3, ease: easeOut }}
         className="absolute inset-0 origin-bottom pointer-events-none"
-        style={{ background: "rgba(245,158,11,0.04)" }}
+        style={{ background: "rgba(91,77,255,0.04)" }}
       />
       {/* amber left bar */}
       <motion.div
         animate={{ scaleY: hovered ? 1 : 0, opacity: hovered ? 1 : 0 }}
         transition={{ duration: 0.2 }}
         className="absolute left-0 top-0 bottom-0 w-[3px] origin-top"
-        style={{ background: "#F59E0B" }}
+        style={{ background: "#5b4dff" }}
       />
 
       <div className="relative flex items-baseline gap-4 sm:gap-8 py-6 sm:py-8 pl-5 sm:pl-8 pr-2">
         <span
           className="text-xs font-mono shrink-0 transition-colors duration-200"
-          style={{ color: hovered ? "#F59E0B" : "rgba(245,240,232,0.22)" }}
+          style={{ color: hovered ? "#5b4dff" : "rgba(14,13,31,0.22)" }}
         >
           {String(index + 1).padStart(2, "0")}
         </span>
 
         <motion.h3
-          animate={{ x: hovered ? 10 : 0, color: hovered ? "#F5F0E8" : "rgba(245,240,232,0.55)" }}
+          animate={{ x: hovered ? 10 : 0, skewX: hovered ? -2 : 0 }}
           transition={{ duration: 0.3, ease: easeOut }}
-          className="flex-1 min-w-0 font-bold tracking-tight leading-[1.1] truncate"
-          style={{ fontSize: "clamp(1.5rem, 3.6vw, 3rem)" }}
+          className="relative flex-1 min-w-0 font-bold tracking-tight leading-[1.1] truncate"
+          style={{ fontSize: "clamp(1.5rem, 3.6vw, 3rem)", color: "rgba(14,13,31,0.55)" }}
         >
           {project.title}
+          {/* iris fill sweeps left→right on hover */}
+          <motion.span
+            aria-hidden
+            animate={{ clipPath: hovered ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)" }}
+            transition={{ duration: 0.45, ease: easeOut }}
+            className="text-iris absolute inset-0 truncate"
+          >
+            {project.title}
+          </motion.span>
         </motion.h3>
 
         <div className="hidden sm:flex items-center gap-4 shrink-0">
           <span
             className="text-[10px] font-mono tracking-[0.2em] uppercase px-2.5 py-1 rounded-full transition-all duration-200"
             style={{
-              color: hovered ? "rgba(245,158,11,0.9)" : "rgba(245,240,232,0.3)",
-              border: `1px solid ${hovered ? "rgba(245,158,11,0.3)" : "rgba(245,240,232,0.1)"}`,
+              color: hovered ? "rgba(91,77,255,0.9)" : "rgba(14,13,31,0.3)",
+              border: `1px solid ${hovered ? "rgba(91,77,255,0.3)" : "rgba(14,13,31,0.1)"}`,
             }}
           >
             {categoryLabel[project.category]}
           </span>
-          <span className="text-xs font-mono w-24 text-right" style={{ color: "rgba(245,240,232,0.25)" }}>
+          <span className="text-xs font-mono w-24 text-right" style={{ color: "rgba(14,13,31,0.25)" }}>
             {project.period.split("~")[0].trim()}
           </span>
           <motion.span
             animate={{ x: hovered ? 0 : -8, opacity: hovered ? 1 : 0.15, rotate: hovered ? 0 : -45 }}
             transition={{ duration: 0.25, ease: easeOut }}
             className="text-xl"
-            style={{ color: "#F59E0B" }}
+            style={{ color: "#5b4dff" }}
           >
             ↗
           </motion.span>
@@ -278,33 +287,33 @@ function ProjectOverlay({ project, onClose }: { project: Project; onClose: () =>
       exit={{ y: "100%" }}
       transition={{ duration: 0.65, ease: easeOut }}
       className="fixed inset-0 z-[1100] overflow-y-auto [&::-webkit-scrollbar]:hidden"
-      style={{ background: "#0F0E0C" }}
+      style={{ background: "#f4f5fb" }}
     >
       {/* faint amber glow */}
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-[60vh]"
-        style={{ background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(245,158,11,0.06) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(91,77,255,0.06) 0%, transparent 70%)" }}
       />
 
       {/* Top bar */}
       <div
         className="sticky top-0 z-10 flex items-center justify-between px-6 md:px-12 py-4"
-        style={{ background: "rgba(15,14,12,0.85)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(245,240,232,0.06)" }}
+        style={{ background: "rgba(244,245,251,0.85)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(14,13,31,0.06)" }}
       >
-        <span className="text-[10px] font-mono tracking-[0.25em] uppercase" style={{ color: "rgba(245,158,11,0.7)" }}>
+        <span className="text-[10px] font-mono tracking-[0.25em] uppercase" style={{ color: "rgba(91,77,255,0.7)" }}>
           {categoryLabel[project.category]} / Case
         </span>
         <button
           onClick={onClose}
           className="flex items-center gap-2 text-xs font-mono px-4 py-2 rounded-full transition-colors duration-200"
-          style={{ color: "rgba(245,240,232,0.6)", border: "1px solid rgba(245,240,232,0.12)" }}
+          style={{ color: "rgba(14,13,31,0.6)", border: "1px solid rgba(14,13,31,0.12)" }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = "rgba(245,158,11,0.5)";
-            (e.currentTarget as HTMLElement).style.color = "#F5F0E8";
+            (e.currentTarget as HTMLElement).style.borderColor = "rgba(91,77,255,0.5)";
+            (e.currentTarget as HTMLElement).style.color = "#0e0d1f";
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = "rgba(245,240,232,0.12)";
-            (e.currentTarget as HTMLElement).style.color = "rgba(245,240,232,0.6)";
+            (e.currentTarget as HTMLElement).style.borderColor = "rgba(14,13,31,0.12)";
+            (e.currentTarget as HTMLElement).style.color = "rgba(14,13,31,0.6)";
           }}
         >
           ✕ <span className="hidden sm:inline">ESC</span>
@@ -323,25 +332,25 @@ function ProjectOverlay({ project, onClose }: { project: Project; onClose: () =>
             style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}>
             {project.status}
           </span>
-          <span className="text-xs font-mono" style={{ color: "rgba(245,240,232,0.25)" }}>{project.period}</span>
+          <span className="text-xs font-mono" style={{ color: "rgba(14,13,31,0.25)" }}>{project.period}</span>
         </motion.div>
 
         {/* Title */}
         <motion.h1
           variants={fadeUp}
           className="font-bold tracking-tight leading-[1.02] mb-6"
-          style={{ fontSize: "clamp(2.2rem, 6vw, 5rem)", color: "#F5F0E8" }}
+          style={{ fontSize: "clamp(2.2rem, 6vw, 5rem)", color: "#0e0d1f" }}
         >
           {project.title}
         </motion.h1>
 
         {/* Role */}
-        <motion.p variants={fadeUp} className="text-sm font-mono leading-relaxed mb-5" style={{ color: "rgba(245,158,11,0.7)" }}>
+        <motion.p variants={fadeUp} className="text-sm font-mono leading-relaxed mb-5" style={{ color: "rgba(91,77,255,0.7)" }}>
           {role}
         </motion.p>
 
         {/* Description */}
-        <motion.p variants={fadeUp} className="text-base font-light leading-relaxed max-w-2xl" style={{ color: "rgba(245,240,232,0.5)" }}>
+        <motion.p variants={fadeUp} className="text-base font-light leading-relaxed max-w-2xl" style={{ color: "rgba(14,13,31,0.5)" }}>
           {desc}
         </motion.p>
 
@@ -350,10 +359,10 @@ function ProjectOverlay({ project, onClose }: { project: Project; onClose: () =>
           <motion.div
             variants={fadeUp}
             className="mt-8 inline-flex flex-col gap-1 px-5 py-4 rounded-xl"
-            style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.14)" }}
+            style={{ background: "rgba(91,77,255,0.05)", border: "1px solid rgba(91,77,255,0.14)" }}
           >
-            <span className="text-[10px] font-mono tracking-[0.2em] uppercase" style={{ color: "rgba(245,158,11,0.5)" }}>{tp.results}</span>
-            <span className="text-base font-medium" style={{ color: "rgba(245,158,11,0.9)" }}>{project.metrics}</span>
+            <span className="text-[10px] font-mono tracking-[0.2em] uppercase" style={{ color: "rgba(91,77,255,0.5)" }}>{tp.results}</span>
+            <span className="text-base font-medium" style={{ color: "rgba(91,77,255,0.9)" }}>{project.metrics}</span>
           </motion.div>
         )}
 
@@ -368,8 +377,8 @@ function ProjectOverlay({ project, onClose }: { project: Project; onClose: () =>
                   style={{
                     height: "min(52vh, 420px)",
                     maxWidth: "88vw",
-                    border: "1px solid rgba(245,240,232,0.09)",
-                    background: "rgba(10,9,8,0.5)",
+                    border: "1px solid rgba(14,13,31,0.09)",
+                    background: "rgba(250,250,253,0.5)",
                   }}
                 >
                   <img
@@ -388,11 +397,11 @@ function ProjectOverlay({ project, onClose }: { project: Project; onClose: () =>
           {/* Left: stack + CTA (sticky on desktop) */}
           <div className="md:sticky md:top-24 self-start flex flex-col gap-10">
             <div>
-              <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-4" style={{ color: "rgba(245,240,232,0.22)" }}>{tp.stack}</p>
+              <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-4" style={{ color: "rgba(14,13,31,0.22)" }}>{tp.stack}</p>
               <div className="flex flex-wrap gap-2">
                 {project.tech.map((t) => (
                   <span key={t} className="text-xs font-mono px-3 py-1.5 rounded-lg"
-                    style={{ color: "rgba(245,158,11,0.85)", background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.15)" }}>
+                    style={{ color: "rgba(91,77,255,0.85)", background: "rgba(91,77,255,0.07)", border: "1px solid rgba(91,77,255,0.15)" }}>
                     {t}
                   </span>
                 ))}
@@ -406,15 +415,15 @@ function ProjectOverlay({ project, onClose }: { project: Project; onClose: () =>
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all duration-200"
-                  style={{ background: "#F59E0B", color: "#0F0E0C" }}
+                  style={{ background: "#5b4dff", color: "#f4f5fb" }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = "#FBBF24")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "#F59E0B")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "#5b4dff")}
                 >
                   {tp.visitProject}
                 </a>
               ) : (
                 <span className="inline-flex items-center px-6 py-3 rounded-full text-sm font-medium"
-                  style={{ color: "rgba(245,240,232,0.25)", border: "1px solid rgba(245,240,232,0.07)" }}>
+                  style={{ color: "rgba(14,13,31,0.25)", border: "1px solid rgba(14,13,31,0.07)" }}>
                   {tp.privateNDA}
                 </span>
               )}
@@ -425,12 +434,12 @@ function ProjectOverlay({ project, onClose }: { project: Project; onClose: () =>
           <div className="flex flex-col gap-12">
             {tasks && tasks.length > 0 && (
               <div>
-                <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-5" style={{ color: "rgba(245,240,232,0.22)" }}>{tp.whatIDid}</p>
+                <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-5" style={{ color: "rgba(14,13,31,0.22)" }}>{tp.whatIDid}</p>
                 <ul className="space-y-4">
                   {tasks.map((item, i) => (
                     <li key={i} className="flex items-start gap-4">
-                      <div className="mt-[10px] h-px w-5 shrink-0" style={{ background: "rgba(245,158,11,0.4)" }} />
-                      <span className="text-sm font-light leading-relaxed" style={{ color: "rgba(245,240,232,0.55)" }}>{item}</span>
+                      <div className="mt-[10px] h-px w-5 shrink-0" style={{ background: "rgba(91,77,255,0.4)" }} />
+                      <span className="text-sm font-light leading-relaxed" style={{ color: "rgba(14,13,31,0.55)" }}>{item}</span>
                     </li>
                   ))}
                 </ul>
@@ -439,12 +448,12 @@ function ProjectOverlay({ project, onClose }: { project: Project; onClose: () =>
 
             {features && features.length > 0 && (
               <div>
-                <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-5" style={{ color: "rgba(245,240,232,0.22)" }}>{tp.keyFeatures}</p>
+                <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-5" style={{ color: "rgba(14,13,31,0.22)" }}>{tp.keyFeatures}</p>
                 <ul className="space-y-3">
                   {features.map((item, i) => (
                     <li key={i} className="flex items-start gap-3">
-                      <span className="mt-1.5 shrink-0 w-1 h-1 rounded-full" style={{ background: "rgba(245,158,11,0.5)" }} />
-                      <span className="text-sm font-light leading-relaxed" style={{ color: "rgba(245,240,232,0.5)" }}>{item}</span>
+                      <span className="mt-1.5 shrink-0 w-1 h-1 rounded-full" style={{ background: "rgba(91,77,255,0.5)" }} />
+                      <span className="text-sm font-light leading-relaxed" style={{ color: "rgba(14,13,31,0.5)" }}>{item}</span>
                     </li>
                   ))}
                 </ul>
@@ -453,12 +462,12 @@ function ProjectOverlay({ project, onClose }: { project: Project; onClose: () =>
 
             {impact && impact.length > 0 && (
               <div>
-                <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-5" style={{ color: "rgba(245,240,232,0.22)" }}>{tp.impact}</p>
+                <p className="text-[10px] font-mono tracking-[0.2em] uppercase mb-5" style={{ color: "rgba(14,13,31,0.22)" }}>{tp.impact}</p>
                 <ul className="space-y-4">
                   {impact.map((item, i) => (
                     <li key={i} className="flex items-start gap-4">
-                      <div className="mt-[10px] h-px w-5 shrink-0" style={{ background: "rgba(74,222,128,0.4)" }} />
-                      <span className="text-sm font-light leading-relaxed" style={{ color: "rgba(245,240,232,0.5)" }}>{item}</span>
+                      <div className="mt-[10px] h-px w-5 shrink-0" style={{ background: "rgba(16,185,129,0.4)" }} />
+                      <span className="text-sm font-light leading-relaxed" style={{ color: "rgba(14,13,31,0.5)" }}>{item}</span>
                     </li>
                   ))}
                 </ul>
@@ -484,8 +493,8 @@ export default function Projects() {
   const handleHover = useCallback((p: Project | null) => setHoveredProject(p), []);
 
   return (
-    <section id="projects" className="relative w-full overflow-hidden" style={{ background: "#0F0E0C" }}>
-      <div className="w-full" style={{ height: "1px", background: "rgba(245,240,232,0.06)" }} />
+    <section id="projects" className="relative w-full overflow-hidden">
+      <div className="w-full" style={{ height: "1px", background: "rgba(14,13,31,0.06)" }} />
 
       <div className="mx-auto max-w-6xl px-8 lg:px-12 pt-28 pb-28">
         {/* Header */}
@@ -497,81 +506,130 @@ export default function Projects() {
             transition={{ duration: 0.5 }}
             className="flex items-center gap-3 mb-5"
           >
-            <span className="w-6 h-px" style={{ background: "rgba(245,158,11,0.7)" }} />
-            <span className="text-xs font-mono tracking-[0.25em] uppercase" style={{ color: "rgba(245,158,11,0.8)" }}>
+            <span className="w-6 h-px" style={{ background: "rgba(91,77,255,0.7)" }} />
+            <span className="text-xs font-mono tracking-[0.25em] uppercase" style={{ color: "rgba(91,77,255,0.8)" }}>
               Selected Work
             </span>
           </motion.div>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
+
+          {/* letter-stagger reveal — the only section using per-char motion */}
+          <h2
+            className="font-bold tracking-tight leading-[1.0]"
+            style={{ fontSize: "clamp(3rem, 7vw, 6rem)", color: "#0e0d1f" }}
+          >
+            {(["Selected", "work."] as const).map((word, line) => (
+              <span key={word} className="block overflow-hidden">
+                <motion.span
+                  initial="hidden"
+                  whileInView="show"
+                  viewport={{ once: true }}
+                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.035, delayChildren: line * 0.18 } } }}
+                  className="inline-block"
+                >
+                  {word.split("").map((ch, i) => (
+                    <motion.span
+                      key={i}
+                      variants={{
+                        hidden: { y: "110%", opacity: 0 },
+                        show: { y: "0%", opacity: 1, transition: { duration: 0.6, ease: easeOut } },
+                      }}
+                      className={`inline-block ${line === 1 ? "text-outline font-display" : ""}`}
+                      style={line === 1 ? { WebkitTextStroke: "1.5px rgba(14,13,31,0.8)" } : undefined}
+                    >
+                      {ch}
+                    </motion.span>
+                  ))}
+                </motion.span>
+              </span>
+            ))}
+          </h2>
+
+          {/* mono archive meta line */}
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.05 }}
-            className="font-bold tracking-tight leading-[1.0]"
-            style={{ fontSize: "clamp(3rem, 7vw, 6rem)", color: "#F5F0E8" }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="mt-6 text-[11px] font-mono uppercase tracking-[0.25em]"
+            style={{ color: "rgba(14,13,31,0.28)" }}
           >
-            Selected<br />
-            <span style={{ color: "rgba(245,240,232,0.3)" }}>work.</span>
-          </motion.h2>
+            [{projects.length} projects — 2019 → 2026]
+          </motion.p>
         </div>
 
-        {/* Filter tabs */}
+        {/* Filter tabs — mono underline style + live status readout */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="flex flex-wrap gap-2 mb-12"
+          className="mb-12 flex flex-wrap items-end justify-between gap-x-8 gap-y-4"
         >
-          {filters.map((f) => {
-            const active = filter === f.id;
-            const count = getFiltered(f.id).length;
-            return (
-              <button
-                key={f.id}
-                onClick={() => { setFilter(f.id); setHoveredProject(null); }}
-                className="relative px-4 py-2 rounded-full text-xs font-mono tracking-wider transition-colors duration-200"
-                style={{
-                  color: active ? "#0F0E0C" : "rgba(245,240,232,0.4)",
-                  border: `1px solid ${active ? "#F59E0B" : "rgba(245,240,232,0.12)"}`,
-                }}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="filter-pill"
-                    className="absolute inset-0 rounded-full"
-                    style={{ background: "#F59E0B" }}
-                    transition={{ type: "spring", damping: 30, stiffness: 350 }}
-                  />
-                )}
-                <span className="relative z-10">
-                  {f.label} <span style={{ opacity: 0.55 }}>{count}</span>
-                </span>
-              </button>
-            );
-          })}
+          <div className="flex flex-wrap gap-x-7 gap-y-2">
+            {filters.map((f) => {
+              const active = filter === f.id;
+              const count = getFiltered(f.id).length;
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => { setFilter(f.id); setHoveredProject(null); }}
+                  className="relative pb-2 text-xs font-mono uppercase tracking-[0.18em] transition-colors duration-200"
+                  style={{ color: active ? "#0e0d1f" : "rgba(14,13,31,0.35)" }}
+                >
+                  {f.label}
+                  <sup className="ml-1 text-[9px]" style={{ color: active ? "#5b4dff" : "rgba(14,13,31,0.3)" }}>
+                    {count}
+                  </sup>
+                  {active && (
+                    <motion.span
+                      layoutId="filter-underline"
+                      className="absolute bottom-0 left-0 right-0 h-[2px]"
+                      style={{ background: "linear-gradient(90deg, #5b4dff, #14c8eb, #59f0c0)" }}
+                      transition={{ type: "spring", damping: 30, stiffness: 350 }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <span className="hidden sm:block text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: "rgba(14,13,31,0.22)" }}>
+            filter: {filters.find((f) => f.id === filter)?.label} / {items.length} items
+          </span>
         </motion.div>
 
         {/* Project list */}
-        <div style={{ borderTop: "1px solid rgba(245,240,232,0.07)" }}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={filter}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-            >
-              {items.map((p, i) => (
+        <div>
+          {/* archive column header */}
+          <div
+            className="flex items-baseline gap-4 sm:gap-8 pb-3 pl-5 sm:pl-8 pr-2 text-[10px] font-mono uppercase tracking-[0.2em]"
+            style={{ color: "rgba(14,13,31,0.22)", borderBottom: "1px solid rgba(14,13,31,0.07)" }}
+          >
+            <span className="shrink-0 w-6">No.</span>
+            <span className="flex-1">Project</span>
+            <span className="hidden sm:block">Category</span>
+            <span className="hidden sm:block w-24 text-right">Year</span>
+            <span className="hidden sm:block w-5" />
+          </div>
+
+          <AnimatePresence mode="popLayout">
+            {items.map((p, i) => (
+              <motion.div
+                key={p.id}
+                layout
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.35, ease: easeOut }}
+              >
                 <ListRow
-                  key={p.id}
                   project={p}
                   index={i}
                   onClick={() => { setSelectedProject(p); setHoveredProject(null); }}
                   onHover={handleHover}
                 />
-              ))}
-            </motion.div>
+              </motion.div>
+            ))}
           </AnimatePresence>
         </div>
       </div>

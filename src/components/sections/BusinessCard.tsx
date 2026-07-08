@@ -28,7 +28,7 @@ const contacts = [
   { icon: <FaPhone />, label: "Phone", value: cardData.phone, link: `tel:${cardData.phone.replace(/\s+/g, "")}`, color: "#16a34a" },
   { icon: <SiGmail />, label: "Email", value: cardData.email, link: `mailto:${cardData.email}`, color: "#ea4335" },
   { icon: <FaTelegramPlane />, label: "Telegram", value: cardData.telegram, link: `https://t.me/${cardData.telegram.replace("@", "")}`, color: "#229ED9" },
-  { icon: <FaGithub />, label: "GitHub", value: "@0122wndnjs", link: `https://${cardData.github}`, color: "#1a1a1a" },
+  { icon: <FaGithub />, label: "GitHub", value: "@0122wndnjs", link: `https://${cardData.github}`, color: "#2f2c45" },
 ];
 
 export default function BusinessCard({ isOpen, onClose }: BusinessCardProps) {
@@ -71,7 +71,7 @@ export default function BusinessCard({ isOpen, onClose }: BusinessCardProps) {
             exit={{ opacity: 0 }}
             onClick={onClose}
             className="fixed inset-0 z-[100]"
-            style={{ background: "rgba(10,9,8,0.88)", backdropFilter: "blur(10px)" }}
+            style={{ background: "rgba(250,250,253,0.88)", backdropFilter: "blur(10px)" }}
           />
 
           <motion.div
@@ -84,25 +84,30 @@ export default function BusinessCard({ isOpen, onClose }: BusinessCardProps) {
           >
             <div
               className="rounded-t-3xl overflow-hidden flex flex-col"
-              style={{ background: "#F5F0E8" }}
+              style={{ background: "#0e0d1f" }}
             >
+              {/* iris hairline on the card's top edge */}
+              <div
+                className="shrink-0"
+                style={{ height: "2px", background: "linear-gradient(90deg, #5b4dff, #14c8eb, #59f0c0)" }}
+              />
               {/* Handle */}
               <div className="flex justify-center pt-3 pb-0 shrink-0">
-                <div className="w-9 h-1 rounded-full" style={{ background: "rgba(15,14,12,0.12)" }} />
+                <div className="w-9 h-1 rounded-full" style={{ background: "rgba(244,245,251,0.12)" }} />
               </div>
 
               {/* Close */}
               <button
                 onClick={onClose}
                 className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full transition-colors duration-200"
-                style={{ background: "rgba(15,14,12,0.07)", color: "rgba(15,14,12,0.4)" }}
+                style={{ background: "rgba(244,245,251,0.07)", color: "rgba(244,245,251,0.4)" }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "rgba(15,14,12,0.13)";
-                  (e.currentTarget as HTMLElement).style.color = "#0F0E0C";
+                  (e.currentTarget as HTMLElement).style.background = "rgba(244,245,251,0.13)";
+                  (e.currentTarget as HTMLElement).style.color = "#f4f5fb";
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "rgba(15,14,12,0.07)";
-                  (e.currentTarget as HTMLElement).style.color = "rgba(15,14,12,0.4)";
+                  (e.currentTarget as HTMLElement).style.background = "rgba(244,245,251,0.07)";
+                  (e.currentTarget as HTMLElement).style.color = "rgba(244,245,251,0.4)";
                 }}
               >
                 <FiX size={13} />
@@ -115,23 +120,23 @@ export default function BusinessCard({ isOpen, onClose }: BusinessCardProps) {
                   <div className="flex items-start gap-4 mb-6">
                     <div
                       className="w-16 h-16 rounded-2xl overflow-hidden shrink-0"
-                      style={{ border: "1px solid rgba(15,14,12,0.1)" }}
+                      style={{ border: "1px solid rgba(244,245,251,0.1)" }}
                     >
                       <img src={cardData.photo} alt="Joowon Kim" className="w-full h-full object-cover" />
                     </div>
                     <div className="pt-1">
                       <h2
-                        className="font-bold leading-tight tracking-tight mb-1"
-                        style={{ fontSize: "1.3rem", color: "#0F0E0C" }}
+                        className="font-display font-bold leading-tight tracking-tight mb-1"
+                        style={{ fontSize: "1.3rem", color: "#f4f5fb" }}
                       >
                         {cardData.name}
                       </h2>
-                      <p className="text-xs font-light leading-snug" style={{ color: "rgba(15,14,12,0.5)" }}>
+                      <p className="text-xs font-light leading-snug" style={{ color: "rgba(244,245,251,0.5)" }}>
                         {cardData.title}
                       </p>
                       <div className="flex items-center gap-1.5 mt-2">
-                        <FiMapPin size={10} style={{ color: "rgba(15,14,12,0.3)" }} />
-                        <span className="text-[10px] font-mono" style={{ color: "rgba(15,14,12,0.3)" }}>
+                        <FiMapPin size={10} style={{ color: "rgba(244,245,251,0.3)" }} />
+                        <span className="text-[10px] font-mono" style={{ color: "rgba(244,245,251,0.3)" }}>
                           {cardData.location}
                         </span>
                       </div>
@@ -139,7 +144,7 @@ export default function BusinessCard({ isOpen, onClose }: BusinessCardProps) {
                   </div>
 
                   {/* Divider */}
-                  <div className="mb-5" style={{ height: "1px", background: "rgba(15,14,12,0.08)" }} />
+                  <div className="mb-5" style={{ height: "1px", background: "rgba(244,245,251,0.08)" }} />
 
                   {/* Contacts */}
                   <div className="flex flex-col gap-1 mb-5">
@@ -154,7 +159,7 @@ export default function BusinessCard({ isOpen, onClose }: BusinessCardProps) {
                         transition={{ delay: i * 0.06, duration: 0.3 }}
                         className="group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200"
                         style={{ background: "transparent" }}
-                        onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = "rgba(15,14,12,0.05)"}
+                        onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = "rgba(244,245,251,0.05)"}
                         onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = "transparent"}
                       >
                         <div
@@ -164,22 +169,22 @@ export default function BusinessCard({ isOpen, onClose }: BusinessCardProps) {
                           {c.icon}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[10px] font-mono uppercase tracking-widest mb-0.5" style={{ color: "rgba(15,14,12,0.3)" }}>
+                          <p className="text-[10px] font-mono uppercase tracking-widest mb-0.5" style={{ color: "rgba(244,245,251,0.3)" }}>
                             {c.label}
                           </p>
-                          <p className="text-sm font-medium truncate" style={{ color: "#0F0E0C" }}>
+                          <p className="text-sm font-medium truncate" style={{ color: "#f4f5fb" }}>
                             {c.value}
                           </p>
                         </div>
-                        <span className="text-xs opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: "rgba(15,14,12,0.3)" }}>↗</span>
+                        <span className="text-xs opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: "rgba(244,245,251,0.3)" }}>↗</span>
                       </motion.a>
                     ))}
                   </div>
 
-                  {/* QR */}
+                  {/* QR — solid light chip so dark modules stay scannable on the ink card */}
                   <div
                     className="flex justify-center py-5 rounded-2xl mb-5"
-                    style={{ background: "rgba(15,14,12,0.04)", border: "1px solid rgba(15,14,12,0.07)" }}
+                    style={{ background: "#ffffff", border: "1px solid rgba(244,245,251,0.1)" }}
                   >
                     <StyledQR url={cardData.website} />
                   </div>
@@ -190,17 +195,17 @@ export default function BusinessCard({ isOpen, onClose }: BusinessCardProps) {
                       onClick={handleSaveContact}
                       className="flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200"
                       style={{
-                        background: "rgba(15,14,12,0.06)",
-                        color: "rgba(15,14,12,0.6)",
-                        border: "1px solid rgba(15,14,12,0.1)",
+                        background: "rgba(244,245,251,0.06)",
+                        color: "rgba(244,245,251,0.6)",
+                        border: "1px solid rgba(244,245,251,0.1)",
                       }}
                       onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLElement).style.background = "rgba(15,14,12,0.1)";
-                        (e.currentTarget as HTMLElement).style.color = "#0F0E0C";
+                        (e.currentTarget as HTMLElement).style.background = "rgba(244,245,251,0.1)";
+                        (e.currentTarget as HTMLElement).style.color = "#f4f5fb";
                       }}
                       onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLElement).style.background = "rgba(15,14,12,0.06)";
-                        (e.currentTarget as HTMLElement).style.color = "rgba(15,14,12,0.6)";
+                        (e.currentTarget as HTMLElement).style.background = "rgba(244,245,251,0.06)";
+                        (e.currentTarget as HTMLElement).style.color = "rgba(244,245,251,0.6)";
                       }}
                     >
                       <FiDownload size={14} />
@@ -211,9 +216,9 @@ export default function BusinessCard({ isOpen, onClose }: BusinessCardProps) {
                       onClick={shareOrDownload}
                       disabled={isSharing}
                       className="flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200"
-                      style={{ background: "#0F0E0C", color: "#F5F0E8" }}
-                      onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = "#2a2724"}
-                      onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = "#0F0E0C"}
+                      style={{ background: "#5b4dff", color: "#ffffff" }}
+                      onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = "#4a3ce8"}
+                      onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = "#5b4dff"}
                     >
                       <FiShare2 size={14} />
                       {isSharing ? "Sharing…" : "Share"}

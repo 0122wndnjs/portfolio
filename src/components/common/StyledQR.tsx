@@ -17,18 +17,18 @@ export default function StyledQR({ url }: Props) {
       data: url,
       dotsOptions: {
         type: "rounded",
-        color: "#0F0E0C",
+        color: "#0e0d1f",
       },
       backgroundOptions: {
         color: "transparent",
       },
       cornersSquareOptions: {
         type: "extra-rounded",
-        color: "#0F0E0C",
+        color: "#5b4dff",
       },
       cornersDotOptions: {
         type: "dot",
-        color: "#0F0E0C",
+        color: "#5b4dff",
       },
     });
 
