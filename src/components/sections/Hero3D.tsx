@@ -1,139 +1,146 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import {
-  Environment,
-  Float,
-  Lightformer,
-  Line,
-  MeshTransmissionMaterial,
-  Sparkles,
-} from "@react-three/drei";
+import { Environment, Float, Html, Lightformer, Line, Sparkles } from "@react-three/drei";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 
-// transmission material samples this instead of the (transparent) canvas backdrop
-const GLASS_BACKGROUND = new THREE.Color("#eef0fb");
+type SystemNode = {
+  label: string;
+  role: string;
+  position: [number, number, number];
+  color: string;
+};
 
-const orbitNodes = [
-  { angle: 0.2, radius: 1.75, y: 0.1, size: 0.16, color: "#5b4dff" },
-  { angle: 1.35, radius: 2.05, y: -0.2, size: 0.12, color: "#14c8eb" },
-  { angle: 2.55, radius: 1.55, y: 0.3, size: 0.14, color: "#59f0c0" },
-  { angle: 3.75, radius: 1.95, y: -0.05, size: 0.1, color: "#8fa1ff" },
-  { angle: 4.85, radius: 1.65, y: 0.22, size: 0.13, color: "#14c8eb" },
-  { angle: 5.65, radius: 2.2, y: -0.28, size: 0.11, color: "#5b4dff" },
+const systemNodes: SystemNode[] = [
+  { label: "REACT", role: "INTERFACE", position: [-1.3, 1.2, 0.15], color: "#5b4dff" },
+  { label: "TYPESCRIPT", role: "LANGUAGE", position: [1.3, 1.25, -0.15], color: "#8fa1ff" },
+  { label: "NODE.JS", role: "RUNTIME", position: [-1.5, -0.85, -0.2], color: "#59f0c0" },
+  { label: "WEB3", role: "PROTOCOL", position: [1.5, -0.75, 0.1], color: "#14c8eb" },
+  { label: "SOLIDITY", role: "CONTRACT", position: [0.05, -1.65, -0.45], color: "#5b4dff" },
 ];
 
-function MultiChainOrbit() {
-  const core = useRef<THREE.Mesh>(null);
-  const group = useRef<THREE.Group>(null);
-  const orbitA = useRef<THREE.Group>(null);
-  const orbitB = useRef<THREE.Group>(null);
+function DataPacket({ end, color, delay }: { end: THREE.Vector3; color: string; delay: number }) {
+  const packet = useRef<THREE.Mesh>(null);
 
-  const nodes = useMemo(
-    () =>
-      orbitNodes.map((node) => ({
-        ...node,
-        position: new THREE.Vector3(
-          Math.cos(node.angle) * node.radius,
-          node.y,
-          Math.sin(node.angle) * node.radius * 0.55,
-        ),
-      })),
-    [],
+  useFrame(({ clock }) => {
+    if (!packet.current) return;
+    const progress = (clock.elapsedTime * 0.22 + delay) % 1;
+    packet.current.position.copy(end).multiplyScalar(progress);
+    const pulse = 0.75 + Math.sin(progress * Math.PI) * 0.45;
+    packet.current.scale.setScalar(0.045 * pulse);
+  });
+
+  return (
+    <mesh ref={packet} scale={0.045}>
+      <sphereGeometry args={[1, 12, 12]} />
+      <meshBasicMaterial color={color} toneMapped={false} />
+    </mesh>
   );
+}
+
+function TechNode({ node, index }: { node: SystemNode; index: number }) {
+  const position = useMemo(() => new THREE.Vector3(...node.position), [node.position]);
+
+  return (
+    <group position={position}>
+      <Line
+        points={[[0, 0, 0], [-position.x, -position.y, -position.z]]}
+        color={node.color}
+        lineWidth={0.8}
+        transparent
+        opacity={0.34}
+      />
+      <mesh>
+        <octahedronGeometry args={[0.15, 0]} />
+        <meshStandardMaterial
+          color={node.color}
+          emissive={node.color}
+          emissiveIntensity={1.25}
+          roughness={0.25}
+          metalness={0.45}
+        />
+      </mesh>
+      <mesh scale={1.65}>
+        <sphereGeometry args={[0.15, 20, 20]} />
+        <meshBasicMaterial color={node.color} transparent opacity={0.09} />
+      </mesh>
+      <Html center distanceFactor={7} position={[0, 0.38, 0]} style={{ pointerEvents: "none" }}>
+        <div className="whitespace-nowrap rounded-md border border-[#5b4dff]/15 bg-white/70 px-2.5 py-1.5 font-mono shadow-[0_8px_30px_rgba(91,77,255,0.10)] backdrop-blur-md">
+          <div className="text-[9px] font-bold tracking-[0.14em] text-[#0e0d1f]">{node.label}</div>
+          <div className="mt-0.5 text-[6px] tracking-[0.18em] text-[#0e0d1f]/45">{node.role}</div>
+        </div>
+      </Html>
+      <DataPacket end={position.clone().multiplyScalar(-1)} color={node.color} delay={index * 0.17} />
+    </group>
+  );
+}
+
+function SystemCore() {
+  const group = useRef<THREE.Group>(null);
+  const core = useRef<THREE.Mesh>(null);
 
   useFrame((state, delta) => {
     if (core.current) {
-      core.current.rotation.x += delta * 0.12;
-      core.current.rotation.y += delta * 0.18;
-    }
-    if (orbitA.current) {
-      orbitA.current.rotation.y += delta * 0.12;
-    }
-    if (orbitB.current) {
-      orbitB.current.rotation.z -= delta * 0.08;
+      core.current.rotation.x += delta * 0.09;
+      core.current.rotation.y += delta * 0.14;
     }
     if (group.current) {
-      const { x, y } = state.pointer;
-      group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, x * 0.3, 0.04);
-      group.current.rotation.x = THREE.MathUtils.lerp(group.current.rotation.x, -y * 0.2, 0.04);
+      group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, state.pointer.x * 0.14, 0.035);
+      group.current.rotation.x = THREE.MathUtils.lerp(group.current.rotation.x, -state.pointer.y * 0.1, 0.035);
     }
   });
 
   return (
-    <group ref={group} position={[2.6, 0.35, -0.8]}>
-      <Float speed={1.2} rotationIntensity={0.45} floatIntensity={1.0}>
-        <group ref={orbitA} rotation={[0.25, 0, -0.08]}>
-          <mesh>
-            <torusGeometry args={[1.8, 0.008, 8, 160]} />
-            <meshBasicMaterial color="#8fa1ff" transparent opacity={0.35} />
-          </mesh>
-          <mesh rotation={[Math.PI / 2.6, 0, 0.35]}>
-            <torusGeometry args={[1.45, 0.006, 8, 160]} />
-            <meshBasicMaterial color="#14c8eb" transparent opacity={0.28} />
-          </mesh>
-        </group>
-
-        <group ref={orbitB} rotation={[0.7, 0.2, 0.45]}>
-          <mesh>
-            <torusGeometry args={[2.08, 0.005, 8, 160]} />
-            <meshBasicMaterial color="#59f0c0" transparent opacity={0.22} />
-          </mesh>
-        </group>
-
-        {nodes.map((node, index) => (
-          <group key={`${node.color}-${index}`} position={node.position}>
-            <mesh scale={node.size}>
-              <sphereGeometry args={[1, 24, 24]} />
-              <meshStandardMaterial
-                color={node.color}
-                emissive={node.color}
-                emissiveIntensity={1.2}
-                roughness={0.24}
-                metalness={0.35}
-              />
-            </mesh>
-            <Line
-              points={[[0, 0, 0], [-node.position.x, -node.position.y, -node.position.z]]}
-              color={node.color}
-              lineWidth={0.8}
-              transparent
-              opacity={0.25}
-            />
-          </group>
+    <group
+      ref={group}
+      position={[2.35, 0.2, -0.65]}
+      rotation={[-0.04, -0.08, 0.02]}
+      scale={0.84}
+    >
+      <Float speed={1.05} rotationIntensity={0.12} floatIntensity={0.45}>
+        {systemNodes.map((node, index) => (
+          <TechNode key={node.label} node={node} index={index} />
         ))}
 
-        <mesh ref={core} scale={0.82}>
-          <icosahedronGeometry args={[1, 1]} />
-          <MeshTransmissionMaterial
-            background={GLASS_BACKGROUND}
-            thickness={0.55}
-            roughness={0.07}
-            transmission={1}
-            ior={1.45}
-            chromaticAberration={0.32}
-            anisotropicBlur={0.22}
-            distortion={0.16}
-            distortionScale={0.32}
-            temporalDistortion={0.08}
+        <mesh ref={core}>
+          <icosahedronGeometry args={[0.68, 1]} />
+          <meshPhysicalMaterial
             color="#dfe4ff"
+            emissive="#5b4dff"
+            emissiveIntensity={0.22}
+            transmission={0.72}
+            thickness={0.8}
+            roughness={0.12}
+            metalness={0.12}
+            transparent
+            opacity={0.92}
           />
         </mesh>
-
-        <mesh scale={0.34}>
+        <mesh scale={0.3}>
           <sphereGeometry args={[1, 32, 32]} />
           <meshStandardMaterial
             color="#5b4dff"
             emissive="#14c8eb"
-            emissiveIntensity={1.7}
-            roughness={0.25}
-            metalness={0.55}
+            emissiveIntensity={1.8}
+            roughness={0.2}
+            metalness={0.5}
           />
         </mesh>
+        <mesh rotation={[Math.PI / 2.45, 0, 0.25]}>
+          <torusGeometry args={[0.98, 0.008, 8, 120]} />
+          <meshBasicMaterial color="#14c8eb" transparent opacity={0.42} />
+        </mesh>
+
+        <Html center distanceFactor={7} position={[0, 0.02, 0.72]} style={{ pointerEvents: "none" }}>
+          <div className="whitespace-nowrap text-center font-mono">
+            <div className="text-[8px] font-bold tracking-[0.22em] text-[#0e0d1f]">SYSTEM CORE</div>
+            <div className="mt-1 text-[6px] tracking-[0.16em] text-[#5b4dff]">BUILD · CONNECT · SHIP</div>
+          </div>
+        </Html>
       </Float>
 
-      <Sparkles count={58} scale={5.2} size={1.7} speed={0.28} opacity={0.35} color="#8fa1ff" />
+      <Sparkles count={42} scale={5} size={1.4} speed={0.22} opacity={0.28} color="#8fa1ff" />
     </group>
   );
 }
@@ -147,9 +154,8 @@ export default function Hero3D() {
       style={{ pointerEvents: "none" }}
       eventSource={typeof document !== "undefined" ? document.body : undefined}
     >
-      <ambientLight intensity={0.5} />
-      <MultiChainOrbit />
-      {/* local lightformer env — no runtime HDR fetch */}
+      <ambientLight intensity={0.65} />
+      <SystemCore />
       <Environment resolution={256}>
         <Lightformer intensity={2.6} position={[4, 2, 4]} scale={[4, 6, 1]} color="#5b4dff" />
         <Lightformer intensity={2.2} position={[-5, -1, 3]} scale={[5, 4, 1]} color="#14c8eb" />
