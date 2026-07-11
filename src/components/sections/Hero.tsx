@@ -4,11 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
 import { useState, useEffect } from "react";
-import dynamic from "next/dynamic";
 import HeroCanvas from "./HeroCanvas";
 import ChainTicker from "./ChainTicker";
-
-const Hero3D = dynamic(() => import("./Hero3D"), { ssr: false });
 
 const stats = [
   { n: "6+", labelEn: "Years Experience", labelKo: "년 경력" },
@@ -23,21 +20,6 @@ export default function Hero() {
   const t = translations[lang].hero;
   const paragraphs = [t.line1, t.line2, t.line3];
   const [index, setIndex] = useState(0);
-  const [show3d, setShow3d] = useState(false);
-
-  useEffect(() => {
-    // 3D only on desktop-class devices with a fine pointer, no reduced-motion
-    const mq = window.matchMedia("(min-width: 1024px) and (pointer: fine)");
-    const rm = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setShow3d(mq.matches && !rm.matches);
-    update();
-    mq.addEventListener("change", update);
-    rm.addEventListener("change", update);
-    return () => {
-      mq.removeEventListener("change", update);
-      rm.removeEventListener("change", update);
-    };
-  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -61,13 +43,6 @@ export default function Hero() {
 
       {/* Cursor-reactive dot grid */}
       <HeroCanvas />
-
-      {/* floating glass gem */}
-      {show3d && (
-        <div className="absolute inset-0 pointer-events-none z-[1] opacity-80">
-          <Hero3D />
-        </div>
-      )}
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-8 lg:px-16 pt-32 pb-20">
 
@@ -130,14 +105,14 @@ export default function Hero() {
           </motion.div>
         </div>
 
-        {/* Description + CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.5, ease }}
-          className="max-w-5xl"
-        >
-          <div className="flex flex-col gap-4 max-w-lg">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-end lg:gap-20">
+          {/* Description + CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.5, ease }}
+            className="flex max-w-lg flex-col gap-4"
+          >
             <div style={{ minHeight: "5rem" }}>
               <AnimatePresence mode="wait">
                 <motion.p
@@ -188,37 +163,42 @@ export default function Hero() {
                 {t.cta2}
               </motion.a>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.0, duration: 0.6 }}
-          className="mt-16 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3"
-        >
-          {stats.map((s, i) => (
-            <motion.div
-              key={s.labelEn}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.05 + i * 0.08, duration: 0.55, ease }}
-              className="rounded-[8px] border px-5 py-4 backdrop-blur-sm"
-              style={{
-                borderColor: "rgba(91,77,255,0.14)",
-                background:
-                  "linear-gradient(135deg, rgba(255,255,255,0.72), rgba(244,245,251,0.46))",
-                boxShadow: "0 18px 50px rgba(91,77,255,0.08)",
-              }}
-            >
-              <div className="text-4xl font-bold leading-none tracking-tight" style={{ color: "#5b4dff" }}>{s.n}</div>
-              <div className="mt-2 text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: "rgba(14,13,31,0.48)" }}>
-                {lang === "en" ? s.labelEn : s.labelKo}
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+          {/* KPI */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.85, duration: 0.6 }}
+            className="grid grid-cols-1 gap-5 sm:grid-cols-3 lg:grid-cols-1 lg:gap-0"
+          >
+            {stats.map((s, i) => (
+              <motion.div
+                key={s.labelEn}
+                initial={{ opacity: 0, x: 18 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.9 + i * 0.08, duration: 0.55, ease }}
+                className="border-t py-4 lg:py-5"
+                style={{ borderColor: "rgba(91,77,255,0.2)" }}
+              >
+                <div className="flex items-end justify-between gap-5">
+                  <div
+                    className="text-4xl font-bold leading-none tracking-tight lg:text-5xl"
+                    style={{ color: "#5b4dff" }}
+                  >
+                    {s.n}
+                  </div>
+                  <div
+                    className="pb-1 text-right text-[10px] font-semibold uppercase tracking-[0.16em]"
+                    style={{ color: "rgba(14,13,31,0.48)" }}
+                  >
+                    {lang === "en" ? s.labelEn : s.labelKo}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
       </div>
 
     </section>
