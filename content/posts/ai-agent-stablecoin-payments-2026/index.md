@@ -1,7 +1,7 @@
 ---
 title: AI 에이전트가 직접 결제하는 시대 — 스테이블코인이 없으면 불가능한 이유
 description: AI가 스스로 돈을 쓰는 시대가 오고 있다. 그런데 신용카드는 AI한테 발급이 안 된다. 왜 스테이블코인이 유일한 답인지, 그리고 지금 어떤 인프라가 만들어지고 있는지 정리했다.
-date: 2026-06-25
+date: 2026-07-13
 tags: [AI, stablecoin, agentic-payments, x402, Stripe, Coinbase, USDC, Web3]
 author: Joowon Kim
 series: stablecoin
