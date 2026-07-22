@@ -24,9 +24,9 @@ export default function Hero() {
   useEffect(() => {
     const timer = setInterval(() => {
       setIndex((i) => (i + 1) % paragraphs.length);
-    }, 3500);
+    }, 5000);
     return () => clearInterval(timer);
-  }, [paragraphs.length]);
+  }, [paragraphs.length, index]);
 
   return (
     <section
@@ -72,7 +72,7 @@ export default function Hero() {
         </motion.div>
 
         {/* Hero Name */}
-        <div className="mb-14 overflow-hidden">
+        <div className="mb-6 overflow-hidden">
           <motion.h1
             initial={{ opacity: 0, y: 120 }}
             animate={{ opacity: 1, y: 0 }}
@@ -113,7 +113,7 @@ export default function Hero() {
             transition={{ duration: 0.9, delay: 0.5, ease }}
             className="flex max-w-lg flex-col gap-4"
           >
-            <div style={{ minHeight: "5rem" }}>
+            <div style={{ minHeight: "6.5rem" }}>
               <AnimatePresence mode="wait">
                 <motion.p
                   key={index}
@@ -121,7 +121,7 @@ export default function Hero() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -12 }}
                   transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="text-base font-light leading-relaxed"
+                  className="text-lg lg:text-xl font-light leading-relaxed"
                   style={{ color: "rgba(14,13,31,0.65)" }}
                 >
                   {paragraphs[index]}

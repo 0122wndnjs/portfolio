@@ -262,9 +262,9 @@ const row2 = [
 
 function TechMarquee() {
   const tile = (t: { name: string; icon: React.ReactNode; color: string }, i: number) => (
-    <div key={i} className="flex items-center gap-2.5 px-7 py-2 mx-2 shrink-0 opacity-25 hover:opacity-70 transition-opacity duration-300">
-      <span className="text-2xl" style={{ color: t.color }}>{t.icon}</span>
-      <span className="text-sm font-medium whitespace-nowrap" style={{ color: "#0e0d1f" }}>{t.name}</span>
+    <div key={i} className="flex items-center gap-3.5 px-9 py-3 mx-3 shrink-0 opacity-60 hover:opacity-100 transition-opacity duration-300">
+      <span className="text-5xl" style={{ color: t.color }}>{t.icon}</span>
+      <span className="text-xl font-medium whitespace-nowrap" style={{ color: "#0e0d1f" }}>{t.name}</span>
     </div>
   );
   const d1 = [...row1, ...row1, ...row1];
@@ -272,11 +272,11 @@ function TechMarquee() {
 
   return (
     <div className="w-full overflow-hidden mt-20 pb-28">
-      <p className="text-center text-[10px] font-mono tracking-[0.3em] uppercase mb-10" style={{ color: "rgba(14,13,31,0.18)" }}>
+      <p className="text-center text-sm font-mono tracking-[0.3em] uppercase mb-14" style={{ color: "rgba(14,13,31,0.35)" }}>
         Tech Stack
       </p>
       <div
-        className="space-y-5"
+        className="space-y-10"
         style={{
           WebkitMaskImage: "linear-gradient(to right, transparent, black 12%, black 88%, transparent)",
           maskImage: "linear-gradient(to right, transparent, black 12%, black 88%, transparent)",

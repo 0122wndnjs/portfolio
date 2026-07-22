@@ -590,4 +590,23 @@ export const projectTranslationsEn: Record<number, ProjectTranslation> = {
       "Extended beyond document production to web presentation pages usable at in-person meetings, events, partner proposals, and investor pitching.",
     ],
   },
+  37: {
+    role: "Full-stack development of a dermatology clinic's content site and custom admin back office, plus SEO/AEO/GEO audit and optimization",
+    desc: "Built Veraclinic's public treatment-content site and a custom admin back office end-to-end, and ran production-crawl-based SEO/AEO/GEO audits and optimization.",
+    tasks: [
+      "Structured 5 treatment hub categories (skin disease, scalp, foot, aesthetics, tattoo removal) and per-condition/treatment detail pages with structured data (hero, symptoms, before/after case photos, FAQ).",
+      "Built a notice/event/medical-column CMS on a Tiptap editor so admins can author content directly.",
+      "Implemented custom member auth (sign-up/login with rate limiting) via a custom session table instead of Supabase Auth, plus a real-time 1:1 inquiry form saved to Supabase.",
+      "Built a scheduled popup notice system with configurable link targets, and integrated Kakao Maps.",
+      "Set up SEO fundamentals with a dynamic sitemap.xml and JSON-LD structured data (MedicalWebPage/FAQPage/MedicalClinic/BreadcrumbList), and GEO exposure via llms.txt for LLM crawlers.",
+      "Built the admin system: middleware-based route protection, a live-data dashboard, full CRUD for inquiries/members/notices/columns/events/popups/clinic hub exposure, and role-based menus (super admin/admin).",
+      "Added inquiry table filtering, sorting, Excel export, and KST timezone handling.",
+      "Ran SEO/AEO/GEO audits via real production crawls, surfacing 404s indexed in the sitemap and missing FAQ schema on 20 unfinished pages; designed a noindex + sitemap-filtering setup that blocks thin content from search exposure while auto-restoring it once content is complete.",
+    ],
+    impact: [
+      "Deployed and ran both the public site and admin system on Cloudflare Workers (OpenNext + Wrangler) edge infrastructure instead of Vercel.",
+      "Consolidated everything a clinic needs to operate — content CMS, member auth, inquiry management, and 4-language support (KO/EN/ZH/JA) — into a self-built back office.",
+      "Went beyond SEO to directly audit AEO/GEO, securing both search/generative-AI citation exposure and a content-quality control system.",
+    ],
+  },
 };
