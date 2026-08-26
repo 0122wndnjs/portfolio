@@ -15,25 +15,26 @@
 
 메인 포트폴리오, 상단 카드, 대표 프로젝트 영역에 우선 노출할 프로젝트입니다.
 
-- 1-1. Multi-Token Smart Contract Development
 - 1-3. Exchange Listing Support
-- 2-1. UNIDECA Website
 - 3-2. E******* Wallet
 - 3-6. S********* RWA Wallet Platform
 - 3-10. TheBlockLink Web3 Event Platform
-- 3-12. Medical Platform App
+- 3-12. VIORA
 - 3-13. RankFit
 - 3-14. WKMLCRAFT Portfolio & Commerce Platform
-- 4-8. Web3 Company Profile Production
+- 3-16. CourseNow
+- 3-17. Openbal Partners
 
 ## Additional Projects
 
 전체 경력과 프로젝트 범위를 보여주기 위해 상세 페이지, 아카이브, 카테고리별 목록에 함께 포함할 프로젝트입니다.
 
+- 1-1. Multi-Token Smart Contract Development
 - 1-2. Token Whitepaper & Tokenomics
 - 1-4. NFT Document Management dApp
 - 1-5. eMetalexchange
 - 1-6. BlockApps Korea Market Entry Support
+- 2-1. UNIDECA Website
 - 2-2. Hun&Hyun Website
 - 2-3. HexaGroup Corporate Website
 - 2-4. Ruienm Entertainment Website
@@ -57,6 +58,7 @@
 - 4-5. B*** Marketing & Pitch Materials
 - 4-6. Private Web3 Event Planning & Execution
 - 4-7. HK Consensus Partnership Management
+- 4-8. Web3 Company Profile Production
 
 ---
 
@@ -85,7 +87,7 @@ SEO/GEO/AEO, PM, Operations, 마케팅, 행사 운영, 컨설팅, 내부 API, �
 ## 1-1. Multi-Token Smart Contract Development
 
 - 카테고리: web3
-- 노출 구분: Featured
+- 노출 구분: Additional
 - 공개명: Multi-Token Smart Contract Development
 - 실제 포함 프로젝트: Op***Token, E**Token, S***Token, W**, B***Token, Al*****, Ad**Token, SP***Token, Ai********, K***
 - 기간: 2025.08 ~ Current
@@ -298,7 +300,7 @@ SEO/GEO/AEO, PM, Operations, 마케팅, 행사 운영, 컨설팅, 내부 API, �
 ## 2-1. UNIDECA Website
 
 - 카테고리: website
-- 노출 구분: Featured
+- 노출 구분: Additional
 - 공개명: UNIDECA Website
 - 실제 프로젝트명: UNIDECA Website / UNIDECA Services Website
 - URL: https://unideca.com / https://services.unideca.com
@@ -982,43 +984,48 @@ SEO/GEO/AEO, PM, Operations, 마케팅, 행사 운영, 컨설팅, 내부 API, �
 
 ---
 
-## 3-12. Medical Platform App
+## 3-12. VIORA
 
 - 카테고리: platforms
 - 노출 구분: Featured
-- 공개명: Medical Platform App
-- 실제 프로젝트명: Global Medical & Beauty Platform
+- 공개명: VIORA
+- 실제 프로젝트명: VIORA (Global Medical & Beauty Platform)
+- URL: https://viora.biz
 - 기간: 2026.06 ~ Current
-- 역할: 글로벌 의료·뷰티 플랫폼 기획 및 웹/앱 동시 개발
-- 상태: Planning / In Progress
-- 사용 기술/도구: Next.js, React Native, NestJS, PostgreSQL, Redis, AWS S3 또는 Cloudflare R2, Social Login, Payment Gateway
-- 한 줄 설명: 해외 환자와 국내 피부과·성형외과를 연결하는 글로벌 의료·뷰티 플랫폼으로, 사용자 웹/앱, 병원 관리자, 전체 관리자, 예약금 결제, 리뷰, 리워드, 의료관광 패키지를 포함한 플랫폼 개발 프로젝트
+- 역할: 글로벌 의료·뷰티 플랫폼 기획 및 모노레포 기반 풀스택 개발 (오케스트레이션 기반 개발 프로세스 설계, 소셜 로그인 OAuth 통합, GA4 이벤트 트래킹, PWA 서비스워커 이슈 대응)
+- 상태: Live (1차 출시 완료)
+- 사용 기술/도구:
+  - 아키텍처: Turborepo + pnpm workspace 모노레포 (apps/*, packages/*), 4개 앱(user-web/hospital-admin/admin-console/api), 공용 패키지(types/ui/i18n/config)
+  - 프론트엔드: Next.js 15(App Router, Turbopack), React 19, Tailwind CSS 4, next-intl, Zustand, Serwist(PWA), Cloudflare Workers 배포(OpenNext), GA4 이벤트 트래킹
+  - 백엔드: NestJS 11, Prisma 6, PostgreSQL, JWT(access/refresh) + Passport, Google/Kakao/Naver/Facebook/Line/Apple/WeChat OAuth2 자체 구현(JWKS 검증 포함), Stripe 결제, AWS S3, web-push, nodemailer, Throttler, Swagger, Helmet, class-validator
+  - 인프라: Cloudflare(Workers, Wrangler), Turbo CI 파이프라인(build/lint/typecheck)
+- 한 줄 설명: 해외 의료·미용 시술 예약, 결제, 정산까지 아우르는 멀티 테넌트 플랫폼. 유저용 웹, 병원 관리자, 슈퍼 관리자 콘솔, API 서버를 하나의 모노레포로 운영하며 1차 출시 완료
 - 주요 업무:
-  - 기존 의료·뷰티 플랫폼과 병원 예약 서비스 구조를 벤치마킹하여 글로벌 의료·뷰티 플랫폼 서비스 구조 기획
-  - 해외 환자와 국내 피부과·성형외과를 연결하는 사용자 웹/앱, 병원 관리자, 전체 관리자 구조 설계
-  - 외국인환자 유치업자 등록 법인 운영 구조와 외국인환자 유치의료기관 등록 병원 중심의 초기 서비스 모델 정리
-  - 중국, 일본, 동남아 등 해외 환자를 1차 타겟으로 한 병원/시술 탐색, 예약, 결제, 리뷰, 방문 인증 플로우 기획
-  - 예약금 기반 노쇼 방지, 방문 인증 리워드, 의료관광 패키지, 파트너/인플루언서 시스템 등 차별화 기능 설계
-  - 초기 해외 PG 연동, 추후 국내 PG 및 BANA 코인/리워드 연동을 고려한 결제 확장 구조 기획
-  - Next.js 기반 사용자 웹, React Native 기반 모바일 앱, NestJS 기반 백엔드, PostgreSQL 기반 데이터 구조 설계
-  - 이미지/영상 등 병원·시술 콘텐츠 관리를 위한 AWS S3 또는 Cloudflare R2 기반 파일 저장 구조 검토
-- 기획 범위:
-  - 유저: 해외 환자 회원가입, 소셜 로그인, 병원/시술 탐색, 예약 신청, 예약금 결제, 방문 인증, 리뷰 작성, 리워드 적립
-  - 병원: 병원 입점, 병원 정보 관리, 시술/상품 등록, 예약 관리, 고객 문의 확인, 리뷰 관리, 정산 관리
-  - 상품/시술: 피부과·성형외과 시술 상품 등록, 가격/이벤트 관리, 카테고리 분류, 전후사진/콘텐츠 관리
-  - 예약: 날짜/시간 선택, 예약금 결제, 예약 상태 관리, 노쇼 방지 구조, 알림 및 방문 인증 플로우
-  - 결제: 초기 해외 PG 연동, 예약금 결제, 추후 국내 PG 및 BANA 코인/리워드 결제 확장 구조
-  - 리뷰: 방문 인증 기반 리뷰 작성, 후기/전후사진 관리, 병원 신뢰도 및 검색 노출에 활용 가능한 리뷰 구조
-  - 관리자: 전체 병원 관리, 유저 관리, 예약/결제 관리, 리뷰 관리, 콘텐츠 검수, 파트너/인플루언서 관리
-  - 확장: 국내 사용자, 치과, 건강검진, 재활, VIP 헬스케어, 의료관광 패키지로 확장 가능한 구조
+  - Turborepo + pnpm workspace 기반 모노레포 아키텍처 설계 및 4개 앱(고객/병원 어드민/슈퍼 어드민/백엔드) 구조 구축
+  - Next.js 15 + React 19 기반 다국어(next-intl) 사용자 웹, PWA(Serwist) 적용, Cloudflare Workers(OpenNext) 배포
+  - NestJS 11 + Prisma 6 + PostgreSQL 기반 백엔드 API 서버 구축, JWT 인증 및 소셜 로그인 7종(Google/Kakao/Naver/Facebook/Line/Apple/WeChat) OAuth2 자체 구현(JWKS 검증 포함)
+  - Stripe 결제 연동, 보증금(Deposit) 및 정산(Settlement) 자동화 구조 설계
+  - 리워드/쿠폰, 실시간 채팅, 알림(웹푸시+로그), 사진 포함 리뷰 등 커뮤니케이션 도메인 구현
+  - 병원/의료진/스태프 관리, QR 기반 예약 확인 등 병원 운영 도메인 구현
+  - 감사 로그, 배너/카테고리/공지/FAQ CMS, 승인 워크플로우 등 관리자 도메인 구현
+  - GA4 이벤트 트래킹(sign_up/login/begin_checkout/purchase) 연동 및 오케스트레이션 기반 개발 프로세스(기획→작업지시→구현→리뷰 분리) 설계
+- 핵심 기능 (도메인 모듈 기준):
+  - 인증/사용자: JWT 인증, 소셜 로그인 7종, 약관 동의 이력 관리(ConsentLog), 프로필
+  - 예약/상품: 병원·시술 상품 등록, 옵션(variant), 예약(Reservation) 및 상태 이력 추적
+  - 결제/정산: Stripe 결제, 보증금(Deposit), 정산(Settlement/SettlementItem) 자동화
+  - 리워드/쿠폰: 적립(RewardLog), 쿠폰 발급/사용(Coupon, UserCoupon), 웰컴 쿠폰 시딩 스크립트
+  - 커뮤니케이션: 실시간 채팅(Conversation/Message), 알림(푸시+로그), 리뷰(사진 포함) 및 답글
+  - 병원 운영: 병원/의료진/스태프 관리, 병원 이미지, QR 기반 예약 확인
+  - 관리자: 감사 로그(AuditLog), 배너/카테고리/공지/FAQ CMS, 승인 워크플로우
+  - 검색/즐겨찾기: 상품/병원 검색, 즐겨찾기
+  - 스케줄러: 배치 작업 heartbeat 모니터링
 - 성과/임팩트:
-  - 해외 환자와 국내 의료기관을 연결하는 글로벌 의료·뷰티 플랫폼의 서비스 구조와 개발 방향을 구체화
-  - 사용자 웹/앱, 병원 관리자, 전체 관리자를 포함한 멀티사이드 플랫폼 구조 설계
-  - 예약금 기반 노쇼 방지, 방문 인증 리워드, 의료관광 패키지, 파트너/인플루언서 시스템 등 기존 병원 플랫폼과 차별화되는 기능 기획
-  - 피부과·성형외과를 시작으로 치과, 검진, 재활, VIP 헬스케어, 의료관광 패키지까지 확장 가능한 플랫폼 기반 마련
-  - 초기 해외 환자 유치와 병원 입점 구조를 중심으로, 향후 국내 사용자 및 BANA 코인/리워드 생태계까지 연결 가능한 확장 모델 설계
+  - 해외 환자와 국내 의료기관을 연결하는 글로벌 의료·뷰티 플랫폼을 1차 출시까지 완료
+  - 4개 앱(유저 웹/병원 어드민/슈퍼 어드민/API)을 하나의 모노레포로 운영하는 멀티 테넌트 아키텍처 구축
+  - 소셜 로그인 7종 OAuth2 자체 구현, Stripe 결제, 정산 자동화 등 핵심 도메인 로직 구현
+  - 오케스트레이션 기반 개발 프로세스(기획→작업지시→구현→리뷰 분리)를 실제 프로젝트에 적용
 - 공개 가능 여부: 공개 가능
-- 비고: 현재 기획 및 초기 개발 단계의 웹/앱 동시 개발 프로젝트로, 포트폴리오에서는 글로벌 의료·뷰티 플랫폼 기획, 멀티사이드 서비스 구조, 예약/결제/리뷰/관리자 시스템 설계 경험 중심으로 소개
+- 비고: 1차 출시 완료(Live) 상태이며, 포트폴리오에서는 모노레포 아키텍처 설계, 멀티사이드 플랫폼 구조, 소셜 로그인/결제/정산 시스템 구현, 오케스트레이션 기반 개발 프로세스 경험 중심으로 소개
 
 ---
 
@@ -1143,6 +1150,98 @@ SEO/GEO/AEO, PM, Operations, 마케팅, 행사 운영, 컨설팅, 내부 API, �
   - 향후 예비창업자 DB 기반 영업, 상담, 계약 전환, 창업 지원 운영을 플랫폼화할 수 있는 기반 마련
 - 공개 가능 여부: 공개 가능
 - 비고: 현재는 기획 및 1차 랜딩 페이지 준비 단계이며, 1인 카페 창업 수요조사와 DB 수집 이후 본격적인 프랜차이즈 창업 플랫폼으로 확장 예정
+
+---
+
+## 3-16. CourseNow
+
+- 카테고리: platforms
+- 노출 구분: Featured
+- 공개명: CourseNow
+- 실제 프로젝트명: CourseNow (코스나우)
+- URL: https://coursenow.app
+- 기간: 2026.07 ~ Current
+- 역할: 골프 커뮤니티 플랫폼 기획 및 웹/모바일(iOS·Android) 통합 풀스택 개발
+- 상태: Live (1차 출시 완료)
+- 사용 기술/도구:
+  - Frontend: Next.js 15(App Router), React 19, TypeScript, CSS Modules, React Hooks 상태관리, Lucide React
+  - Mobile: Capacitor(iOS/Android 크로스플랫폼), 네이티브 스플래시(iOS LaunchScreen/Android SplashScreen), 카메라·파일시스템·위치·푸시 알림 네이티브 기능
+  - Backend/DB: Next.js API Routes, Supabase(PostgreSQL), Supabase Auth(OAuth-Naver), Row-Level Security(RLS), SQL 마이그레이션 관리
+  - 푸시: Android FCM(v1), iOS APNs
+  - 테스트/정적분석: Playwright E2E(14개), Node.js 네이티브 테스트(7개), TypeScript/Stylelint/ESLint
+  - 배포/모니터링: Vercel, GitHub Actions(Pipeline, Code Review), 에러 로깅 및 성능 추적
+- 한 줄 설명: 라운드 기록, 골프장 정보 공유, 포인트 경제 기반 게이미피케이션을 제공하는 골프 커뮤니티 웹·모바일 통합 앱. 1차 출시 완료
+- 주요 업무:
+  - Next.js 15(App Router) + Capacitor 기반으로 웹/iOS/Android를 하나의 코드베이스에서 통합 개발
+  - Supabase(PostgreSQL) + RLS 기반 데이터 접근 제어와 Naver OAuth 소셜 로그인 구현
+  - 라운드 기록/스코어 관리, 골프장 탐색·필터링·리뷰, 라운드 리포트 및 커뮤니티 랭킹 기능 구현
+  - 크레딧 적립/소비, 일일 로그인 보너스, 12개월 무활동 소멸 정책을 포함한 포인트 경제 시스템 설계
+  - 암호화 검증 기반 래플(응모/추첨) 시스템과 포인트샵 구매 플로우 구현
+  - FCM(Android)/APNs(iOS) 네이티브 푸시와 PWA 웹 푸시를 함께 지원하는 알림 시스템 구축
+  - 사용자/라운드/리포트 통계 대시보드, 배너·공지·아이템·래플 관리, 신고 처리를 포함한 관리자 시스템 구축
+  - 단일 API 호출로 다중 리소스를 조회하는 배치 요청 구조로 N+1 쿼리 방지, WASM 기반 이미지 얼굴 흐림 처리 적용
+  - Playwright E2E 테스트 14종, Node.js 네이티브 통합 테스트 7종과 GitHub Actions CI/CD 파이프라인 구축
+- 핵심 기능:
+  - 라운드 기록: 라운드 추가/편집/삭제, 스코어(파/스트로크) 기록, 라운드 분석 및 통계
+  - 골프장 탐색: 목록/필터링, 상세 정보(위치·난이도·리뷰), 즐겨찾기, 실시간 리포트/리뷰 통계
+  - 커뮤니티: 라운드 리포트(사진·코멘트), 골프장 리뷰(평점·코멘트), 좋아요/댓글, 전국/지역 랭킹
+  - 포인트 경제: 크레딧 적립/소비, 일일 로그인 보너스, 리포트 작성 보상, 12개월 무활동 소멸 정책
+  - 래플: 주기적 래플 개최, 포인트 기반 응모, 암호화 검증 추첨, 당첨 히스토리
+  - 포인트샵: 포인트 기반 상품 구매, 카테고리 필터링, 구매 내역 관리
+  - 푸시 알림: 웹 푸시(PWA), 네이티브 푸시(FCM/APNs), 당첨/이벤트 알림
+  - 관리자: 통계 대시보드, 배너/공지 관리, 아이템/래플 관리, 신고 처리
+  - 프로필: 닉네임/아바타 관리, 활동 히스토리, 랭킹 조회, 내 응모 현황
+  - PWA: 홈 화면 설치, 오프라인 폴백, App Manifest, iOS 홈 화면 추가 안내
+- 아키텍처 특징:
+  - 성능: 배치 요청으로 N+1 쿼리 방지, RLS 기반 데이터 접근 제어, Service Role 기반 정확한 집계 카운팅, WASM 기반 얼굴 흐림 이미지 최적화
+  - 보안: Naver OAuth, 토큰/UUID 유효성 검증, 경로 allowlist, 관리자/사용자 역할 분리, RLS, 전 API 입력 검증
+  - 신뢰성: E2E 테스트 14개, 네이티브 통합 테스트 7개, TypeScript 100% 커버리지, SQL 마이그레이션 기반 버전 관리
+  - UX: 웹+iOS+Android 통합 경험, 네이티브 기능(카메라/위치/푸시) 활용, 모바일 퍼스트 반응형 디자인, PWA 오프라인 지원
+- 성과/임팩트:
+  - 웹 + iOS + Android를 하나의 코드베이스로 통합한 크로스플랫폼 골프 커뮤니티 플랫폼을 1차 출시
+  - 월 활성 사용자 추적이 가능한 포인트 경제 시스템과 암호화 검증 기반 래플 시스템을 완성
+  - Playwright/Node.js 기반 100개 이상의 E2E·통합 테스트와 200개 이상 항목의 릴리스 QA 체크리스트로 신뢰성 확보
+  - RLS, OAuth, 역할 기반 권한 분리, 입력 검증 등 데이터베이스·API 전 계층 보안 체계 구축
+- 공개 가능 여부: 공개 가능
+- 비고: 1차 출시 완료(Live) 상태이며, 포트폴리오에서는 웹/모바일 통합 아키텍처, 포인트 경제·래플 시스템 설계, 테스트 자동화 및 CI/CD 구축 경험 중심으로 소개
+
+---
+
+## 3-17. Openbal Partners
+
+- 카테고리: platforms
+- 노출 구분: Featured
+- 공개명: Openbal Partners
+- 실제 프로젝트명: Openbal Partners (계약서 자동 생성 웹앱 + 전문가 인증·시공사례 등록 서비스)
+- 기간: 2026.07 ~ Current
+- 역할: 인테리어 시공업체 파트너용 웹앱 2종(계약서 자동 생성, 전문가 인증·시공사례 등록) 기획 및 풀스택 개발
+- 상태: Live
+- 사용 기술/도구:
+  - 계약서 자동 생성: Vue 3(Composition API, TSX), TypeScript, Vite, Tailwind CSS 4 + class-variance-authority/tailwind-merge, Zod, html-to-image, Cloudflare Pages, vue-tsc, oxlint
+  - 전문가 인증 등록: React 19, TypeScript, Vite, Tailwind CSS 4, shadcn/ui, React Hook Form, Zod, Netlify Functions, Google Drive API, Notion API, Netlify
+- 한 줄 설명: 인테리어 시공업체를 위한 사내 파트너 도구 2종 — 표준 도급계약서를 마법사 형태로 작성·PDF 미리보기하는 계약서 자동 생성 웹앱과, 전문가 인증 서류·시공사례를 제출·검수하는 등록 서비스
+- 주요 업무:
+  - [계약서 자동 생성] 기본정보→공사정보→계약정보→하자보수→특약사항→미리보기로 이어지는 4~6단계 마법사 플로우를 Vue 3(Composition API) + TSX + Zod 스키마 기반으로 구현
+  - [계약서 자동 생성] 실제 회사 계약서·하자보수 엑셀 서식 구조(병합 체크박스 항목 포함)를 그대로 데이터 모델로 옮겨, 체크만으로 문서에 반영되도록 설계
+  - [계약서 자동 생성] 분할 지급금, 부가세 별도 스케줄, 하자보증 비율 등 실무 계약 조건을 조건부 필드로 처리하고, html-to-image로 A4 페이지 단위 실시간 미리보기·썸네일 캡처 구현
+  - [계약서 자동 생성] 여러 파트너 도구를 카드 형태로 모아두는 서비스 허브 랜딩(/) 구성, 라우터 라이브러리 없이 pathname 파싱만으로 경량 라우팅 처리
+  - [계약서 자동 생성] 원래 React로 시작한 프로덕션 서비스를 라우팅/폼 상태/문서 렌더링 로직까지 포함해 Vue 3로 전체 마이그레이션
+  - [전문가 인증 등록] React Hook Form + Zod로 사업자정보·대표자/담당자 정보·시공사례 3단계 등록 폼과 단계별 부분 검증 구현
+  - [전문가 인증 등록] Netlify Functions에서 Google Drive 업로드(신분증/건설면허/시공사례 폴더 자동 분리 및 파일명 정규화)와 Notion DB 등록을 일괄 처리하는 서버리스 파이프라인 구축
+  - [전문가 인증 등록] 서비스 계정 기반 서버 인증으로 API 키를 클라이언트에 노출하지 않는 구조 설계, 모바일 우선 반응형 UI(PC는 480px 모바일 뷰) 구현
+- 핵심 기능:
+  - 계약서 자동 생성: 4~6단계 마법사, 실물 서식 재현, 분할지급/부가세/하자보증 조건부 필드, 실시간 미리보기·PDF 다운로드, 서비스 허브 랜딩
+  - 전문가 인증·시공사례 등록: 3단계 등록 폼(사업자/대표자·담당자/시공사례), 실시간 유효성 검증(사업자등록번호·휴대폰·이메일), 이미지·PDF·ZIP 업로드 및 미리보기, 제출 전 최종 확인, 중복 제출 방지, Google Drive 자동 저장 및 Notion DB 자동 등록
+- 특기할 만한 작업 포인트:
+  - 원래 React로 시작했다가 프로덕션 운영 중에 Vue 3로 전체 마이그레이션(라우팅/폼 상태/문서 렌더링 로직 포함)을 진행 — 프레임워크 비종속적인 아키텍처 설계 경험
+  - 기존에 수기로 엑셀에 옮겨적던 업무 서식을 코드로 정확히 재현(도메인 규칙 이해 후 데이터 모델링)
+  - Toss Design System 가이드를 참고해 자체 브랜드 컬러로 대체 적용한 디자인 시스템 구축 경험
+- 성과/임팩트:
+  - 수기로 엑셀에 옮겨적던 계약서·하자보수 서식을 코드로 정확히 재현해 파트너사의 계약서 작성 업무를 자동화
+  - React에서 Vue 3로 프로덕션 운영 중 프레임워크 마이그레이션을 수행하며 프레임워크 비종속적인 폼/렌더링 아키텍처 경험 확보
+  - Google Drive/Notion API 연동으로 전문가 인증 서류 접수부터 운영팀 검수까지 이어지는 무서버(serverless) 자동화 파이프라인 구축
+- 공개 가능 여부: 공개 가능
+- 비고: 파트너 전용 계약서 생성 도구와 전문가 인증·시공사례 등록 도구를 하나의 Openbal Partners 프로젝트로 묶어 소개
 
 # 4. Other Systems
 
@@ -1408,7 +1507,7 @@ SEO/GEO/AEO, PM, Operations, 마케팅, 행사 운영, 컨설팅, 내부 API, �
 ## 4-8. Web3 Company Profile Production
 
 - 카테고리: systems
-- 노출 구분: Featured
+- 노출 구분: Additional
 - 공개명: Web3 Company Profile Production
 - 실제 프로젝트명: UNIDECA & Client Web3 Company Profile Production
 - 기간: 2025.12 ~ Current
