@@ -1086,7 +1086,13 @@ export const projects: Project[] = [
     ],
     visibility: "public",
     url: "https://coursenow.app",
-    images: [],
+    images: [
+      "images/projects/coursenow_1.jpg",
+      "images/projects/coursenow_2.jpg",
+      "images/projects/coursenow_3.jpg",
+      "images/projects/coursenow_4.jpg",
+      "images/projects/coursenow_5.jpg",
+    ],
   },
 
   {
