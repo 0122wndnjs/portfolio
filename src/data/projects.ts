@@ -1,8 +1,68 @@
 export type ProjectCategory = "web3" | "website" | "platforms" | "systems";
 export type ProjectVisibility = "public" | "masked" | "private";
+export type ProjectContext = "unideca" | "trillionslab" | "deltaDental" | "freelance" | "personal";
+
+export const projectIds = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+  11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+  21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+  31, 32, 33, 34, 35, 36, 37, 38, 39,
+] as const;
+
+export type ProjectId = (typeof projectIds)[number];
+
+export const projectContexts: Record<ProjectId, ProjectContext> = {
+  1: "unideca",
+  2: "unideca",
+  3: "unideca",
+  4: "trillionslab",
+  5: "trillionslab",
+  6: "trillionslab",
+  7: "unideca",
+  8: "unideca",
+  9: "trillionslab",
+  10: "trillionslab",
+  11: "unideca",
+  12: "unideca",
+  13: "unideca",
+  14: "unideca",
+  15: "unideca",
+  16: "unideca",
+  17: "unideca",
+  18: "unideca",
+  19: "unideca",
+  20: "unideca",
+  21: "unideca",
+  22: "unideca",
+  23: "trillionslab",
+  24: "trillionslab",
+  25: "unideca",
+  26: "unideca",
+  27: "unideca",
+  28: "personal",
+  29: "unideca",
+  30: "freelance",
+  31: "freelance",
+  32: "freelance",
+  33: "deltaDental",
+  34: "unideca",
+  35: "unideca",
+  36: "unideca",
+  37: "unideca",
+  38: "unideca",
+  39: "unideca",
+};
+
+export const projectContextLabels: Record<ProjectContext, string> = {
+  unideca: "Company Project · UNIDECA",
+  trillionslab: "Company Project · TrillionsLab",
+  deltaDental: "Employment · Delta Dental of Michigan",
+  freelance: "Client Delivery · Freelance",
+  personal: "Independent Project",
+};
 
 export type Project = {
-  id: number;
+  id: ProjectId;
   title: string;
   category: ProjectCategory;
   featured: boolean;

@@ -9,7 +9,7 @@ import {
   useVelocity,
   useTransform,
 } from "framer-motion";
-import { projects, type Project } from "../../data/projects";
+import { projects, projectContexts, projectContextLabels, type Project } from "../../data/projects";
 import { projectTranslationsEn } from "../../data/projectTranslations";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/i18n/translations";
@@ -217,6 +217,9 @@ function ListRow({ project, index, onClick, onHover }: {
         </motion.h3>
 
         <div className="hidden sm:flex items-center gap-4 shrink-0">
+          <span className="hidden lg:block max-w-48 truncate text-[10px] font-mono" style={{ color: "rgba(14,13,31,0.3)" }}>
+            {projectContextLabels[projectContexts[project.id]]}
+          </span>
           <span
             className="text-[10px] font-mono tracking-[0.2em] uppercase px-2.5 py-1 rounded-full transition-all duration-200"
             style={{
@@ -257,6 +260,7 @@ const fadeUp = {
 
 function ProjectOverlay({ project, onClose }: { project: Project; onClose: () => void }) {
   const s = statusStyle(project.status);
+  const projectContext = projectContextLabels[projectContexts[project.id]];
   const { lang } = useLanguage();
   const tp = translations[lang].projects;
   const tr = lang === "en" ? projectTranslationsEn[project.id] : null;
@@ -333,6 +337,7 @@ function ProjectOverlay({ project, onClose }: { project: Project; onClose: () =>
             {project.status}
           </span>
           <span className="text-xs font-mono" style={{ color: "rgba(14,13,31,0.25)" }}>{project.period}</span>
+          <span className="text-xs font-mono" style={{ color: "rgba(14,13,31,0.45)" }}>Project context: {projectContext}</span>
         </motion.div>
 
         {/* Title */}
@@ -607,6 +612,7 @@ export default function Projects() {
           >
             <span className="shrink-0 w-6">No.</span>
             <span className="flex-1">Project</span>
+            <span className="hidden lg:block max-w-48">Project context</span>
             <span className="hidden sm:block">Category</span>
             <span className="hidden sm:block w-24 text-right">Year</span>
             <span className="hidden sm:block w-5" />
