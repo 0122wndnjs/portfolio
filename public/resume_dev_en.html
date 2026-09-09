@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Joowon Kim — Full-Stack &amp; Blockchain Engineer Resume</title>
+<style>
+  @page { size: A4 portrait; margin: 14mm 13mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    color: #1a1a1a;
+    font-size: 10.3pt;
+    line-height: 1.54;
+    margin: 0;
+    letter-spacing: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .header { display: flex; align-items: center; gap: 16px; border-bottom: 2px solid #1B2A4A; padding-bottom: 10px; margin-bottom: 12px; }
+  .profile-photo { width: 74px; height: 88px; border-radius: 4px; flex-shrink: 0; object-fit: cover; object-position: center 35%; border: 1px solid #d8dde7; }
+  .header-text { flex: 1; min-width: 0; }
+  .name { font-size: 22pt; font-weight: 700; color: #1B2A4A; margin: 0; letter-spacing: -0.25px; line-height: 1.15; }
+  .name .kr { font-size: 12pt; font-weight: 400; color: #666; margin-left: 8px; }
+  .headline { font-size: 11.5pt; font-weight: 600; color: #2E5AAC; margin: 3px 0 6px; }
+  .headline-stack { font-size: 9pt; font-weight: 500; color: #667085; }
+  .contact { font-size: 8.8pt; color: #555; display: grid; gap: 3px; }
+  .contact-line { display: flex; align-items: center; gap: 16px; }
+  .contact a { color: inherit; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; white-space: nowrap; }
+  .contact-icon { width: 11px; height: 11px; color: #2E5AAC; flex: 0 0 auto; }
+  h2 { font-size: 11.5pt; font-weight: 700; color: #1B2A4A; text-transform: uppercase; letter-spacing: .7px; border-bottom: 1.2px solid #1B2A4A; padding-bottom: 3px; margin: 15px 0 7px; break-after: avoid; }
+  h2:first-of-type { margin-top: 0; }
+  .summary { font-size: 10pt; line-height: 1.58; color: #262626; margin: 0 0 4px; }
+  .skills { display: grid; grid-template-columns: 114px 1fr; gap: 3px 10px; margin: 2px 0; }
+  .skill-label { font-size: 8.9pt; font-weight: 700; color: #1B2A4A; }
+  .skill-value { font-size: 8.9pt; color: #333; }
+  .job, .project { margin-bottom: 10px; break-inside: avoid-page; }
+  .job-row, .project-row, .edu-row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 3px 12px; }
+  .job-title-org { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 6px; }
+  .job-title { font-size: 10.5pt; font-weight: 700; color: #111; }
+  .job-org { font-size: 10pt; color: #2E5AAC; font-weight: 600; }
+  .period { font-size: 8.7pt; color: #777; white-space: nowrap; }
+  .job-sub { font-size: 8.5pt; color: #888; font-style: italic; margin: 1px 0 4px; }
+  ul.bullets { margin: 3px 0 0; padding-left: 16px; }
+  ul.bullets li { margin-bottom: 4px; font-size: 9.7pt; line-height: 1.5; }
+  .metric { font-weight: 700; color: #1B2A4A; }
+  .project-title { font-size: 10.4pt; font-weight: 700; color: #1B2A4A; }
+  .project-tech { font-size: 8.4pt; color: #888; margin: 2px 0 3px; }
+  .edu-school { font-size: 10.2pt; font-weight: 700; }
+  .edu-detail { font-size: 9.3pt; color: #444; font-style: italic; margin: 1px 0 6px; }
+  @media screen {
+    html { background: #eef1f5; padding: 24px 0; }
+    body { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 14mm 13mm; background: #fff; box-shadow: 0 4px 24px rgba(27,42,74,.12); }
+  }
+  @media print { html, body { background: #fff; } a { color: inherit; text-decoration: none; } }
+</style>
+</head>
+<body>
+  <div class="header">
+    <img class="profile-photo" src="./images/joowon-kim-resume.jpg" alt="Joowon Kim">
+    <div class="header-text">
+      <p class="name">Joowon Kim <span class="kr">김주원</span></p>
+      <p class="headline">Full-Stack Engineer | Blockchain Engineer<br><span class="headline-stack">Next.js · NestJS · Java · PostgreSQL · BSC/EVM</span></p>
+      <div class="contact">
+        <div class="contact-line">
+          <a href="tel:+821066614589"><svg class="contact-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.46 15.46 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2Z"/></svg>+82 10-6661-4589</a>
+          <a href="mailto:0122wndnjs@gmail.com"><svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>0122wndnjs@gmail.com</a>
+        </div>
+        <div class="contact-line">
+          <a href="https://linkedin.com/in/joowon-kim-0122"><svg class="contact-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 10h4v11H3V10Zm6.5 0h3.83v1.5h.05c.53-1.01 1.84-2.08 3.78-2.08 4.04 0 4.84 2.66 4.84 6.12V21h-4v-4.84c0-1.16-.02-2.64-1.61-2.64-1.61 0-1.86 1.26-1.86 2.55V21h-4V10Z"/></svg>linkedin.com/in/joowon-kim-0122</a>
+          <a href="https://github.com/0122wndnjs"><svg class="contact-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .7A11.5 11.5 0 0 0 8.36 23.1c.58.1.79-.25.79-.56v-2.2c-3.22.7-3.9-1.37-3.9-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.04 1.77 2.72 1.26 3.38.96.1-.75.4-1.26.74-1.55-2.57-.3-5.27-1.29-5.27-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.16 1.18A10.96 10.96 0 0 1 12 6.14c.98 0 1.96.13 2.88.39 2.2-1.49 3.16-1.18 3.16-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.83 1.19 3.09 0 4.41-2.71 5.39-5.29 5.68.42.36.79 1.06.79 2.14v3.24c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/></svg>github.com/0122wndnjs</a>
+          <a href="https://joowonkim.me"><svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.46 3.8 5.46 3.8 9s-1.3 6.54-3.8 9c-2.5-2.46-3.8-5.46-3.8-9S9.5 5.46 12 3Z"/></svg>joowonkim.me</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Summary</h2>
+  <p class="summary">Hands-on full-stack and blockchain engineer with 6+ years of experience building production web applications, BSC/EVM wallets, stablecoin payment flows, smart contracts, token platforms, and AI-powered SaaS. Experienced across React/Next.js frontends, NestJS and Spring Boot backends, PostgreSQL/Redis data systems, asynchronous workers, wallet security, and on-chain transaction integration. Able to own architecture, implementation, deployment, and production operations while translating ambiguous business requirements into reliable software.</p>
+
+  <h2>Technical Skills</h2>
+  <div class="skills">
+    <span class="skill-label">Languages</span><span class="skill-value">TypeScript, JavaScript, Java, Solidity, SQL</span>
+    <span class="skill-label">Frontend</span><span class="skill-value">React, Next.js, Tailwind CSS, responsive web applications</span>
+    <span class="skill-label">Backend</span><span class="skill-value">Node.js, NestJS, Spring Boot, REST APIs, event-driven processing</span>
+    <span class="skill-label">Blockchain</span><span class="skill-value">BSC/EVM, ethers.js, WalletConnect, Web3j, Hardhat, BEP-20, BscScan/Etherscan APIs</span>
+    <span class="skill-label">Data &amp; Infrastructure</span><span class="skill-value">PostgreSQL, Redis, Prisma, BullMQ, Docker, AWS</span>
+    <span class="skill-label">Security &amp; Quality</span><span class="skill-value">OTP, WebAuthn/Passkeys, encrypted key storage, schema validation, audit logging</span>
+  </div>
+
+  <h2>Experience</h2>
+  <div class="job">
+    <div class="job-row"><div class="job-title-org"><span class="job-title">Blockchain Product Lead</span><span class="job-org">UNIDECA</span></div><span class="period">May 2025 – Present</span></div>
+    <div class="job-sub">Seoul, South Korea · Hands-on full-stack and blockchain engineering lead</div>
+    <ul class="bullets">
+      <li>Architect and implement <span class="metric">five production BSC wallet and token platforms</span> using React/Next.js, NestJS, PostgreSQL, Redis, ethers.js, WalletConnect, and BscScan integrations.</li>
+      <li>Designed hybrid settlement systems that verify USDT deposits and withdrawals on-chain while processing purchases, staking, lockups, rewards, and transfers through auditable off-chain ledgers.</li>
+      <li>Built wallet security and operational controls including encrypted key storage, OTP, Passkeys/WebAuthn, automated transaction verification, Telegram event alerts, treasury reconciliation, gas-reserve monitoring, and administrator audit logs.</li>
+      <li>Developed smart-contract purchase flows with BEP-20 approvals, receipt and event verification, transaction synchronization, configurable pricing, treasury controls, pausing, and ownership management.</li>
+      <li>Launched and operate a hybrid BSC platform serving <span class="metric">783 registered users and 398 purchasers</span>, processing <span class="metric">844K USDT in cumulative token purchase volume</span> within five months.</li>
+    </ul>
+  </div>
+
+  <div class="job">
+    <div class="job-row"><div class="job-title-org"><span class="job-title">Blockchain Product Manager</span><span class="job-org">TrillionsLab</span></div><span class="period">Aug 2021 – Oct 2024</span></div>
+    <div class="job-sub">Smart contract development · Java platform integration</div>
+    <ul class="bullets">
+      <li>Designed and developed Solidity contracts for Emetal Exchange, a government-backed non-ferrous-metals marketplace supporting standard and reverse auctions, escrow settlement, winner payment, and unsuccessful-bid refunds.</li>
+      <li>Connected smart contracts to the existing Java platform using MetaMask, Web3j, Infura, and Etherscan transaction tracking, with automatic retry and transaction-state handling.</li>
+      <li>Coordinated independent validation that achieved <span class="metric">100% smart contract execution accuracy</span> and supported 200 concurrent users with a 0% server error rate.</li>
+      <li>Contributed to the patented “Integrated Aluminum Ingot Trading Management System” and supported BlockApps’ Korea market entry through direct technical coordination with its U.S. team.</li>
+    </ul>
+  </div>
+
+  <div class="job">
+    <div class="job-row"><div class="job-title-org"><span class="job-title">Java Backend Developer</span><span class="job-org">Delta Dental of Michigan</span></div><span class="period">Feb 2020 – Jan 2021</span></div>
+    <ul class="bullets"><li>Developed Java/Spring Boot REST APIs and JDBC database integrations for an enterprise dental insurance intranet within a distributed Agile engineering team in Lansing, Michigan.</li></ul>
+  </div>
+
+  <div class="job">
+    <div class="job-row"><div class="job-title-org"><span class="job-title">Software Engineer Intern</span><span class="job-org">Apolis</span></div><span class="period">Aug 2019 – Jan 2020</span></div>
+    <ul class="bullets"><li>Built Java/Spring Boot REST APIs for a microservice-based hotel reservation management system, working with relational databases, backend architecture patterns, and unit testing.</li></ul>
+  </div>
+
+  <h2>Selected Engineering Projects</h2>
+  <div class="project">
+    <div class="project-row"><span class="project-title">VIORA — Global Medical &amp; Beauty Platform</span><span class="period">Jun 2026 – Present</span></div>
+    <div class="project-tech">Turborepo · Next.js 15 · React 19 · NestJS 11 · Prisma · PostgreSQL · OAuth2 · Stripe · Cloudflare Workers</div>
+    <ul class="bullets">
+      <li>Architected and launched a multi-tenant platform comprising four applications: customer web, hospital administration, super-admin console, and backend API, managed in a Turborepo/pnpm monorepo.</li>
+      <li>Implemented JWT authentication and seven OAuth2 providers—Google, Kakao, Naver, Facebook, LINE, Apple, and WeChat—including JWKS-based token verification.</li>
+      <li>Integrated Stripe payments and designed deposit and settlement automation; built booking/status workflows, product variants, rewards, coupons, real-time chat, web push, reviews, QR confirmation, audit logs, approval workflows, and CMS tools.</li>
+      <li>Delivered a multilingual PWA on Cloudflare Workers using OpenNext and implemented GA4 event tracking for sign-up, login, checkout, and purchase.</li>
+    </ul>
+  </div>
+
+  <div class="project">
+    <div class="project-row"><span class="project-title">RankFit — AI-Powered SEO / AEO / GEO Intelligence SaaS</span><span class="period">May 2026 – Present</span></div>
+    <div class="project-tech">Next.js · NestJS · Prisma · PostgreSQL · Redis · BullMQ · Playwright · PageSpeed · OpenAI · Claude</div>
+    <ul class="bullets">
+      <li>Designed and built a multi-page crawling and analysis platform validated across <span class="metric">19 web projects</span>, combining deterministic scoring, competitor benchmarking, structured diagnosis, and AI-search visibility testing.</li>
+      <li>Architected asynchronous crawl and LLM workloads with BullMQ/Redis and implemented Zod schema validation, prompt-injection safeguards, data redaction, retries, and graceful fallbacks.</li>
+      <li>Guided a live client implementation that improved the total score from <span class="metric">77 to 89</span>, including Technical SEO 87→100, On-page 82→100, AEO 24→74, and GEO 58→85 under the same scoring model.</li>
+    </ul>
+  </div>
+
+  <div class="project">
+    <div class="project-row"><span class="project-title">Hybrid BSC Wallet &amp; Token Platform</span><span class="period">Oct 2025 – Present</span></div>
+    <div class="project-tech">React · NestJS · PostgreSQL · Redis · ethers.js · WalletConnect · BscScan · WebAuthn</div>
+    <ul class="bullets">
+      <li>Built a production wallet integrating external MetaMask and Binance Wallet accounts through WalletConnect, automated USDT deposit verification, off-chain token accounting, and on-chain withdrawal settlement.</li>
+      <li>Implemented staking and lockup engines, purchase and withdrawal queues, Passkey/OTP security, Telegram alerts, BscScan transaction links, multilingual UI, simulations, and detailed administrator workflows.</li>
+      <li>Built treasury dashboards for fund flows, gas reserves, token balances, ledger-to-on-chain reconciliation, external balance adjustments, commissions, margins, and administrative audit history.</li>
+    </ul>
+  </div>
+
+  <div class="project">
+    <div class="project-row"><span class="project-title">CourseNow — Cross-Platform Golf Community</span><span class="period">Jul 2026 – Present</span></div>
+    <div class="project-tech">Next.js 15 · React 19 · TypeScript · Capacitor · Supabase · PostgreSQL · RLS · FCM · APNs · Playwright</div>
+    <ul class="bullets">
+      <li>Built and launched a shared-codebase web, iOS, and Android application using Next.js and Capacitor, with Supabase/PostgreSQL, Naver OAuth, and Row-Level Security.</li>
+      <li>Implemented round and score tracking, golf-course discovery, reports, reviews, rankings, a credit economy, cryptographically verifiable raffles, a point shop, and administration dashboards.</li>
+      <li>Delivered native push through FCM/APNs plus PWA web push, optimized multi-resource fetching to avoid N+1 queries, and added WASM-based face blurring for uploaded images.</li>
+      <li>Established Playwright E2E tests, Node.js integration tests, SQL migration management, and a GitHub Actions CI/CD pipeline.</li>
+    </ul>
+  </div>
+
+  <h2>Education</h2>
+  <div class="edu-row"><span class="edu-school">University of Minnesota, Twin Cities</span><span class="period">Sep 2017 – May 2019</span></div>
+  <div class="edu-detail">B.A., Computer Science (major) · Mathematics (minor) — GPA 3.0/4.0 · Transfer student</div>
+
+  <h2>Languages</h2>
+  <p class="summary">Korean (native) · English (fluent) · Extensive U.S. academic and professional experience</p>
+</body>
+</html>
