@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useScroll, useSpring } from "framer-motion";
 import { FiArrowUpRight, FiMenu, FiX } from "react-icons/fi";
 import { usePathname, useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
+import ResumeMenu from "@/components/common/ResumeMenu";
 
 type NavItem = {
   id: string;
@@ -169,6 +170,8 @@ export default function Header() {
               <span style={{ color: lang === "ko" ? "#5b4dff" : "rgba(14,13,31,0.3)" }}>KO</span>
             </button>
 
+            <ResumeMenu />
+
             <button
               onClick={() => handleNavClick(contextualAction)}
               className="flex items-center gap-1.5 text-[13px] font-medium transition-all duration-200 group"
@@ -247,6 +250,8 @@ export default function Header() {
                   ))}
 
                   <div className="mt-1 pt-2 space-y-0.5" style={{ borderTop: "1px solid rgba(14,13,31,0.06)" }}>
+                    <ResumeMenu variant="mobile" />
+
                     <button
                       onClick={() => handleNavClick(contextualAction)}
                       className="w-full text-left px-4 py-3.5 rounded-xl text-base font-medium flex items-center justify-between transition-colors duration-200"

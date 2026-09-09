@@ -1,0 +1,38 @@
+@page { size: A4 portrait; margin: 14mm 13mm; }
+* { box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Noto Sans KR", "Apple SD Gothic Neo", Arial, sans-serif; color: #1a1a1a; font-size: 10.3pt; line-height: 1.54; margin: 0; letter-spacing: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.header { display: flex; align-items: center; gap: 16px; border-bottom: 2px solid #1B2A4A; padding-bottom: 10px; margin-bottom: 12px; }
+.profile-photo { width: 74px; height: 88px; border-radius: 4px; flex-shrink: 0; object-fit: cover; object-position: center 35%; border: 1px solid #d8dde7; }
+.header-text { flex: 1; min-width: 0; }
+.name { font-size: 22pt; font-weight: 700; color: #1B2A4A; margin: 0; letter-spacing: -.25px; line-height: 1.15; }
+.name .en { font-size: 11pt; font-weight: 400; color: #666; margin-left: 8px; }
+.headline { font-size: 11.5pt; font-weight: 600; color: #2E5AAC; margin: 3px 0 6px; }
+.headline-stack { font-size: 9pt; font-weight: 500; color: #667085; }
+.contact { font-size: 8.8pt; color: #555; display: grid; gap: 3px; }
+.contact-line { display: flex; align-items: center; gap: 16px; }
+.contact a { color: inherit; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; white-space: nowrap; }
+.contact-icon { width: 11px; height: 11px; color: #2E5AAC; flex: 0 0 auto; }
+h2 { font-size: 11.5pt; font-weight: 700; color: #1B2A4A; text-transform: uppercase; letter-spacing: .7px; border-bottom: 1.2px solid #1B2A4A; padding-bottom: 3px; margin: 15px 0 7px; break-after: avoid; }
+h2:first-of-type { margin-top: 0; }
+.summary { font-size: 10pt; line-height: 1.58; color: #262626; margin: 0 0 4px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 2px; }
+.tag { font-size: 8.6pt; font-weight: 600; color: #2E5AAC; background: #F2F3F5; padding: 3px 8px; border-radius: 3px; white-space: nowrap; }
+.skills { display: grid; grid-template-columns: 114px 1fr; gap: 3px 10px; margin: 2px 0; }
+.skill-label { font-size: 8.9pt; font-weight: 700; color: #1B2A4A; }
+.skill-value { font-size: 8.9pt; color: #333; }
+.job, .project { margin-bottom: 10px; break-inside: avoid-page; }
+.job-row, .project-row, .edu-row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 3px 12px; }
+.job-title-org { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 6px; }
+.job-title { font-size: 10.5pt; font-weight: 700; color: #111; }
+.job-org { font-size: 10pt; color: #2E5AAC; font-weight: 600; }
+.period { font-size: 8.7pt; color: #777; white-space: nowrap; }
+.job-sub { font-size: 8.5pt; color: #888; font-style: italic; margin: 1px 0 4px; }
+ul.bullets { margin: 3px 0 0; padding-left: 16px; }
+ul.bullets li { margin-bottom: 4px; font-size: 9.7pt; line-height: 1.5; }
+.metric { font-weight: 700; color: #1B2A4A; }
+.project-title { font-size: 10.4pt; font-weight: 700; color: #1B2A4A; }
+.project-tech { font-size: 8.4pt; color: #888; margin: 2px 0 3px; }
+.edu-school { font-size: 10.2pt; font-weight: 700; }
+.edu-detail { font-size: 9.3pt; color: #444; font-style: italic; margin: 1px 0 6px; }
+@media screen { html { background: #eef1f5; padding: 24px 0; } body { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 14mm 13mm; background: #fff; box-shadow: 0 4px 24px rgba(27,42,74,.12); } }
+@media print { html, body { background: #fff; } a { color: inherit; text-decoration: none; } }

@@ -8,6 +8,7 @@ import { SiGithub } from "react-icons/si";
 import { FaTelegramPlane } from "react-icons/fa";
 import { FiCreditCard, FiMail, FiMessageCircle } from "react-icons/fi";
 import BusinessCard from "./BusinessCard";
+import ResumeMenu from "@/components/common/ResumeMenu";
 
 const socials = [
   {
@@ -207,6 +208,8 @@ export default function Contact() {
             <p className="text-[10px] font-mono tracking-[0.25em] uppercase mb-1" style={{ color: "rgba(14,13,31,0.2)" }}>
               {t.getInTouch}
             </p>
+
+            <ResumeMenu variant="contact" />
 
             {/* Email — click copies address */}
             <a
