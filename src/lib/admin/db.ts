@@ -25,6 +25,7 @@ function normalizeRow(row: Record<string, unknown>): Record<string, unknown> {
 let client: Sql | undefined;
 let healthCheck: Promise<Sql> | undefined;
 let activeTransactions = 0;
+let lastHealthyAt = 0;
 const transactionContext = new AsyncLocalStorage<QuerySql>();
 
 function createClient(): Sql {
@@ -51,18 +52,26 @@ function withTimeout<T>(operation: Promise<T>, milliseconds: number): Promise<T>
 
 async function connection(): Promise<Sql> {
   if (healthCheck) return healthCheck;
-  const current = client ?? (client = createClient());
-  if (activeTransactions > 0) return current;
+  if (!client) {
+    client = createClient();
+    lastHealthyAt = Date.now();
+    return client;
+  }
+  const current = client;
+  if (activeTransactions > 0 || Date.now() - lastHealthyAt < 30_000)
+    return current;
 
   healthCheck = (async () => {
     try {
       await withTimeout(current.unsafe("SELECT 1"), 5000);
+      lastHealthyAt = Date.now();
       return current;
     } catch {
       const replacement = createClient();
       if (client === current) client = replacement;
       void current.end({ timeout: 1 }).catch(() => undefined);
       await withTimeout(replacement.unsafe("SELECT 1"), 5000);
+      lastHealthyAt = Date.now();
       return replacement;
     }
   })();
@@ -90,7 +99,9 @@ export const db = {
       });
       const active = transactionContext.getStore();
       const sql = active ?? await connection();
-      return sql.unsafe(parameters(query, normalized), normalized);
+      const rows = await sql.unsafe(parameters(query, normalized), normalized);
+      lastHealthyAt = Date.now();
+      return rows;
     };
     return {
       async get(...values: unknown[]): Promise<Record<string, unknown> | undefined> {

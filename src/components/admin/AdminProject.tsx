@@ -359,6 +359,7 @@ export default function AdminProject({ projectId }: { projectId: string }) {
                   await api(`/api/admin/projects/${project.id}`, "PATCH", {
                     status,
                   });
+                  window.dispatchEvent(new Event("admin:projects-changed"));
                 } catch (err) {
                   setError(
                     err instanceof Error ? err.message : "상태 저장 실패",
@@ -612,6 +613,7 @@ export default function AdminProject({ projectId }: { projectId: string }) {
           onSave={async (body) => {
             try {
               await api(`/api/admin/projects/${project.id}`, "PATCH", body);
+              window.dispatchEvent(new Event("admin:projects-changed"));
               flash("프로젝트 정보 저장했어요.");
               await load();
             } catch (e) {

@@ -59,7 +59,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       window.removeEventListener("focus", refreshProjects);
       window.removeEventListener("admin:projects-changed", refreshProjects);
     };
-  }, [pathname]);
+  }, []);
   async function logout() {
     await fetch("/api/admin/auth/logout", { method: "POST" });
     window.location.href = "/admin";
