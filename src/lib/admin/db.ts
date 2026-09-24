@@ -23,17 +23,54 @@ function normalizeRow(row: Record<string, unknown>): Record<string, unknown> {
 }
 
 let client: Sql | undefined;
+let healthCheck: Promise<Sql> | undefined;
+let activeOperations = 0;
 const transactionContext = new AsyncLocalStorage<QuerySql>();
 
-function connection(): QuerySql {
-  const active = transactionContext.getStore();
-  if (active) return active;
-  if (!client) {
-    const url = process.env.ADMIN_DATABASE_URL;
-    if (!url) throw new Error("ADMIN_DATABASE_URL 환경변수가 필요합니다.");
-    client = postgres(url, { max: 1, prepare: false, ssl: "require" });
+function createClient(): Sql {
+  const url = process.env.ADMIN_DATABASE_URL;
+  if (!url) throw new Error("ADMIN_DATABASE_URL 환경변수가 필요합니다.");
+  return postgres(url, {
+    max: 1,
+    prepare: false,
+    ssl: "require",
+    connect_timeout: 5,
+    idle_timeout: 10,
+  });
+}
+
+function withTimeout<T>(operation: Promise<T>, milliseconds: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  return Promise.race([
+    operation,
+    new Promise<T>((_, reject) => {
+      timer = setTimeout(() => reject(new Error("데이터베이스 연결 확인 시간이 초과되었습니다.")), milliseconds);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
+async function connection(): Promise<Sql> {
+  if (healthCheck) return healthCheck;
+  const current = client ?? (client = createClient());
+  if (activeOperations > 0) return current;
+
+  healthCheck = (async () => {
+    try {
+      await withTimeout(current.unsafe("SELECT 1"), 5000);
+      return current;
+    } catch {
+      const replacement = createClient();
+      if (client === current) client = replacement;
+      void current.end({ timeout: 1 }).catch(() => undefined);
+      await withTimeout(replacement.unsafe("SELECT 1"), 5000);
+      return replacement;
+    }
+  })();
+  try {
+    return await healthCheck;
+  } finally {
+    healthCheck = undefined;
   }
-  return client;
 }
 
 function parameters(query: string, values: unknown[]) {
@@ -51,7 +88,14 @@ export const db = {
         if (["string", "number", "boolean"].includes(typeof value)) return value as Value;
         throw new Error("지원하지 않는 SQL 매개변수입니다.");
       });
-      return connection().unsafe(parameters(query, normalized), normalized);
+      const active = transactionContext.getStore();
+      const sql = active ?? await connection();
+      activeOperations++;
+      try {
+        return await sql.unsafe(parameters(query, normalized), normalized);
+      } finally {
+        activeOperations--;
+      }
     };
     return {
       async get(...values: unknown[]): Promise<Record<string, unknown> | undefined> {
@@ -68,8 +112,13 @@ export const db = {
       },
     };
   },
-  transaction<T>(callback: () => Promise<T>): Promise<T> {
-    if (!client) connection();
-    return client!.begin((tx) => transactionContext.run(tx, callback)) as Promise<T>;
+  async transaction<T>(callback: () => Promise<T>): Promise<T> {
+    const sql = await connection();
+    activeOperations++;
+    try {
+      return await sql.begin((tx) => transactionContext.run(tx, callback)) as T;
+    } finally {
+      activeOperations--;
+    }
   },
 };
