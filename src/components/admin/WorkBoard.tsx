@@ -14,7 +14,7 @@ import { TaskEditor, type Task } from "./AdminProject";
 import CalendarView from "./CalendarView";
 import type { Meeting } from "./MeetingsPage";
 import { projectColor } from "@/lib/admin/project-colors";
-import { PROJECT_KINDS, PROJECT_KIND_LABELS, type ProjectKind } from "@/lib/admin/project-kinds";
+import { matchesProjectKind, PROJECT_KINDS, PROJECT_KIND_LABELS, type ProjectKind } from "@/lib/admin/project-kinds";
 
 type BoardTask = Task & { project_name: string };
 type Project = { id: string; name: string; client: string; kind: ProjectKind; due_date: string | null };
@@ -104,7 +104,7 @@ export default function WorkBoard() {
   const today = new Date().toLocaleDateString("en-CA", {
     timeZone: "Asia/Seoul",
   });
-  const availableProjects = projects.filter((project) => !kind || project.kind === kind);
+  const availableProjects = projects.filter((project) => matchesProjectKind(project.kind, kind));
   const availableProjectIds = new Set(availableProjects.map((project) => project.id));
   const visible = tasks.filter(
     (task) =>
@@ -187,7 +187,7 @@ export default function WorkBoard() {
         <div>
           <h1>
             내 작업 보드{" "}
-            <span>{tasks.filter((task) => task.status !== "완료" && (!kind || projects.some((project) => project.id === task.project_id && project.kind === kind))).length}</span>
+            <span>{tasks.filter((task) => task.status !== "완료" && projects.some((project) => project.id === task.project_id && matchesProjectKind(project.kind, kind))).length}</span>
           </h1>
         </div>
         <Link href="/admin/projects?new=1" className="board-secondary">
