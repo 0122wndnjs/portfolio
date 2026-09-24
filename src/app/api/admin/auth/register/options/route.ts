@@ -12,12 +12,12 @@ import { credentials, relyingParty } from "@/lib/admin/webauthn";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  if (!checkRateLimit(`register:${requestAddress(request)}`, 5, 60 * 60_000))
+  if (!await checkRateLimit(`register:${requestAddress(request)}`, 5, 60 * 60_000))
     return NextResponse.json(
       { error: "패스키 등록 시도가 많습니다. 잠시 후 다시 시도하세요." },
       { status: 429 },
     );
-  const existing = credentials();
+  const existing = await credentials();
   const authenticated = await isAuthenticated();
   const body = (await request.json().catch(() => ({}))) as {
     bootstrapToken?: string;
@@ -55,6 +55,6 @@ export async function POST(request: Request) {
       transports: JSON.parse(item.transports),
     })),
   });
-  const challengeId = saveChallenge(options.challenge, "register");
+  const challengeId = await saveChallenge(options.challenge, "register");
   return NextResponse.json({ options, challengeId });
 }

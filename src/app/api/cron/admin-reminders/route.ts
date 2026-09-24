@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   )
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const chatId = (
-    db
+    await db
       .prepare("SELECT value FROM settings WHERE key='telegram_chat_id'")
       .get() as { value: string } | undefined
   )?.value;
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ sent: 0, skipped: "telegram not connected" });
   const prefs = JSON.parse(
     (
-      db.prepare("SELECT value FROM settings WHERE key='preferences'").get() as
+      await db.prepare("SELECT value FROM settings WHERE key='preferences'").get() as
         { value: string } | undefined
     )?.value || "{}",
   );
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   const today = todaySeoul(),
     tomorrow = addDay(today, 1),
     waitingDate = addDay(today, -(Number(prefs.overdueDays) || 3));
-  const tasks = db
+  const tasks = await db
     .prepare(
       `SELECT t.id,t.title,t.status,t.due_date,t.waiting_since,p.name AS project_name FROM tasks t JOIN projects p ON p.id=t.project_id WHERE t.archived=0 AND t.status!='완료' AND p.status IN ('준비 중','진행 중')`,
     )
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     waiting_since: string | null;
     project_name: string;
   }>;
-  const invoiceRows = db
+  const invoiceRows = await db
     .prepare(
       `SELECT i.id,i.title,i.due_date,p.name AS project_name,i.amount,(SELECT COALESCE(SUM(amount),0) FROM payments WHERE invoice_id=i.id) AS paid FROM invoices i JOIN projects p ON p.id=i.project_id`,
     )
@@ -109,7 +109,7 @@ export async function POST(request: Request) {
       text: `오늘 일정 ${messages.length}건 · 마감 작업 ${messages.filter((item) => item.key.startsWith("deadline:")).length}건 · 고객 확인 대기 ${messages.filter((item) => item.key.startsWith("waiting:")).length}건 · 입금 일정 ${messages.filter((item) => item.key.startsWith("payment:")).length}건`,
     });
   const createClaim = db.prepare(
-    "INSERT OR IGNORE INTO notification_log(id,dedupe_key,message,sent_at,result) VALUES(?,?,?,?, 'sending')",
+    "INSERT INTO notification_log(id,dedupe_key,message,sent_at,result) VALUES(?,?,?,?, 'sending') ON CONFLICT (dedupe_key) DO NOTHING",
   );
   const retryClaim = db.prepare(
     "UPDATE notification_log SET message=?,sent_at=?,result='sending' WHERE dedupe_key=? AND (result='failed' OR (result='sending' AND sent_at<?))",
@@ -122,16 +122,16 @@ export async function POST(request: Request) {
   for (const item of messages) {
     const claimedAt = new Date().toISOString();
     const claimed =
-      createClaim.run(
+      (await createClaim.run(
         randomBytes(16).toString("hex"),
         item.key,
         item.text,
         claimedAt,
-      ).changes === 1;
+      )).changes === 1;
     const staleClaim = new Date(Date.now() - 15 * 60_000).toISOString();
     const reclaimed =
       !claimed &&
-      retryClaim.run(item.text, claimedAt, item.key, staleClaim).changes === 1;
+      (await retryClaim.run(item.text, claimedAt, item.key, staleClaim)).changes === 1;
     if (!claimed && !reclaimed) continue;
     let response: Response | undefined;
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -155,7 +155,7 @@ export async function POST(request: Request) {
       await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
     }
     const result = response?.ok ? "sent" : "failed";
-    finishClaim.run(new Date().toISOString(), result, item.key);
+    await finishClaim.run(new Date().toISOString(), result, item.key);
     if (result === "sent") sent++;
   }
   return NextResponse.json({ sent, total: messages.length });

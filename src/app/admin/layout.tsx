@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { isAuthenticated } from "@/lib/admin/auth";
 import { db } from "@/lib/admin/db";
+import { relyingParty } from "@/lib/admin/webauthn";
 import AdminLogin from "@/components/admin/AdminLogin";
 import AdminShell from "@/components/admin/AdminShell";
 
@@ -19,9 +20,10 @@ export default async function AdminLayout({
   children: ReactNode;
 }) {
   const authenticated = await isAuthenticated();
+  const { rpID } = await relyingParty();
   const configured =
     (
-      db.prepare("SELECT COUNT(*) AS count FROM credentials").get() as {
+      await db.prepare("SELECT COUNT(*) AS count FROM credentials WHERE rp_id=?").get(rpID) as {
         count: number;
       }
     ).count > 0;

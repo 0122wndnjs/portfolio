@@ -1,5 +1,4 @@
 import "server-only";
-import { cookies } from "next/headers";
 import { headers } from "next/headers";
 import { db } from "@/lib/admin/db";
 
@@ -18,10 +17,11 @@ export async function relyingParty() {
   };
 }
 
-export function credentials() {
-  return db
-    .prepare("SELECT id, public_key, counter, transports FROM credentials")
-    .all() as Array<{
+export async function credentials() {
+  const { rpID } = await relyingParty();
+  return await db
+    .prepare("SELECT id, public_key, counter, transports FROM credentials WHERE rp_id=?")
+    .all(rpID) as Array<{
     id: string;
     public_key: string;
     counter: number;

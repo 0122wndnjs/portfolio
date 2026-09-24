@@ -1,16 +1,18 @@
 # 관리자 작업실 운영 설정
 
-구현: `/admin` — Next.js Node.js 런타임 + SQLite + WebAuthn 패스키 + Telegram Bot API.
+구현: `/admin` — Next.js Node.js 런타임 + Supabase Postgres + WebAuthn 패스키 + Telegram Bot API.
 
 ## 로컬 실행
 
-Node.js 22 이상 권장. 루트 `.env.local`에 아래 항목을 설정한다. `.env` 파일은 저장소에 올리지 않는다.
+Node.js 22 이상 권장. 먼저 Supabase 프로젝트의 SQL Editor에서
+[`supabase/migrations/20260924000000_admin_workspace.sql`](../supabase/migrations/20260924000000_admin_workspace.sql)을 실행한다.
+루트 `.env.local`에 아래 항목을 설정한다. `.env` 파일은 저장소에 올리지 않는다.
 
 ```dotenv
 ADMIN_BOOTSTRAP_TOKEN=랜덤한_최초_등록_비밀값
 ADMIN_ORIGIN=http://localhost:3000
 WEBAUTHN_RP_ID=localhost
-ADMIN_DB_PATH=.data/workspace.sqlite
+ADMIN_DATABASE_URL=postgresql://postgres.PROJECT_REF:비밀번호@POOLER_HOST:6543/postgres
 ```
 
 ```bash
@@ -19,17 +21,28 @@ npm run dev
 
 `/admin`에 접속해 `ADMIN_BOOTSTRAP_TOKEN`을 입력하고 패스키를 등록한다. 이 토큰은 최초 등록 요청에만 쓰이며 로그인 이후에는 필요하지 않다. 등록 후 토큰은 `.env.local`에서 지워도 된다. 패스키 등록은 localhost 또는 HTTPS에서 동작한다.
 
-## 운영 서버 필수 조건
+## Supabase + Vercel 운영 설정
 
-- 단일 Node.js 인스턴스 또는 SQLite 쓰기 잠금을 공유하는 단일 쓰기 노드.
-- `.data` 대신 영속 볼륨에 `ADMIN_DB_PATH` 지정. 서버리스 임시 파일 시스템과 Edge Runtime은 지원하지 않는다.
+- Supabase 프로젝트의 **Connect → Transaction pooler**에서 연결 문자열을 복사한다. 비밀번호의 `@`, `#`, `/` 등 특수문자는 URL 인코딩된 연결 문자열을 사용한다.
+- Vercel 프로젝트의 **Settings → Environment Variables → Production**에 `ADMIN_DATABASE_URL`, `ADMIN_ORIGIN`, `WEBAUTHN_RP_ID`, `ADMIN_BOOTSTRAP_TOKEN`을 설정한 뒤 재배포한다. `NEXT_PUBLIC_` 접두사는 붙이지 않는다.
+- DB 클라이언트는 Vercel 서버리스용으로 연결 1개, TLS, prepared statements 비활성화로 설정되어 있다.
 - 외부에서 접속하는 주소와 일치하도록 `ADMIN_ORIGIN=https://실제-도메인`, `WEBAUTHN_RP_ID=실제-도메인` 설정. 서브도메인 사용 시 RP ID 범위도 확인한다.
 - HTTPS 적용. 지문/Face ID 데이터는 기기에 머물며 서버에는 패스키 공개 키만 저장된다.
 - 프록시/CDN은 `X-Forwarded-For`를 클라이언트가 임의 지정한 값이 아닌 실제 연결 IP로 덮어써야 한다. 로그인 rate limit이 이 헤더를 사용한다.
 - `ADMIN_BOOTSTRAP_TOKEN`은 충분히 긴 임의 값으로 지정한 뒤 첫 관리자 등록 후 폐기.
-- DB 볼륨 백업 및 복원 확인. SQLite DB를 실행 중 단순 파일 복사하면 WAL 데이터가 빠질 수 있으니 SQLite 백업 기능을 사용한다.
+- Supabase 프로젝트의 백업 정책을 확인한다. 무료 플랜은 자동 백업이 제공되지 않으므로 업무 데이터는 별도 백업 계획이 필요하다.
 
-현재 프로젝트에는 배포 플랫폼, DB 서비스, 예약 실행 설정이 없다. 배포 대상이 서버리스이거나 영속 볼륨을 제공하지 않으면 운영 전에 PostgreSQL 등 관리형 DB로 옮겨야 한다.
+`ADMIN_DB_PATH`는 더 이상 사용하지 않는다. 패스키·세션·복구 코드는 RP ID별로 구분하므로 로컬과 운영 도메인에서 각각 패스키를 등록할 수 있다. 다만 로컬 개발에서 운영 DB를 연결하면 프로젝트 등 **업무 데이터는 공유**되므로 테스트 입력도 운영 데이터에 반영된다.
+
+## 기존 로컬 SQLite 데이터 이전
+
+로컬에 입력한 프로젝트·작업·견적·입금·미팅 데이터가 있으면, SQL 스키마 생성 후 **대상 테이블이 비어 있을 때만** 아래 명령으로 이전한다. `sqlite3` CLI가 필요하다. 이전 도중 오류가 나면 Postgres 트랜잭션이 롤백된다. 원본 SQLite는 변경하지 않는다.
+
+```bash
+node --env-file=.env.local scripts/migrate-admin-sqlite.mjs .data/workspace.sqlite
+```
+
+이전 스크립트는 패스키·세션·복구 코드·텔레그램 연결 설정을 복사하지 않는다. 운영 도메인에서 `ADMIN_BOOTSTRAP_TOKEN`으로 패스키를 새로 등록하고 복구 코드를 다시 발급한다. 이전 완료 후 로컬 DB 파일은 확인 전까지 보관한다.
 
 ## Telegram 알림 설정
 
@@ -67,7 +80,7 @@ curl --request POST \
 
 ## 구현 범위와 제한
 
-- 데이터는 SQLite에 서버 측 저장. 공개 포트폴리오 데이터와 관리자 API는 분리.
+- 데이터는 Supabase Postgres에 서버 측 저장. 모든 관리자 테이블에 RLS를 켜고 Data API 정책은 만들지 않았다. DB 연결 문자열은 서버 전용 비밀값이다.
 - 세션은 HttpOnly·SameSite Strict 쿠키, 7일 만료. 인증 수단 변경·로그인 시도는 제한 및 기록.
 - 설정 화면에서 일회용 복구 코드 10개를 발급할 수 있다. 발급 직후에만 원문이 보이며, 새로 발급하면 기존 코드는 모두 무효화된다. 복구 코드를 사용하면 등록 패스키와 세션을 폐기하고 새 패스키 등록을 요구한다. 코드는 비밀번호 관리자 등 안전한 곳에 보관한다.
 - 고객 상세 정보는 Telegram 메시지에 보내지 않는다. 알림에는 프로젝트명과 작업/청구 제목이 포함될 수 있다.

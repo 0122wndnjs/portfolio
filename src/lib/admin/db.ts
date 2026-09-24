@@ -1,95 +1,75 @@
 import "server-only";
-import Database from "better-sqlite3";
-import { mkdirSync } from "node:fs";
-import path from "node:path";
+import { AsyncLocalStorage } from "node:async_hooks";
+import postgres from "postgres";
 
-const dbPath =
-  process.env.ADMIN_DB_PATH ||
-  path.join(process.cwd(), ".data", "workspace.sqlite");
-mkdirSync(path.dirname(dbPath), { recursive: true });
+type Sql = ReturnType<typeof postgres>;
+type QuerySql = Pick<Sql, "unsafe">;
+type Value = string | number | boolean | null;
+const numericColumns = new Set([
+  "count", "task_count", "done_count", "imported_item_count", "amount", "tax_amount",
+  "contract_amount", "total", "paid", "counter",
+]);
 
-const db = new Database(dbPath);
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
-db.exec(`
-CREATE TABLE IF NOT EXISTS credentials (
-  id TEXT PRIMARY KEY, public_key TEXT NOT NULL, counter INTEGER NOT NULL DEFAULT 0,
-  transports TEXT NOT NULL DEFAULT '[]', device_name TEXT NOT NULL DEFAULT '내 기기',
-  created_at TEXT NOT NULL, last_used_at TEXT
-);
-CREATE TABLE IF NOT EXISTS challenges (
-  id TEXT PRIMARY KEY, challenge TEXT NOT NULL, kind TEXT NOT NULL, expires_at TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS sessions (
-  token_hash TEXT PRIMARY KEY, expires_at TEXT NOT NULL, created_at TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS recovery_codes (
-  code_hash TEXT PRIMARY KEY, created_at TEXT NOT NULL, used_at TEXT
-);
-CREATE TABLE IF NOT EXISTS projects (
-  id TEXT PRIMARY KEY, name TEXT NOT NULL, client TEXT NOT NULL, description TEXT NOT NULL DEFAULT '',
-  contact TEXT NOT NULL DEFAULT '', email TEXT NOT NULL DEFAULT '', kind TEXT NOT NULL DEFAULT '외주', status TEXT NOT NULL DEFAULT '준비 중',
-  start_date TEXT, due_date TEXT, contract_amount INTEGER, memo TEXT NOT NULL DEFAULT '',
-  links TEXT NOT NULL DEFAULT '[]', created_at TEXT NOT NULL, updated_at TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS tasks (
-  id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), title TEXT NOT NULL,
-  description TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT '할 일', priority TEXT NOT NULL DEFAULT '보통',
-  due_date TEXT, position INTEGER NOT NULL DEFAULT 0, checklist TEXT NOT NULL DEFAULT '[]',
-  links TEXT NOT NULL DEFAULT '[]', waiting_since TEXT, completed_at TEXT, archived INTEGER NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL, updated_at TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS invoices (
-  id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), title TEXT NOT NULL,
-  amount INTEGER NOT NULL, due_date TEXT, memo TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS payments (
-  id TEXT PRIMARY KEY, invoice_id TEXT NOT NULL REFERENCES invoices(id), amount INTEGER NOT NULL,
-  paid_at TEXT NOT NULL, memo TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS quotes (
-  id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), number TEXT NOT NULL UNIQUE,
-  title TEXT NOT NULL, sender TEXT NOT NULL DEFAULT '', recipient TEXT NOT NULL,
-  issue_date TEXT NOT NULL, valid_until TEXT, status TEXT NOT NULL DEFAULT '초안',
-  items TEXT NOT NULL, tax_amount INTEGER NOT NULL DEFAULT 0,
-  note TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL, updated_at TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS quote_task_links (
-  quote_id TEXT NOT NULL REFERENCES quotes(id), item_index INTEGER NOT NULL,
-  task_id TEXT NOT NULL UNIQUE REFERENCES tasks(id),
-  PRIMARY KEY (quote_id, item_index)
-);
-CREATE TABLE IF NOT EXISTS meetings (
-  id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), title TEXT NOT NULL,
-  meeting_date TEXT NOT NULL, start_time TEXT NOT NULL, attendees TEXT NOT NULL DEFAULT '',
-  location TEXT NOT NULL DEFAULT '', agenda TEXT NOT NULL DEFAULT '', decisions TEXT NOT NULL DEFAULT '',
-  created_at TEXT NOT NULL, updated_at TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS meeting_task_links (
-  meeting_id TEXT NOT NULL REFERENCES meetings(id), task_id TEXT NOT NULL UNIQUE REFERENCES tasks(id),
-  PRIMARY KEY (meeting_id, task_id)
-);
-CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS notification_log (
-  id TEXT PRIMARY KEY, dedupe_key TEXT NOT NULL UNIQUE, message TEXT NOT NULL,
-  sent_at TEXT NOT NULL, result TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS audit_log (
-  id TEXT PRIMARY KEY, action TEXT NOT NULL, detail TEXT NOT NULL, created_at TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS rate_limits (
-  bucket_key TEXT PRIMARY KEY, attempts INTEGER NOT NULL, window_started TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS tasks_project_status ON tasks(project_id, status, position);
-CREATE INDEX IF NOT EXISTS invoices_project ON invoices(project_id);
-CREATE INDEX IF NOT EXISTS payments_invoice ON payments(invoice_id);
-CREATE INDEX IF NOT EXISTS quotes_project ON quotes(project_id, created_at);
-CREATE INDEX IF NOT EXISTS meetings_project_date ON meetings(project_id, meeting_date);
-`);
-
-const projectColumns = db.pragma("table_info(projects)") as Array<{ name: string }>;
-if (!projectColumns.some((column) => column.name === "kind")) {
-  db.exec("ALTER TABLE projects ADD COLUMN kind TEXT NOT NULL DEFAULT '외주'");
+function normalizeRow(row: Record<string, unknown>): Record<string, unknown> {
+  const result = { ...row };
+  for (const key of numericColumns) {
+    const value = result[key];
+    if (typeof value === "string" && /^-?\d+$/.test(value)) {
+      const number = Number(value);
+      if (Number.isSafeInteger(number)) result[key] = number;
+    }
+  }
+  return result;
 }
 
-export { db };
+let client: Sql | undefined;
+const transactionContext = new AsyncLocalStorage<QuerySql>();
+
+function connection(): QuerySql {
+  const active = transactionContext.getStore();
+  if (active) return active;
+  if (!client) {
+    const url = process.env.ADMIN_DATABASE_URL;
+    if (!url) throw new Error("ADMIN_DATABASE_URL 환경변수가 필요합니다.");
+    client = postgres(url, { max: 1, prepare: false, ssl: "require" });
+  }
+  return client;
+}
+
+function parameters(query: string, values: unknown[]) {
+  let index = 0;
+  const sql = query.replace(/\?/g, () => `$${++index}`);
+  if (index !== values.length) throw new Error("SQL 매개변수 개수가 맞지 않습니다.");
+  return sql;
+}
+
+export const db = {
+  prepare(query: string) {
+    const execute = async (values: unknown[]) => {
+      const normalized = values.map((value): Value => {
+        if (value === undefined || value === null) return null;
+        if (["string", "number", "boolean"].includes(typeof value)) return value as Value;
+        throw new Error("지원하지 않는 SQL 매개변수입니다.");
+      });
+      return connection().unsafe(parameters(query, normalized), normalized);
+    };
+    return {
+      async get(...values: unknown[]): Promise<Record<string, unknown> | undefined> {
+        const rows = await execute(values);
+        return rows[0] ? normalizeRow(rows[0]) : undefined;
+      },
+      async all(...values: unknown[]): Promise<Record<string, unknown>[]> {
+        const rows = await execute(values);
+        return rows.map(normalizeRow);
+      },
+      async run(...values: unknown[]): Promise<{ changes: number }> {
+        const rows = await execute(values);
+        return { changes: rows.count };
+      },
+    };
+  },
+  transaction<T>(callback: () => Promise<T>): Promise<T> {
+    if (!client) connection();
+    return client!.begin((tx) => transactionContext.run(tx, callback)) as Promise<T>;
+  },
+};

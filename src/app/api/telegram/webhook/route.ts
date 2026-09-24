@@ -19,12 +19,12 @@ export async function POST(request: Request) {
   const code = text.match(/^\/start\s+([A-Za-z0-9_-]+)$/)?.[1];
   if (!code || !chatId) return NextResponse.json({ ok: true });
   const savedHash = (
-    db
+    await db
       .prepare("SELECT value FROM settings WHERE key='telegram_connect_hash'")
       .get() as { value: string } | undefined
   )?.value;
   const expires = (
-    db
+    await db
       .prepare(
         "SELECT value FROM settings WHERE key='telegram_connect_expires'",
       )
@@ -43,10 +43,10 @@ export async function POST(request: Request) {
   const clearHash = db.prepare(
     "DELETE FROM settings WHERE key IN ('telegram_connect_hash','telegram_connect_expires')",
   );
-  db.transaction(() => {
-    set.run(String(chatId));
-    clearHash.run();
-  })();
+  await db.transaction(async () => {
+    await set.run(String(chatId));
+    await clearHash.run();
+  });
   if (process.env.TELEGRAM_BOT_TOKEN) {
     await fetch(
       `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,

@@ -16,7 +16,7 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   try {
     await assertOrigin(request);
-    if (!checkRateLimit(`register:${requestAddress(request)}`, 5, 60 * 60_000))
+    if (!await checkRateLimit(`register:${requestAddress(request)}`, 5, 60 * 60_000))
       return NextResponse.json(
         { error: "패스키 등록 시도가 많습니다. 잠시 후 다시 시도하세요." },
         { status: 429 },
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       bootstrapToken?: string;
       deviceName?: string;
     };
-    const existing = credentials();
+    const existing = await credentials();
     const authenticated = await isAuthenticated();
     if (
       existing.length === 0 &&
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         { error: "로그인이 필요합니다." },
         { status: 401 },
       );
-    const expectedChallenge = consumeChallenge(body.challengeId, "register");
+    const expectedChallenge = await consumeChallenge(body.challengeId, "register");
     if (!expectedChallenge)
       return NextResponse.json(
         { error: "등록 요청이 만료됐습니다. 다시 시도하세요." },
@@ -65,17 +65,18 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     const credential = result.registrationInfo.credential;
-    db.prepare(
-      "INSERT INTO credentials(id,public_key,counter,transports,device_name,created_at) VALUES(?,?,?,?,?,?)",
+    await db.prepare(
+      "INSERT INTO credentials(id,rp_id,public_key,counter,transports,device_name,created_at) VALUES(?,?,?,?,?,?,?)",
     ).run(
       credential.id,
+      rp.rpID,
       Buffer.from(credential.publicKey).toString("base64url"),
       credential.counter,
       JSON.stringify(credential.transports || []),
       (body.deviceName || "내 기기").slice(0, 60),
       new Date().toISOString(),
     );
-    audit("passkey.registered", { credentialId: credential.id });
+    await audit("passkey.registered", { credentialId: credential.id });
     if (existing.length === 0) await createSession();
     return NextResponse.json({ verified: true });
   } catch (error) {

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { audit, hash, isAuthenticated } from "@/lib/admin/auth";
 import { db } from "@/lib/admin/db";
-import { assertOrigin } from "@/lib/admin/webauthn";
+import { assertOrigin, relyingParty } from "@/lib/admin/webauthn";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,16 +47,16 @@ const validLinks = (value: unknown) =>
     }
   });
 
-function getSetting(key: string, fallback = "") {
+async function getSetting(key: string, fallback = "") {
   return (
     (
-      db.prepare("SELECT value FROM settings WHERE key=?").get(key) as
+      await db.prepare("SELECT value FROM settings WHERE key=?").get(key) as
         { value: string } | undefined
     )?.value ?? fallback
   );
 }
-function setSetting(key: string, value: string) {
-  db.prepare(
+async function setSetting(key: string, value: string) {
+  await db.prepare(
     "INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
   ).run(key, value);
 }
@@ -79,7 +79,7 @@ function safeTask(row: Row) {
 function safeQuote(row: Row) {
   return { ...row, items: parse(row.items) };
 }
-function quoteInput(body: Record<string, unknown>) {
+async function quoteInput(body: Record<string, unknown>) {
   const projectId = String(body.project_id || "");
   const title = String(body.title || "").trim();
   const sender = String(body.sender || "").trim();
@@ -90,7 +90,7 @@ function quoteInput(body: Record<string, unknown>) {
   const note = String(body.note || "").trim();
   const taxAmount = Number(body.tax_amount ?? 0);
   const items = body.items;
-  const project = db.prepare("SELECT kind FROM projects WHERE id=?").get(projectId) as { kind: string } | undefined;
+  const project = await db.prepare("SELECT kind FROM projects WHERE id=?").get(projectId) as { kind: string } | undefined;
   if (!project) throw new Error("프로젝트를 선택하세요.");
   if (project.kind === "회사") throw new Error("회사 업무에는 견적서를 만들 수 없습니다.");
   if (!title || title.length > 120 || sender.length > 120 || !recipient || recipient.length > 120) throw new Error("제목과 받는 사람을 입력하세요. 각 항목은 120자 이내여야 합니다.");
@@ -113,7 +113,7 @@ function quoteInput(body: Record<string, unknown>) {
   if (!Number.isSafeInteger(taxAmount) || taxAmount < 0 || !Number.isSafeInteger(subtotal + taxAmount)) throw new Error("부가세 금액을 확인하세요.");
   return { projectId, title, sender, recipient, issueDate, validUntil, status, note, taxAmount, items: cleanItems };
 }
-function meetingInput(body: Record<string, unknown>) {
+async function meetingInput(body: Record<string, unknown>) {
   const projectId = String(body.project_id || "");
   const title = String(body.title || "").trim();
   const meetingDate = String(body.meeting_date || "");
@@ -122,14 +122,14 @@ function meetingInput(body: Record<string, unknown>) {
   const location = String(body.location || "").trim();
   const agenda = String(body.agenda || "").trim();
   const decisions = String(body.decisions || "").trim();
-  if (!db.prepare("SELECT 1 FROM projects WHERE id=?").get(projectId)) throw new Error("프로젝트를 선택하세요.");
+  if (!await db.prepare("SELECT 1 FROM projects WHERE id=?").get(projectId)) throw new Error("프로젝트를 선택하세요.");
   if (!title || title.length > 160) throw new Error("미팅 제목은 1~160자로 입력하세요.");
   if (!meetingDate || !validDate(meetingDate)) throw new Error("미팅 날짜를 확인하세요.");
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(startTime)) throw new Error("미팅 시간을 확인하세요.");
   if (attendees.length > 500 || location.length > 1000 || agenda.length > 10000 || decisions.length > 10000) throw new Error("미팅 내용이 너무 깁니다.");
   return { projectId, title, meetingDate, startTime, attendees, location, agenda, decisions };
 }
-function invoicesWithPayments(projectId?: string): Array<
+async function invoicesWithPayments(projectId?: string): Promise<Array<
   Row & {
     amount: number;
     paid_amount: number;
@@ -138,13 +138,13 @@ function invoicesWithPayments(projectId?: string): Array<
     overdue: boolean;
     payments: Row[];
   }
-> {
-  const rows = db
+>> {
+  const rows = await db
     .prepare(
       `SELECT i.*, p.name AS project_name, p.status AS project_status FROM invoices i JOIN projects p ON p.id=i.project_id ${projectId ? "WHERE i.project_id=?" : ""} ORDER BY COALESCE(i.due_date,'9999-12-31'),i.created_at`,
     )
     .all(...(projectId ? [projectId] : [])) as Row[];
-  const payments = db
+  const payments = await db
     .prepare(
       `SELECT * FROM payments WHERE invoice_id IN (SELECT id FROM invoices ${projectId ? "WHERE project_id=?" : ""}) ORDER BY paid_at`,
     )
@@ -178,6 +178,7 @@ function invoicesWithPayments(projectId?: string): Array<
 
 export async function GET(request: Request, context: Context) {
   if (!(await isAuthenticated())) return fail("로그인이 필요합니다.", 401);
+  const { rpID } = await relyingParty();
   const { path } = await context.params;
   const route = path.join("/");
   const url = new URL(request.url);
@@ -185,7 +186,7 @@ export async function GET(request: Request, context: Context) {
     const status = url.searchParams.get("status");
     const kind = url.searchParams.get("kind") || "";
     const q = `%${url.searchParams.get("q") || ""}%`;
-    const rows = db
+    const rows = await db
       .prepare(
         `SELECT p.*, COUNT(t.id) AS task_count, SUM(CASE WHEN t.status='완료' THEN 1 ELSE 0 END) AS done_count FROM projects p LEFT JOIN tasks t ON t.project_id=p.id AND t.archived=0 WHERE ((?='' AND p.status IN ('준비 중','진행 중','보류')) OR (?<>'' AND p.status=?)) AND (?='' OR p.kind=?) AND (p.name LIKE ? OR p.client LIKE ?) GROUP BY p.id ORDER BY CASE p.status WHEN '진행 중' THEN 0 WHEN '준비 중' THEN 1 WHEN '보류' THEN 2 ELSE 3 END, COALESCE(p.due_date,'9999-12-31'),p.updated_at DESC`,
       )
@@ -194,18 +195,18 @@ export async function GET(request: Request, context: Context) {
   }
   if (route === "quotes") {
     const projectId = url.searchParams.get("project");
-    const rows = db.prepare(`SELECT q.*, p.name AS project_name, (SELECT COUNT(*) FROM quote_task_links l WHERE l.quote_id=q.id) AS imported_item_count FROM quotes q JOIN projects p ON p.id=q.project_id ${projectId ? "WHERE q.project_id=?" : ""} ORDER BY q.issue_date DESC, q.created_at DESC`).all(...(projectId ? [projectId] : [])) as Row[];
+    const rows = await db.prepare(`SELECT q.*, p.name AS project_name, (SELECT COUNT(*) FROM quote_task_links l WHERE l.quote_id=q.id) AS imported_item_count FROM quotes q JOIN projects p ON p.id=q.project_id ${projectId ? "WHERE q.project_id=?" : ""} ORDER BY q.issue_date DESC, q.created_at DESC`).all(...(projectId ? [projectId] : [])) as Row[];
     return json(rows.map(safeQuote));
   }
   if (route === "meetings") {
     const projectId = url.searchParams.get("project");
-    const rows = db.prepare(`SELECT m.*, p.name AS project_name, p.kind AS project_kind FROM meetings m JOIN projects p ON p.id=m.project_id ${projectId ? "WHERE m.project_id=?" : ""} ORDER BY m.meeting_date DESC, m.start_time DESC, m.created_at DESC`).all(...(projectId ? [projectId] : [])) as Row[];
-    const linked = db.prepare(`SELECT l.meeting_id,t.id,t.title,t.status,t.due_date,t.archived FROM meeting_task_links l JOIN tasks t ON t.id=l.task_id ${projectId ? "JOIN meetings m ON m.id=l.meeting_id WHERE m.project_id=?" : ""}`).all(...(projectId ? [projectId] : [])) as Row[];
+    const rows = await db.prepare(`SELECT m.*, p.name AS project_name, p.kind AS project_kind FROM meetings m JOIN projects p ON p.id=m.project_id ${projectId ? "WHERE m.project_id=?" : ""} ORDER BY m.meeting_date DESC, m.start_time DESC, m.created_at DESC`).all(...(projectId ? [projectId] : [])) as Row[];
+    const linked = await db.prepare(`SELECT l.meeting_id,t.id,t.title,t.status,t.due_date,t.archived FROM meeting_task_links l JOIN tasks t ON t.id=l.task_id ${projectId ? "JOIN meetings m ON m.id=l.meeting_id WHERE m.project_id=?" : ""}`).all(...(projectId ? [projectId] : [])) as Row[];
     return json(rows.map((row) => ({ ...row, tasks: linked.filter((task) => task.meeting_id === row.id) })));
   }
   if (route.startsWith("projects/")) {
     const [, projectId, subroute] = route.split("/");
-    const row = db
+    const row = await db
       .prepare("SELECT * FROM projects WHERE id=?")
       .get(projectId) as Row | undefined;
     if (!row) return fail("프로젝트를 찾을 수 없습니다.", 404);
@@ -213,25 +214,25 @@ export async function GET(request: Request, context: Context) {
       return json({
         ...safeProject(row),
         tasks: (
-          db
+          await db
             .prepare(
               "SELECT * FROM tasks WHERE project_id=? AND archived=0 ORDER BY status,position,created_at",
             )
             .all(projectId) as Row[]
         ).map(safeTask),
-        invoices: invoicesWithPayments(projectId),
+        invoices: await invoicesWithPayments(projectId),
       });
     if (subroute === "tasks")
       return json(
         (
-          db
+          await db
             .prepare(
               "SELECT * FROM tasks WHERE project_id=? AND archived=0 ORDER BY status,position,created_at",
             )
             .all(projectId) as Row[]
         ).map(safeTask),
       );
-    if (subroute === "invoices") return json(invoicesWithPayments(projectId));
+    if (subroute === "invoices") return json(await invoicesWithPayments(projectId));
   }
   if (route === "tasks") {
     const selectedStatus = url.searchParams.get("status") || "";
@@ -279,7 +280,7 @@ export async function GET(request: Request, context: Context) {
     if (due === "unscheduled") where.push("t.due_date IS NULL");
     return json(
       (
-        db
+        await db
           .prepare(
             `SELECT t.*,p.name AS project_name,p.status AS project_status FROM tasks t JOIN projects p ON p.id=t.project_id WHERE ${where.join(" AND ")} ORDER BY CASE t.status WHEN '확인 대기' THEN 0 WHEN '진행 중' THEN 1 WHEN '할 일' THEN 2 ELSE 3 END,COALESCE(t.due_date,'9999-12-31'),t.position`,
           )
@@ -287,14 +288,14 @@ export async function GET(request: Request, context: Context) {
       ).map(safeTask),
     );
   }
-  if (route === "payments") return json(invoicesWithPayments());
+  if (route === "payments") return json(await invoicesWithPayments());
   if (route === "dashboard") {
-    const projects = db
+    const projects = await db
       .prepare(
         "SELECT COUNT(*) AS count FROM projects WHERE status IN ('준비 중','진행 중')",
       )
       .get() as Row;
-    const taskRows = db
+    const taskRows = await db
       .prepare(
         `SELECT t.*,p.name AS project_name FROM tasks t JOIN projects p ON p.id=t.project_id WHERE t.archived=0 AND t.status!='완료' AND p.status IN ('준비 중','진행 중')`,
       )
@@ -306,7 +307,7 @@ export async function GET(request: Request, context: Context) {
       "en-CA",
       { timeZone: "Asia/Seoul" },
     );
-    const invoices = invoicesWithPayments();
+    const invoices = await invoicesWithPayments();
     const dueTasks = taskRows
       .filter((task) => task.due_date && String(task.due_date) <= next)
       .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
@@ -328,25 +329,25 @@ export async function GET(request: Request, context: Context) {
     });
   }
   if (route === "settings") {
-    const passkeys = db
+    const passkeys = await db
       .prepare(
-        "SELECT id,device_name,created_at,last_used_at FROM credentials ORDER BY created_at",
+        "SELECT id,device_name,created_at,last_used_at FROM credentials WHERE rp_id=? ORDER BY created_at",
       )
-      .all();
-    const logs = db
+      .all(rpID);
+    const logs = await db
       .prepare(
         "SELECT id,message,sent_at,result FROM notification_log ORDER BY sent_at DESC LIMIT 12",
       )
       .all();
     const recoveryCount = (
-      db
+      await db
         .prepare(
-          "SELECT COUNT(*) AS count FROM recovery_codes WHERE used_at IS NULL",
+          "SELECT COUNT(*) AS count FROM recovery_codes WHERE rp_id=? AND used_at IS NULL",
         )
-        .get() as { count: number }
+        .get(rpID) as { count: number }
     ).count;
     const prefs = JSON.parse(
-      getSetting(
+      await getSetting(
         "preferences",
         JSON.stringify({
           notifications: true,
@@ -359,9 +360,9 @@ export async function GET(request: Request, context: Context) {
     );
     return json({
       passkeys,
-      telegram_connected: !!getSetting("telegram_chat_id"),
+      telegram_connected: !!await getSetting("telegram_chat_id"),
       telegram_username: process.env.TELEGRAM_BOT_USERNAME || "",
-      telegram_link: getSetting("telegram_chat_id")
+      telegram_link: await getSetting("telegram_chat_id")
         ? null
         : process.env.TELEGRAM_BOT_USERNAME
           ? `https://t.me/${process.env.TELEGRAM_BOT_USERNAME}`
@@ -376,7 +377,7 @@ export async function GET(request: Request, context: Context) {
       authenticated: await isAuthenticated(),
       configured:
         (
-          db.prepare("SELECT COUNT(*) AS count FROM credentials").get() as {
+          await db.prepare("SELECT COUNT(*) AS count FROM credentials WHERE rp_id=?").get(rpID) as {
             count: number;
           }
         ).count > 0,
@@ -386,6 +387,7 @@ export async function GET(request: Request, context: Context) {
 
 export async function POST(request: Request, context: Context) {
   if (!(await isAuthenticated())) return fail("로그인이 필요합니다.", 401);
+  const { rpID } = await relyingParty();
   try {
     await assertOrigin(request);
   } catch {
@@ -400,57 +402,57 @@ export async function POST(request: Request, context: Context) {
   try {
     if (route.startsWith("meetings/") && route.endsWith("/tasks")) {
       const meetingId = route.split("/")[1];
-      const meeting = db.prepare("SELECT project_id FROM meetings WHERE id=?").get(meetingId) as { project_id: string } | undefined;
+      const meeting = await db.prepare("SELECT project_id FROM meetings WHERE id=?").get(meetingId) as { project_id: string } | undefined;
       if (!meeting) return fail("미팅을 찾을 수 없습니다.", 404);
       const title = String(body.title || "").trim();
       if (!title || title.length > 200 || !validDate(body.due_date)) return fail("후속 작업 제목과 마감일을 확인하세요.");
       const taskId = id();
       const timestamp = now();
-      db.transaction(() => {
-        const position = (db.prepare("SELECT COUNT(*) AS count FROM tasks WHERE project_id=? AND status='할 일'").get(meeting.project_id) as { count: number }).count;
-        db.prepare("INSERT INTO tasks(id,project_id,title,description,status,priority,due_date,position,checklist,links,waiting_since,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)").run(taskId, meeting.project_id, title, "", "할 일", "보통", body.due_date || null, position, "[]", "[]", null, timestamp, timestamp);
-        db.prepare("INSERT INTO meeting_task_links(meeting_id,task_id) VALUES(?,?)").run(meetingId, taskId);
-      })();
-      audit("meeting.task.created", { meetingId, taskId });
+      await db.transaction(async () => {
+        const position = (await db.prepare("SELECT COUNT(*) AS count FROM tasks WHERE project_id=? AND status='할 일'").get(meeting.project_id) as { count: number }).count;
+        await db.prepare("INSERT INTO tasks(id,project_id,title,description,status,priority,due_date,position,checklist,links,waiting_since,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)").run(taskId, meeting.project_id, title, "", "할 일", "보통", body.due_date || null, position, "[]", "[]", null, timestamp, timestamp);
+        await db.prepare("INSERT INTO meeting_task_links(meeting_id,task_id) VALUES(?,?)").run(meetingId, taskId);
+      });
+      await audit("meeting.task.created", { meetingId, taskId });
       return json({ id: taskId }, 201);
     }
     if (route === "meetings") {
-      const meeting = meetingInput(body);
+      const meeting = await meetingInput(body);
       const meetingId = id();
       const timestamp = now();
-      db.prepare("INSERT INTO meetings(id,project_id,title,meeting_date,start_time,attendees,location,agenda,decisions,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)").run(meetingId, meeting.projectId, meeting.title, meeting.meetingDate, meeting.startTime, meeting.attendees, meeting.location, meeting.agenda, meeting.decisions, timestamp, timestamp);
-      audit("meeting.created", { meetingId, projectId: meeting.projectId });
+      await db.prepare("INSERT INTO meetings(id,project_id,title,meeting_date,start_time,attendees,location,agenda,decisions,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)").run(meetingId, meeting.projectId, meeting.title, meeting.meetingDate, meeting.startTime, meeting.attendees, meeting.location, meeting.agenda, meeting.decisions, timestamp, timestamp);
+      await audit("meeting.created", { meetingId, projectId: meeting.projectId });
       return json({ id: meetingId }, 201);
     }
     if (route.startsWith("quotes/") && route.endsWith("/import-tasks")) {
       const quoteId = route.split("/")[1];
-      const quote = db.prepare("SELECT id,project_id,number,status,items FROM quotes WHERE id=?").get(quoteId) as { id: string; project_id: string; number: string; status: string; items: string } | undefined;
+      const quote = await db.prepare("SELECT id,project_id,number,status,items FROM quotes WHERE id=?").get(quoteId) as { id: string; project_id: string; number: string; status: string; items: string } | undefined;
       if (!quote) return fail("견적서를 찾을 수 없습니다.", 404);
       if (quote.status !== "수락") return fail("수락한 견적서만 작업으로 가져올 수 있습니다.");
       const items = parse(quote.items) as Array<{ name: string; quantity: number; unit_price: number }>;
-      const created = db.transaction(() => {
+      const created = await db.transaction(async () => {
         let count = 0;
-        let position = (db.prepare("SELECT COUNT(*) AS count FROM tasks WHERE project_id=? AND status='할 일'").get(quote.project_id) as { count: number }).count;
+        let position = (await db.prepare("SELECT COUNT(*) AS count FROM tasks WHERE project_id=? AND status='할 일'").get(quote.project_id) as { count: number }).count;
         for (const [index, item] of items.entries()) {
-          if (db.prepare("SELECT 1 FROM quote_task_links WHERE quote_id=? AND item_index=?").get(quoteId, index)) continue;
+          if (await db.prepare("SELECT 1 FROM quote_task_links WHERE quote_id=? AND item_index=?").get(quoteId, index)) continue;
           const taskId = id();
           const timestamp = now();
-          db.prepare("INSERT INTO tasks(id,project_id,title,description,status,priority,due_date,position,checklist,links,waiting_since,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)").run(taskId, quote.project_id, item.name, `견적서 ${quote.number}의 ${index + 1}번 항목`, "할 일", "보통", null, position++, "[]", "[]", null, timestamp, timestamp);
-          db.prepare("INSERT INTO quote_task_links(quote_id,item_index,task_id) VALUES(?,?,?)").run(quoteId, index, taskId);
+          await db.prepare("INSERT INTO tasks(id,project_id,title,description,status,priority,due_date,position,checklist,links,waiting_since,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)").run(taskId, quote.project_id, item.name, `견적서 ${quote.number}의 ${index + 1}번 항목`, "할 일", "보통", null, position++, "[]", "[]", null, timestamp, timestamp);
+          await db.prepare("INSERT INTO quote_task_links(quote_id,item_index,task_id) VALUES(?,?,?)").run(quoteId, index, taskId);
           count++;
         }
         return count;
-      })();
-      audit("quote.tasks.imported", { quoteId, created });
+      });
+      await audit("quote.tasks.imported", { quoteId, created });
       return json({ created });
     }
     if (route === "quotes") {
-      const quote = quoteInput(body);
+      const quote = await quoteInput(body);
       const quoteId = id();
       const number = `Q-${quote.issueDate.replaceAll("-", "")}-${quoteId.slice(0, 6).toUpperCase()}`;
       const timestamp = now();
-      db.prepare("INSERT INTO quotes(id,project_id,number,title,sender,recipient,issue_date,valid_until,status,items,tax_amount,note,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)").run(quoteId, quote.projectId, number, quote.title, quote.sender, quote.recipient, quote.issueDate, quote.validUntil, quote.status, JSON.stringify(quote.items), quote.taxAmount, quote.note, timestamp, timestamp);
-      audit("quote.created", { quoteId, projectId: quote.projectId });
+      await db.prepare("INSERT INTO quotes(id,project_id,number,title,sender,recipient,issue_date,valid_until,status,items,tax_amount,note,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)").run(quoteId, quote.projectId, number, quote.title, quote.sender, quote.recipient, quote.issueDate, quote.validUntil, quote.status, JSON.stringify(quote.items), quote.taxAmount, quote.note, timestamp, timestamp);
+      await audit("quote.created", { quoteId, projectId: quote.projectId });
       return json({ id: quoteId }, 201);
     }
     if (route === "projects") {
@@ -492,7 +494,7 @@ export async function POST(request: Request, context: Context) {
         return fail("마감일은 시작일보다 빠를 수 없습니다.");
       const projectId = id(),
         timestamp = now();
-      db.prepare(
+      await db.prepare(
         "INSERT INTO projects(id,name,client,description,contact,email,kind,status,start_date,due_date,contract_amount,memo,links,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
       ).run(
         projectId,
@@ -511,12 +513,12 @@ export async function POST(request: Request, context: Context) {
         timestamp,
         timestamp,
       );
-      audit("project.created", { projectId, name });
+      await audit("project.created", { projectId, name });
       return json({ id: projectId }, 201);
     }
     if (route.startsWith("projects/") && route.endsWith("/tasks")) {
       const projectId = route.split("/")[1];
-      if (!db.prepare("SELECT id FROM projects WHERE id=?").get(projectId))
+      if (!await db.prepare("SELECT id FROM projects WHERE id=?").get(projectId))
         return fail("프로젝트를 찾을 수 없습니다.", 404);
       const title = String(body.title || "").trim();
       if (!title || title.length > 200)
@@ -549,12 +551,12 @@ export async function POST(request: Request, context: Context) {
         return fail("체크리스트 형식이 올바르지 않습니다.");
       if (body.links !== undefined && !validLinks(body.links))
         return fail("작업 링크 형식이 올바르지 않습니다.");
-      const count = db
+      const count = await db
         .prepare(
           "SELECT COUNT(*) AS count FROM tasks WHERE project_id=? AND status=?",
         )
         .get(projectId, status) as { count: number };
-      db.prepare(
+      await db.prepare(
         "INSERT INTO tasks(id,project_id,title,description,status,priority,due_date,position,checklist,links,waiting_since,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
       ).run(
         taskId,
@@ -584,7 +586,7 @@ export async function POST(request: Request, context: Context) {
         !["할 일", "진행 중", "확인 대기", "완료"].includes(laneStatus)
       )
         return fail("작업 이동 정보가 올바르지 않습니다.");
-      const task = db
+      const task = await db
         .prepare(
           "SELECT status,waiting_since,completed_at FROM tasks WHERE id=? AND project_id=? AND archived=0",
         )
@@ -597,9 +599,9 @@ export async function POST(request: Request, context: Context) {
         | undefined;
       if (!task) return fail("작업을 찾을 수 없습니다.", 404);
       const timestamp = now();
-      const move = db.transaction(() => {
+      const move = async () => db.transaction(async () => {
         const oldLane = (
-          db
+          await db
             .prepare(
               "SELECT id FROM tasks WHERE project_id=? AND status=? AND archived=0 AND id!=? ORDER BY position,created_at",
             )
@@ -609,7 +611,7 @@ export async function POST(request: Request, context: Context) {
           task.status === laneStatus
             ? oldLane
             : (
-                db
+                await db
                   .prepare(
                     "SELECT id FROM tasks WHERE project_id=? AND status=? AND archived=0 AND id!=? ORDER BY position,created_at",
                   )
@@ -629,7 +631,7 @@ export async function POST(request: Request, context: Context) {
               ? task.waiting_since
               : timestamp
             : null;
-        db.prepare(
+        await db.prepare(
           "UPDATE tasks SET status=?,waiting_since=?,completed_at=?,updated_at=? WHERE id=?",
         ).run(
           laneStatus,
@@ -645,12 +647,12 @@ export async function POST(request: Request, context: Context) {
         const update = db.prepare(
           "UPDATE tasks SET position=?,updated_at=? WHERE id=?",
         );
-        newLane.forEach((item, index) => update.run(index, timestamp, item));
+        for (const [index, item] of newLane.entries()) await update.run(index, timestamp, item);
         if (task.status !== laneStatus)
-          oldLane.forEach((item, index) => update.run(index, timestamp, item));
+          for (const [index, item] of oldLane.entries()) await update.run(index, timestamp, item);
       });
       try {
-        move();
+        await move();
       } catch (error) {
         return fail(
           error instanceof Error
@@ -663,7 +665,7 @@ export async function POST(request: Request, context: Context) {
     }
     if (route.startsWith("tasks/") && route.endsWith("/checklist")) {
       const taskId = route.split("/")[1];
-      const task = db
+      const task = await db
         .prepare("SELECT checklist FROM tasks WHERE id=?")
         .get(taskId) as { checklist: string } | undefined;
       if (!task) return fail("작업을 찾을 수 없습니다.", 404);
@@ -676,7 +678,7 @@ export async function POST(request: Request, context: Context) {
       if (!text || text.length > 200)
         return fail("체크 항목은 1~200자로 입력하세요.");
       checklist.push({ id: id(), text, done: false });
-      db.prepare("UPDATE tasks SET checklist=?,updated_at=? WHERE id=?").run(
+      await db.prepare("UPDATE tasks SET checklist=?,updated_at=? WHERE id=?").run(
         JSON.stringify(checklist),
         now(),
         taskId,
@@ -685,7 +687,7 @@ export async function POST(request: Request, context: Context) {
     }
     if (route.startsWith("invoices/") && route.endsWith("/payments")) {
       const invoiceId = route.split("/")[1];
-      const invoice = db
+      const invoice = await db
         .prepare("SELECT amount FROM invoices WHERE id=?")
         .get(invoiceId) as { amount: number } | undefined;
       if (!invoice) return fail("청구 항목을 찾을 수 없습니다.", 404);
@@ -695,7 +697,7 @@ export async function POST(request: Request, context: Context) {
       if (!validDate(body.paid_at) || String(body.memo || "").length > 1000)
         return fail("입금일 또는 메모 형식이 올바르지 않습니다.");
       const paid = (
-        db
+        await db
           .prepare(
             "SELECT COALESCE(SUM(amount),0) AS total FROM payments WHERE invoice_id=?",
           )
@@ -704,7 +706,7 @@ export async function POST(request: Request, context: Context) {
       if (paid + amount > invoice.amount)
         return fail("누적 입금액이 청구 금액을 넘을 수 없습니다.");
       const paymentId = id();
-      db.prepare(
+      await db.prepare(
         "INSERT INTO payments(id,invoice_id,amount,paid_at,memo,created_at) VALUES(?,?,?,?,?,?)",
       ).run(
         paymentId,
@@ -714,12 +716,12 @@ export async function POST(request: Request, context: Context) {
         String(body.memo || ""),
         now(),
       );
-      audit("payment.created", { invoiceId, amount });
+      await audit("payment.created", { invoiceId, amount });
       return json({ id: paymentId }, 201);
     }
     if (route.startsWith("projects/") && route.endsWith("/invoices")) {
       const projectId = route.split("/")[1];
-      const project = db.prepare("SELECT kind FROM projects WHERE id=?").get(projectId) as { kind: string } | undefined;
+      const project = await db.prepare("SELECT kind FROM projects WHERE id=?").get(projectId) as { kind: string } | undefined;
       if (!project)
         return fail("프로젝트를 찾을 수 없습니다.", 404);
       if (project.kind === "회사") return fail("회사 업무에는 입금 항목을 만들 수 없습니다.");
@@ -735,7 +737,7 @@ export async function POST(request: Request, context: Context) {
       )
         return fail("청구 항목명과 1원 이상의 청구액을 입력하세요.");
       const invoiceId = id();
-      db.prepare(
+      await db.prepare(
         "INSERT INTO invoices(id,project_id,title,amount,due_date,memo,created_at) VALUES(?,?,?,?,?,?,?)",
       ).run(
         invoiceId,
@@ -746,7 +748,7 @@ export async function POST(request: Request, context: Context) {
         String(body.memo || ""),
         now(),
       );
-      audit("invoice.created", { projectId, amount });
+      await audit("invoice.created", { projectId, amount });
       return json({ id: invoiceId }, 201);
     }
     if (route === "settings/connect-telegram") {
@@ -756,8 +758,8 @@ export async function POST(request: Request, context: Context) {
           503,
         );
       const code = randomBytes(18).toString("base64url");
-      setSetting("telegram_connect_hash", hash(code));
-      setSetting(
+      await setSetting("telegram_connect_hash", hash(code));
+      await setSetting(
         "telegram_connect_expires",
         new Date(Date.now() + 10 * 60_000).toISOString(),
       );
@@ -778,18 +780,18 @@ export async function POST(request: Request, context: Context) {
             ?.join("-") || "",
       );
       const insert = db.prepare(
-        "INSERT INTO recovery_codes(code_hash,created_at) VALUES(?,?)",
+        "INSERT INTO recovery_codes(code_hash,rp_id,created_at) VALUES(?,?,?)",
       );
-      db.transaction(() => {
-        db.prepare("DELETE FROM recovery_codes").run();
+      await db.transaction(async () => {
+        await db.prepare("DELETE FROM recovery_codes WHERE rp_id=?").run(rpID);
         for (const code of codes)
-          insert.run(hash(code.replaceAll("-", "")), now());
-      })();
-      audit("recovery_codes.regenerated", { count: codes.length });
+          await insert.run(hash(code.replaceAll("-", "")), rpID, now());
+      });
+      await audit("recovery_codes.regenerated", { count: codes.length });
       return json({ codes });
     }
     if (route === "settings/test-telegram") {
-      const chatId = getSetting("telegram_chat_id");
+      const chatId = await getSetting("telegram_chat_id");
       if (!chatId || !process.env.TELEGRAM_BOT_TOKEN)
         return fail("텔레그램 봇을 먼저 연결하세요.", 409);
       const result = await sendTelegram(
@@ -801,29 +803,29 @@ export async function POST(request: Request, context: Context) {
         : fail("텔레그램 발송 실패. 봇 연결과 webhook 설정을 확인하세요.", 502);
     }
     if (route === "settings/retry-notifications") {
-      const chatId = getSetting("telegram_chat_id");
+      const chatId = await getSetting("telegram_chat_id");
       if (!chatId || !process.env.TELEGRAM_BOT_TOKEN)
         return fail("텔레그램 봇을 먼저 연결하세요.", 409);
-      const failed = db
+      const failed = await db
         .prepare(
           "SELECT id,dedupe_key,message FROM notification_log WHERE result='failed' ORDER BY sent_at LIMIT 10",
         )
         .all() as Array<{ id: string; dedupe_key: string; message: string }>;
       let sent = 0;
       for (const item of failed) {
-        const claim = db
+        const claim = await db
           .prepare(
             "UPDATE notification_log SET result='sending',sent_at=? WHERE id=? AND result='failed'",
           )
           .run(now(), item.id);
         if (!claim.changes) continue;
         const result = await sendTelegram(chatId, item.message);
-        db.prepare(
+        await db.prepare(
           "UPDATE notification_log SET result=?,sent_at=? WHERE id=? AND result='sending'",
         ).run(result.ok ? "sent" : "failed", now(), item.id);
         if (result.ok) sent++;
       }
-      audit("telegram.notifications.retried", {
+      await audit("telegram.notifications.retried", {
         attempted: failed.length,
         sent,
       });
@@ -832,7 +834,7 @@ export async function POST(request: Request, context: Context) {
     if (route === "settings") {
       const preferences = body.preferences as Record<string, unknown>;
       if (!preferences) return fail("설정 데이터가 없습니다.");
-      setSetting(
+      await setSetting(
         "preferences",
         JSON.stringify({
           notifications: !!preferences.notifications,
@@ -849,7 +851,7 @@ export async function POST(request: Request, context: Context) {
           paymentAlerts: !!preferences.paymentAlerts,
         }),
       );
-      audit("settings.updated");
+      await audit("settings.updated");
       return json({ ok: true });
     }
   } catch (error) {
@@ -862,6 +864,7 @@ export async function POST(request: Request, context: Context) {
 
 export async function PATCH(request: Request, context: Context) {
   if (!(await isAuthenticated())) return fail("로그인이 필요합니다.", 401);
+  const { rpID } = await relyingParty();
   try {
     await assertOrigin(request);
   } catch {
@@ -877,24 +880,24 @@ export async function PATCH(request: Request, context: Context) {
   try {
     if (route.startsWith("meetings/")) {
       const meetingId = route.split("/")[1];
-      const current = db.prepare("SELECT project_id FROM meetings WHERE id=?").get(meetingId) as { project_id: string } | undefined;
+      const current = await db.prepare("SELECT project_id FROM meetings WHERE id=?").get(meetingId) as { project_id: string } | undefined;
       if (!current) return fail("미팅을 찾을 수 없습니다.", 404);
-      const meeting = meetingInput(body);
-      if (meeting.projectId !== current.project_id && db.prepare("SELECT 1 FROM meeting_task_links WHERE meeting_id=? LIMIT 1").get(meetingId)) return fail("후속 작업이 연결된 미팅은 프로젝트를 변경할 수 없습니다.", 409);
-      db.prepare("UPDATE meetings SET project_id=?,title=?,meeting_date=?,start_time=?,attendees=?,location=?,agenda=?,decisions=?,updated_at=? WHERE id=?").run(meeting.projectId, meeting.title, meeting.meetingDate, meeting.startTime, meeting.attendees, meeting.location, meeting.agenda, meeting.decisions, timestamp, meetingId);
-      audit("meeting.updated", { meetingId });
+      const meeting = await meetingInput(body);
+      if (meeting.projectId !== current.project_id && await db.prepare("SELECT 1 FROM meeting_task_links WHERE meeting_id=? LIMIT 1").get(meetingId)) return fail("후속 작업이 연결된 미팅은 프로젝트를 변경할 수 없습니다.", 409);
+      await db.prepare("UPDATE meetings SET project_id=?,title=?,meeting_date=?,start_time=?,attendees=?,location=?,agenda=?,decisions=?,updated_at=? WHERE id=?").run(meeting.projectId, meeting.title, meeting.meetingDate, meeting.startTime, meeting.attendees, meeting.location, meeting.agenda, meeting.decisions, timestamp, meetingId);
+      await audit("meeting.updated", { meetingId });
       return json({ ok: true });
     }
     if (route.startsWith("quotes/")) {
       const quoteId = route.split("/")[1];
-      const current = db.prepare("SELECT items,project_id FROM quotes WHERE id=?").get(quoteId) as { items: string; project_id: string } | undefined;
+      const current = await db.prepare("SELECT items,project_id FROM quotes WHERE id=?").get(quoteId) as { items: string; project_id: string } | undefined;
       if (!current) return fail("견적서를 찾을 수 없습니다.", 404);
-      const quote = quoteInput(body);
-      const imported = (db.prepare("SELECT COUNT(*) AS count FROM quote_task_links WHERE quote_id=?").get(quoteId) as { count: number }).count;
+      const quote = await quoteInput(body);
+      const imported = (await db.prepare("SELECT COUNT(*) AS count FROM quote_task_links WHERE quote_id=?").get(quoteId) as { count: number }).count;
       if (imported && JSON.stringify(quote.items) !== current.items) return fail("작업으로 가져온 견적 항목은 수정할 수 없습니다.", 409);
       if (imported && quote.projectId !== current.project_id) return fail("작업으로 가져온 견적서는 프로젝트를 변경할 수 없습니다.", 409);
-      db.prepare("UPDATE quotes SET project_id=?,title=?,sender=?,recipient=?,issue_date=?,valid_until=?,status=?,items=?,tax_amount=?,note=?,updated_at=? WHERE id=?").run(quote.projectId, quote.title, quote.sender, quote.recipient, quote.issueDate, quote.validUntil, quote.status, JSON.stringify(quote.items), quote.taxAmount, quote.note, timestamp, quoteId);
-      audit("quote.updated", { quoteId });
+      await db.prepare("UPDATE quotes SET project_id=?,title=?,sender=?,recipient=?,issue_date=?,valid_until=?,status=?,items=?,tax_amount=?,note=?,updated_at=? WHERE id=?").run(quote.projectId, quote.title, quote.sender, quote.recipient, quote.issueDate, quote.validUntil, quote.status, JSON.stringify(quote.items), quote.taxAmount, quote.note, timestamp, quoteId);
+      await audit("quote.updated", { quoteId });
       return json({ ok: true });
     }
     if (route.startsWith("projects/")) {
@@ -913,12 +916,12 @@ export async function PATCH(request: Request, context: Context) {
         "links",
       ] as const;
       if (body.contract_amount !== undefined) {
-        const target = db.prepare("SELECT kind FROM projects WHERE id=?").get(projectId) as { kind: string } | undefined;
+        const target = await db.prepare("SELECT kind FROM projects WHERE id=?").get(projectId) as { kind: string } | undefined;
         if (target?.kind === "회사") return fail("회사 업무에는 계약 금액을 입력할 수 없습니다.");
       }
       const updates = allowed.filter((key) => key in body);
       if (!updates.length) return fail("수정할 항목이 없습니다.");
-      const current = db
+      const current = await db
         .prepare("SELECT start_date,due_date FROM projects WHERE id=?")
         .get(projectId) as
         { start_date: string | null; due_date: string | null } | undefined;
@@ -980,18 +983,18 @@ export async function PATCH(request: Request, context: Context) {
                 ? null
                 : (body[key] ?? null)
               : (body[key] ?? null);
-        db.prepare(`UPDATE projects SET ${key}=?,updated_at=? WHERE id=?`).run(
+        await db.prepare(`UPDATE projects SET ${key}=?,updated_at=? WHERE id=?`).run(
           value,
           timestamp,
           projectId,
         );
       }
-      audit("project.updated", { projectId, fields: updates });
+      await audit("project.updated", { projectId, fields: updates });
       return json({ ok: true });
     }
     if (route.startsWith("tasks/") && route.endsWith("/checklist")) {
       const taskId = route.split("/")[1];
-      const task = db
+      const task = await db
         .prepare("SELECT checklist FROM tasks WHERE id=?")
         .get(taskId) as { checklist: string } | undefined;
       if (!task) return fail("작업을 찾을 수 없습니다.", 404);
@@ -1011,7 +1014,7 @@ export async function PATCH(request: Request, context: Context) {
       } else if (body.action === "delete")
         checklist.splice(checklist.indexOf(item), 1);
       else return fail("알 수 없는 체크 항목 동작입니다.");
-      db.prepare("UPDATE tasks SET checklist=?,updated_at=? WHERE id=?").run(
+      await db.prepare("UPDATE tasks SET checklist=?,updated_at=? WHERE id=?").run(
         JSON.stringify(checklist),
         timestamp,
         taskId,
@@ -1020,7 +1023,7 @@ export async function PATCH(request: Request, context: Context) {
     }
     if (route.startsWith("tasks/")) {
       const taskId = route.split("/")[1];
-      const old = db
+      const old = await db
         .prepare("SELECT status FROM tasks WHERE id=?")
         .get(taskId) as { status: string } | undefined;
       if (!old) return fail("작업을 찾을 수 없습니다.", 404);
@@ -1112,19 +1115,19 @@ export async function PATCH(request: Request, context: Context) {
         assignments.push("completed_at=NULL");
       assignments.push("updated_at=?");
       values.push(timestamp, taskId);
-      db.prepare(`UPDATE tasks SET ${assignments.join(",")} WHERE id=?`).run(
+      await db.prepare(`UPDATE tasks SET ${assignments.join(",")} WHERE id=?`).run(
         ...values,
       );
       return json({ ok: true });
     }
     if (route.startsWith("invoices/")) {
       const invoiceId = route.split("/")[1];
-      const row = db
+      const row = await db
         .prepare("SELECT amount FROM invoices WHERE id=?")
         .get(invoiceId) as { amount: number } | undefined;
       if (!row) return fail("청구 항목을 찾을 수 없습니다.", 404);
       const paid = (
-        db
+        await db
           .prepare(
             "SELECT COALESCE(SUM(amount),0) AS total FROM payments WHERE invoice_id=?",
           )
@@ -1151,12 +1154,12 @@ export async function PATCH(request: Request, context: Context) {
       if (body.memo !== undefined && String(body.memo).length > 1000)
         return fail("메모는 1,000자 이내로 입력하세요.");
       for (const field of fields)
-        db.prepare(`UPDATE invoices SET ${field}=? WHERE id=?`).run(
+        await db.prepare(`UPDATE invoices SET ${field}=? WHERE id=?`).run(
           body[field] ?? null,
           invoiceId,
         );
       if (fields.includes("amount"))
-        audit("invoice.amount.updated", {
+        await audit("invoice.amount.updated", {
           invoiceId,
           before: row.amount,
           after: body.amount,
@@ -1166,7 +1169,7 @@ export async function PATCH(request: Request, context: Context) {
     }
     if (route.startsWith("payments/")) {
       const paymentId = route.split("/")[1];
-      const row = db
+      const row = await db
         .prepare("SELECT invoice_id,amount FROM payments WHERE id=?")
         .get(paymentId) as { invoice_id: string; amount: number } | undefined;
       if (!row) return fail("입금 내역을 찾을 수 없습니다.", 404);
@@ -1177,13 +1180,13 @@ export async function PATCH(request: Request, context: Context) {
         return fail("입금액은 1원 이상의 정수여야 합니다.");
       if (body.amount !== undefined) {
         const others = (
-          db
+          await db
             .prepare(
               "SELECT COALESCE(SUM(amount),0) AS total FROM payments WHERE invoice_id=? AND id!=?",
             )
             .get(row.invoice_id, paymentId) as { total: number }
         ).total;
-        const invoice = db
+        const invoice = await db
           .prepare("SELECT amount FROM invoices WHERE id=?")
           .get(row.invoice_id) as { amount: number };
         if (others + Number(body.amount) > invoice.amount)
@@ -1195,11 +1198,11 @@ export async function PATCH(request: Request, context: Context) {
         return fail("메모는 1,000자 이내로 입력하세요.");
       for (const field of ["amount", "paid_at", "memo"])
         if (field in body)
-          db.prepare(`UPDATE payments SET ${field}=? WHERE id=?`).run(
+          await db.prepare(`UPDATE payments SET ${field}=? WHERE id=?`).run(
             body[field],
             paymentId,
           );
-      audit("payment.updated", {
+      await audit("payment.updated", {
         paymentId,
         before: row.amount,
         after: body.amount ?? row.amount,
@@ -1209,24 +1212,24 @@ export async function PATCH(request: Request, context: Context) {
     if (route === "settings/passkeys") {
       const credentialId = String(body.id || "");
       if (!credentialId) return fail("패스키를 지정하세요.");
-      const result = db.transaction(() => {
-        const credential = db
-          .prepare("SELECT id FROM credentials WHERE id=?")
-          .get(credentialId);
+      const result = await db.transaction(async () => {
+        const credential = await db
+          .prepare("SELECT id FROM credentials WHERE id=? AND rp_id=?")
+          .get(credentialId, rpID);
         if (!credential) return "missing";
         const count = (
-          db.prepare("SELECT COUNT(*) AS count FROM credentials").get() as {
+          await db.prepare("SELECT COUNT(*) AS count FROM credentials WHERE rp_id=?").get(rpID) as {
             count: number;
           }
         ).count;
         if (count <= 1) return "last";
-        db.prepare("DELETE FROM credentials WHERE id=?").run(credentialId);
+        await db.prepare("DELETE FROM credentials WHERE id=? AND rp_id=?").run(credentialId, rpID);
         return "deleted";
-      })();
+      });
       if (result === "missing") return fail("패스키를 찾을 수 없습니다.", 404);
       if (result === "last")
         return fail("마지막 패스키는 삭제할 수 없습니다.", 409);
-      audit("passkey.deleted", { credentialId });
+      await audit("passkey.deleted", { credentialId });
       return json({ ok: true });
     }
   } catch (error) {
@@ -1239,6 +1242,7 @@ export async function PATCH(request: Request, context: Context) {
 
 export async function DELETE(request: Request, context: Context) {
   if (!(await isAuthenticated())) return fail("로그인이 필요합니다.", 401);
+  const { rpID } = await relyingParty();
   try {
     await assertOrigin(request);
   } catch {
@@ -1250,47 +1254,47 @@ export async function DELETE(request: Request, context: Context) {
   if (route.startsWith("invoices/")) {
     const invoiceId = route.split("/")[1];
     const payments = (
-      db
+      await db
         .prepare("SELECT COUNT(*) AS count FROM payments WHERE invoice_id=?")
         .get(invoiceId) as { count: number }
     ).count;
     if (payments) return fail("입금 내역을 먼저 정정하거나 삭제하세요.", 409);
-    db.prepare("DELETE FROM invoices WHERE id=?").run(invoiceId);
-    audit("invoice.deleted", { invoiceId });
+    await db.prepare("DELETE FROM invoices WHERE id=?").run(invoiceId);
+    await audit("invoice.deleted", { invoiceId });
     return json({ ok: true });
   }
   if (route.startsWith("payments/")) {
     const paymentId = route.split("/")[1];
-    const row = db
+    const row = await db
       .prepare("SELECT amount FROM payments WHERE id=?")
       .get(paymentId) as { amount: number } | undefined;
     if (!row) return fail("입금 내역을 찾을 수 없습니다.", 404);
-    db.prepare("DELETE FROM payments WHERE id=?").run(paymentId);
-    audit("payment.deleted", { paymentId, amount: row.amount });
+    await db.prepare("DELETE FROM payments WHERE id=?").run(paymentId);
+    await audit("payment.deleted", { paymentId, amount: row.amount });
     return json({ ok: true });
   }
   if (route.startsWith("tasks/")) {
     const taskId = route.split("/")[1];
-    db.prepare("UPDATE tasks SET archived=1,updated_at=? WHERE id=?").run(
+    await db.prepare("UPDATE tasks SET archived=1,updated_at=? WHERE id=?").run(
       now(),
       taskId,
     );
     return json({ ok: true });
   }
   if (route === "settings/telegram") {
-    setSetting("telegram_chat_id", "");
-    audit("telegram.disconnected");
+    await setSetting("telegram_chat_id", "");
+    await audit("telegram.disconnected");
     return json({ ok: true });
   }
   if (route === "settings/recovery") {
-    db.prepare("DELETE FROM recovery_codes").run();
-    audit("recovery_codes.revoked");
+    await db.prepare("DELETE FROM recovery_codes WHERE rp_id=?").run(rpID);
+    await audit("recovery_codes.revoked");
     return json({ ok: true });
   }
   if (route === "settings/sessions") {
     const token = (await cookies()).get("admin_session")?.value;
-    db.prepare("DELETE FROM sessions WHERE token_hash!=?").run(
-      token ? hash(token) : "",
+    await db.prepare("DELETE FROM sessions WHERE rp_id=? AND token_hash!=?").run(
+      rpID, token ? hash(token) : "",
     );
     return json({ ok: true });
   }
