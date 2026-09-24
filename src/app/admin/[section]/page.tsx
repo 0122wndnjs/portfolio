@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import AdminView from "@/components/admin/AdminView";
 import QuotesPage from "@/components/admin/QuotesPage";
 import MeetingsPage from "@/components/admin/MeetingsPage";
+import { isProjectKind } from "@/lib/admin/project-kinds";
 
 const sections = ["projects", "tasks", "meetings", "quotes", "payments", "settings"];
 
@@ -21,7 +22,7 @@ export default async function AdminSection({
       key={section === "projects" ? `${query.kind || "all"}:${query.new || "list"}` : section}
       section={section as "projects" | "tasks" | "payments" | "settings"}
       initialCreateProject={section === "projects" && query.new === "1"}
-      initialProjectKind={query.kind === "회사" || query.kind === "외주" ? query.kind : ""}
+      initialProjectKind={query.kind && isProjectKind(query.kind) ? query.kind : ""}
     />
   );
 }

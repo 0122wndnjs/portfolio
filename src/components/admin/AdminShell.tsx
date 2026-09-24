@@ -17,6 +17,7 @@ import {
 } from "react-icons/fi";
 import RecoveryManager from "@/components/admin/RecoveryManager";
 import { projectColor } from "@/lib/admin/project-colors";
+import type { ProjectKind } from "@/lib/admin/project-kinds";
 import "./workspace.css";
 
 const links = [
@@ -33,7 +34,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [projects, setProjects] = useState<
-    Array<{ id: string; name: string; status: string; kind: "외주" | "회사" }>
+    Array<{ id: string; name: string; status: string; kind: ProjectKind }>
   >([]);
   const [projectError, setProjectError] = useState(false);
   useEffect(() => {
@@ -123,7 +124,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             <span>{kind === "회사" ? "회사 업무" : "외주 프로젝트"}</span>
             <Link href={`/admin/projects?kind=${encodeURIComponent(kind)}&new=1`} aria-label={`${kind} 프로젝트 만들기`} onClick={() => setOpen(false)}>+</Link>
           </div>
-          {projects.filter((project) => project.kind === kind).map((project) => (
+          {projects.filter((project) => kind === "회사" ? project.kind !== "외주" : project.kind === kind).map((project) => (
             <Link
               key={project.id}
               href={`/admin/projects/${project.id}`}
@@ -141,7 +142,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
               <span className="truncate">{project.name}</span>
             </Link>
           ))}
-          {!projects.some((project) => project.kind === kind) && (
+          {!projects.some((project) => kind === "회사" ? project.kind !== "외주" : project.kind === kind) && (
             <p>
               {projectError
                 ? "목록을 불러오지 못했어요."

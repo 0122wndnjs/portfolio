@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import PaymentRow from "@/components/admin/PaymentRow";
 import MeetingsPage from "@/components/admin/MeetingsPage";
 import { projectColor } from "@/lib/admin/project-colors";
+import { isInternalProjectKind, PROJECT_KIND_LABELS, type ProjectKind } from "@/lib/admin/project-kinds";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FiArrowLeft,
@@ -55,7 +56,7 @@ type Invoice = {
 };
 type Project = {
   id: string;
-  kind: "외주" | "회사";
+  kind: ProjectKind;
   name: string;
   client: string;
   description: string;
@@ -137,7 +138,7 @@ export default function AdminProject({ projectId }: { projectId: string }) {
     try {
       const loaded = await api<Project>(`/api/admin/projects/${projectId}`);
       setProject(loaded);
-      if (loaded.kind === "회사" && tabFromQuery === "입금") setTab("보드");
+      if (isInternalProjectKind(loaded.kind) && tabFromQuery === "입금") setTab("보드");
       if (taskFromQuery) {
         const selectedTask = loaded.tasks.find(
           (task) => task.id === taskFromQuery,
@@ -347,7 +348,7 @@ export default function AdminProject({ projectId }: { projectId: string }) {
           <div className="flex flex-wrap items-center gap-2">
             <span className="project-identity-dot" />
             <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#767676]">
-              {project.kind === "회사" ? "회사 업무 · " : "외주 · "}{project.client}
+              {PROJECT_KIND_LABELS[project.kind]} · {project.client}
             </p>
             <span className="h-1 w-1 rounded-full bg-gray-300" />
             <select
@@ -434,7 +435,7 @@ export default function AdminProject({ projectId }: { projectId: string }) {
         {project.kind === "외주" && <Stat label="미입금" value={won(unpaid)} sub="청구 항목 잔액" />}
       </div>
       <div className="mt-3 flex gap-1 overflow-x-auto border-b border-black/[0.07]">
-        {(project.kind === "회사" ? ["보드", "개요", "미팅", "링크·메모"] : ["보드", "개요", "미팅", "입금", "링크·메모"]).map((item) => (
+        {(isInternalProjectKind(project.kind) ? ["보드", "개요", "미팅", "링크·메모"] : ["보드", "개요", "미팅", "입금", "링크·메모"]).map((item) => (
           <button
             key={item}
             onClick={() => setTab(item)}
@@ -1073,7 +1074,7 @@ function ProjectOverview({
       className="mt-5 grid gap-4 rounded-2xl border border-black/[0.055] bg-white p-5 sm:grid-cols-2"
     >
       <Input name="name" label="프로젝트명" value={project.name} required />
-      <Input name="client" label={project.kind === "회사" ? "팀 / 조직" : "고객명"} value={project.client} required />
+      <Input name="client" label={isInternalProjectKind(project.kind) ? "팀 / 조직" : "고객명"} value={project.client} required />
       <Input name="contact" label="연락처" value={project.contact} />
       <Input name="email" label="이메일" value={project.email} />
       <Input

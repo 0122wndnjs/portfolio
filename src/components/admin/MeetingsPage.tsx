@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { FiCalendar, FiExternalLink, FiPlus, FiUsers, FiX } from "react-icons/fi";
 import { projectColor } from "@/lib/admin/project-colors";
+import type { ProjectKind } from "@/lib/admin/project-kinds";
 
-type Project = { id: string; name: string; kind: "외주" | "회사" };
+type Project = { id: string; name: string; kind: ProjectKind };
 type Followup = { id: string; title: string; status: string; due_date: string | null; archived: number };
 export type Meeting = {
-  id: string; project_id: string; project_name: string; project_kind: "외주" | "회사";
+  id: string; project_id: string; project_name: string; project_kind: ProjectKind;
   title: string; meeting_date: string; start_time: string; attendees: string;
   location: string; agenda: string; decisions: string; tasks: Followup[];
 };

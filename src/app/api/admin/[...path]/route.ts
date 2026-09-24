@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { audit, hash, isAuthenticated } from "@/lib/admin/auth";
 import { db } from "@/lib/admin/db";
+import { isInternalProjectKind, isProjectKind } from "@/lib/admin/project-kinds";
 import { assertOrigin, relyingParty } from "@/lib/admin/webauthn";
 
 export const runtime = "nodejs";
@@ -92,7 +93,7 @@ async function quoteInput(body: Record<string, unknown>) {
   const items = body.items;
   const project = await db.prepare("SELECT kind FROM projects WHERE id=?").get(projectId) as { kind: string } | undefined;
   if (!project) throw new Error("프로젝트를 선택하세요.");
-  if (project.kind === "회사") throw new Error("회사 업무에는 견적서를 만들 수 없습니다.");
+  if (isInternalProjectKind(project.kind)) throw new Error("회사 업무에는 견적서를 만들 수 없습니다.");
   if (!title || title.length > 120 || sender.length > 120 || !recipient || recipient.length > 120) throw new Error("제목과 받는 사람을 입력하세요. 각 항목은 120자 이내여야 합니다.");
   if (!issueDate || !validDate(issueDate) || !validDate(validUntil) || (validUntil && validUntil < issueDate)) throw new Error("발행일과 유효기간을 확인하세요.");
   if (!["초안", "발송", "수락", "거절"].includes(status)) throw new Error("견적 상태가 올바르지 않습니다.");
@@ -459,7 +460,7 @@ export async function POST(request: Request, context: Context) {
       const name = String(body.name || "").trim(),
         client = String(body.client || "").trim();
       const kind = String(body.kind || "외주");
-      if (!["외주", "회사"].includes(kind)) return fail("업무 유형이 올바르지 않습니다.");
+      if (!isProjectKind(kind)) return fail("업무 유형이 올바르지 않습니다.");
       if (!name || name.length > 100 || !client || client.length > 80)
         return fail("프로젝트명(1~100자)과 고객명(1~80자)을 입력하세요.");
       if (
@@ -507,7 +508,7 @@ export async function POST(request: Request, context: Context) {
         String(body.status || "준비 중"),
         body.start_date || null,
         body.due_date || null,
-        kind === "회사" ? null : contractAmount,
+        isInternalProjectKind(kind) ? null : contractAmount,
         String(body.memo || ""),
         JSON.stringify(body.links || []),
         timestamp,
@@ -724,7 +725,7 @@ export async function POST(request: Request, context: Context) {
       const project = await db.prepare("SELECT kind FROM projects WHERE id=?").get(projectId) as { kind: string } | undefined;
       if (!project)
         return fail("프로젝트를 찾을 수 없습니다.", 404);
-      if (project.kind === "회사") return fail("회사 업무에는 입금 항목을 만들 수 없습니다.");
+      if (isInternalProjectKind(project.kind)) return fail("회사 업무에는 입금 항목을 만들 수 없습니다.");
       const title = String(body.title || "").trim(),
         amount = Number(body.amount);
       if (
@@ -917,7 +918,7 @@ export async function PATCH(request: Request, context: Context) {
       ] as const;
       if (body.contract_amount !== undefined) {
         const target = await db.prepare("SELECT kind FROM projects WHERE id=?").get(projectId) as { kind: string } | undefined;
-        if (target?.kind === "회사") return fail("회사 업무에는 계약 금액을 입력할 수 없습니다.");
+        if (target && isInternalProjectKind(target.kind)) return fail("회사 업무에는 계약 금액을 입력할 수 없습니다.");
       }
       const updates = allowed.filter((key) => key in body);
       if (!updates.length) return fail("수정할 항목이 없습니다.");

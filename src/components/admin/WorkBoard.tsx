@@ -14,9 +14,10 @@ import { TaskEditor, type Task } from "./AdminProject";
 import CalendarView from "./CalendarView";
 import type { Meeting } from "./MeetingsPage";
 import { projectColor } from "@/lib/admin/project-colors";
+import { PROJECT_KINDS, PROJECT_KIND_LABELS, type ProjectKind } from "@/lib/admin/project-kinds";
 
 type BoardTask = Task & { project_name: string };
-type Project = { id: string; name: string; client: string; kind: "외주" | "회사"; due_date: string | null };
+type Project = { id: string; name: string; client: string; kind: ProjectKind; due_date: string | null };
 type Invoice = { id: string; project_id: string; project_name: string; title: string; due_date: string | null; balance: number };
 const columns = ["할 일", "진행 중", "확인 대기", "완료"];
 
@@ -199,7 +200,7 @@ export default function WorkBoard() {
           <button type="button" aria-pressed={view === "calendar"} onClick={() => { setView("calendar"); setFocus("all"); }}><FiCalendar /> 캘린더</button>
         </div>
         <div className="project-kind-filter" aria-label="업무 유형 필터">
-          {[["", "전체"], ["외주", "외주"], ["회사", "회사 업무"]].map(([value, label]) => <button type="button" key={label} aria-pressed={kind === value} onClick={() => { setKind(value); setProjectId(""); }}>{label}</button>)}
+          {[["", "전체"], ...PROJECT_KINDS.map((projectKind) => [projectKind, PROJECT_KIND_LABELS[projectKind]])].map(([value, label]) => <button type="button" key={label} aria-pressed={kind === value} onClick={() => { setKind(value); setProjectId(""); }}>{label}</button>)}
         </div>
         <select
           aria-label="프로젝트 필터"

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { startRegistration } from "@simplewebauthn/browser";
 import PaymentRow from "@/components/admin/PaymentRow";
 import { projectColor } from "@/lib/admin/project-colors";
+import { PROJECT_KINDS, PROJECT_KIND_LABELS, type ProjectKind } from "@/lib/admin/project-kinds";
 import { useCallback, useEffect, useState } from "react";
 import {
   FiArrowDownRight,
@@ -19,7 +20,7 @@ import {
 
 type Project = {
   id: string;
-  kind: "외주" | "회사";
+  kind: ProjectKind;
   name: string;
   client: string;
   status: string;
@@ -183,7 +184,7 @@ export default function AdminView({
 }: {
   section: Section;
   initialCreateProject?: boolean;
-  initialProjectKind?: string;
+  initialProjectKind?: ProjectKind | "";
 }) {
   const [loading, setLoading] = useState(true),
     [initialized, setInitialized] = useState(false),
@@ -196,7 +197,7 @@ export default function AdminView({
     [taskQuery, setTaskQuery] = useState(""),
     [status, setStatus] = useState(""),
     [projectKind, setProjectKind] = useState(initialProjectKind),
-    [newProjectKind, setNewProjectKind] = useState<"외주" | "회사">(initialProjectKind === "회사" ? "회사" : "외주"),
+    [newProjectKind, setNewProjectKind] = useState<ProjectKind>(initialProjectKind || "외주"),
     [taskPriority, setTaskPriority] = useState(""),
     [taskProject, setTaskProject] = useState(""),
     [includeClosedProjects, setIncludeClosedProjects] = useState(false),
@@ -593,12 +594,12 @@ export default function AdminView({
           >
             <label className="text-xs text-[#71717f]">
               업무 유형
-              <select name="kind" value={newProjectKind} onChange={(event) => setNewProjectKind(event.target.value as "외주" | "회사")} className="mt-1.5 block w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm">
-                <option value="외주">외주</option><option value="회사">회사 개발 업무</option>
+              <select name="kind" value={newProjectKind} onChange={(event) => setNewProjectKind(event.target.value as ProjectKind)} className="mt-1.5 block w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm">
+                {PROJECT_KINDS.map((kind) => <option value={kind} key={kind}>{PROJECT_KIND_LABELS[kind]}</option>)}
               </select>
             </label>
             <Field name="name" label="프로젝트명" required />
-            <Field name="client" label={newProjectKind === "회사" ? "팀 / 조직" : "고객명"} required />
+            <Field name="client" label={newProjectKind === "외주" ? "고객명" : "팀 / 조직"} required />
             <Field name="due_date" label="마감일" type="date" />
             {newProjectKind === "외주" && <Field
               name="contract_amount"
@@ -628,7 +629,7 @@ export default function AdminView({
         )}
         <div className="admin-toolbar mb-4 flex flex-wrap gap-2">
           <div className="project-kind-filter" aria-label="업무 유형 필터">
-            {[["", "전체"], ["외주", "외주"], ["회사", "회사 업무"]].map(([value, label]) => <button type="button" key={label} aria-pressed={projectKind === value} onClick={() => { setProjectKind(value); if (value === "외주" || value === "회사") setNewProjectKind(value); }}>{label}</button>)}
+            {[["", "전체"], ...PROJECT_KINDS.map((kind) => [kind, PROJECT_KIND_LABELS[kind]])].map(([value, label]) => <button type="button" key={label} aria-pressed={projectKind === value} onClick={() => { setProjectKind(value as ProjectKind | ""); if (value) setNewProjectKind(value as ProjectKind); }}>{label}</button>)}
           </div>
           <label className="flex min-w-[220px] flex-1 items-center gap-2 rounded-xl border border-black/[0.07] bg-white px-3">
             <FiSearch className="text-[#a0a0ac]" />
@@ -678,7 +679,7 @@ export default function AdminView({
                         <p className="truncate">{project.client}</p>
                       </div>
                     </div>
-                    <div className="project-tile-badges"><span className={`project-kind-badge ${project.kind === "회사" ? "is-company" : ""}`}>{project.kind}</span><StatusBadge value={project.status} /></div>
+                    <div className="project-tile-badges"><span className={`project-kind-badge ${project.kind !== "외주" ? "is-company" : ""}`}>{PROJECT_KIND_LABELS[project.kind]}</span><StatusBadge value={project.status} /></div>
                   </div>
                   <div className="project-tile-progress">
                     <div className="flex items-center justify-between gap-3">
