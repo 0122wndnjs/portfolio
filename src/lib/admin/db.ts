@@ -24,7 +24,7 @@ function normalizeRow(row: Record<string, unknown>): Record<string, unknown> {
 
 let client: Sql | undefined;
 let healthCheck: Promise<Sql> | undefined;
-let activeOperations = 0;
+let activeTransactions = 0;
 const transactionContext = new AsyncLocalStorage<QuerySql>();
 
 function createClient(): Sql {
@@ -52,7 +52,7 @@ function withTimeout<T>(operation: Promise<T>, milliseconds: number): Promise<T>
 async function connection(): Promise<Sql> {
   if (healthCheck) return healthCheck;
   const current = client ?? (client = createClient());
-  if (activeOperations > 0) return current;
+  if (activeTransactions > 0) return current;
 
   healthCheck = (async () => {
     try {
@@ -90,12 +90,7 @@ export const db = {
       });
       const active = transactionContext.getStore();
       const sql = active ?? await connection();
-      activeOperations++;
-      try {
-        return await sql.unsafe(parameters(query, normalized), normalized);
-      } finally {
-        activeOperations--;
-      }
+      return sql.unsafe(parameters(query, normalized), normalized);
     };
     return {
       async get(...values: unknown[]): Promise<Record<string, unknown> | undefined> {
@@ -114,11 +109,11 @@ export const db = {
   },
   async transaction<T>(callback: () => Promise<T>): Promise<T> {
     const sql = await connection();
-    activeOperations++;
+    activeTransactions++;
     try {
       return await sql.begin((tx) => transactionContext.run(tx, callback)) as T;
     } finally {
-      activeOperations--;
+      activeTransactions--;
     }
   },
 };
