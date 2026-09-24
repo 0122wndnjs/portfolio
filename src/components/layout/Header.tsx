@@ -79,6 +79,8 @@ export default function Header() {
     ? { id: "go-insights", label: "Insights", type: "route", path: "/insights" }
     : { id: "go-home", label: "Portfolio", type: "route", path: "/" };
 
+  if (pathname.startsWith("/admin")) return null;
+
   return (
     <>
       <motion.header
