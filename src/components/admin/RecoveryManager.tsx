@@ -1,17 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { api } from "@/components/admin/api";
 
-async function api<T>(url: string, method = "GET", body?: unknown): Promise<T> {
-  const response = await fetch(url, {
-    method,
-    headers: body ? { "Content-Type": "application/json" } : {},
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || "요청 실패");
-  return data as T;
-}
 
 export default function RecoveryManager() {
   const [count, setCount] = useState(0),

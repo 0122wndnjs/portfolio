@@ -34,7 +34,8 @@ function createClient(): Sql {
   return postgres(url, {
     max: 1,
     prepare: false,
-    ssl: "require",
+    // 로컬 개발용 DB는 연결 문자열에 sslmode=disable을 붙여 TLS 없이 연결할 수 있다.
+    ssl: /[?&]sslmode=disable(&|$)/.test(url) ? false : "require",
     connect_timeout: 5,
     idle_timeout: 10,
   });

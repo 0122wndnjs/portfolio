@@ -1,19 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { api } from "@/components/admin/api";
 
 type Payment = { id: string; amount: number; paid_at: string; memo: string };
 
-async function api(url: string, method: string, body?: unknown) {
-  const response = await fetch(url, {
-    method,
-    headers: body ? { "Content-Type": "application/json" } : {},
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const result = await response.json();
-  if (!response.ok)
-    throw new Error(result.error || "입금 내역을 수정하지 못했습니다.");
-}
 
 export default function PaymentRow({
   payment,

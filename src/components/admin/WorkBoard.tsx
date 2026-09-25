@@ -15,27 +15,14 @@ import CalendarView from "./CalendarView";
 import type { Meeting } from "./MeetingsPage";
 import { projectColor } from "@/lib/admin/project-colors";
 import { matchesProjectKind, PROJECT_KINDS, PROJECT_KIND_LABELS, type ProjectKind } from "@/lib/admin/project-kinds";
+import { api } from "@/components/admin/api";
 
 type BoardTask = Task & { project_name: string };
 type Project = { id: string; name: string; client: string; kind: ProjectKind; due_date: string | null };
 type Invoice = { id: string; project_id: string; project_name: string; title: string; due_date: string | null; balance: number };
 const columns = ["할 일", "진행 중", "확인 대기", "완료"];
 
-async function request<T>(url: string, body?: unknown): Promise<T> {
-  const response = await fetch(
-    url,
-    body
-      ? {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        }
-      : undefined,
-  );
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || "작업을 불러오지 못했어요.");
-  return data as T;
-}
+const request = <T,>(url: string, body?: unknown) => api<T>(url, body === undefined ? "GET" : "POST", body);
 
 export default function WorkBoard() {
   const [tasks, setTasks] = useState<BoardTask[]>([]);

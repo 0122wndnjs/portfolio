@@ -5,11 +5,12 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { FiCalendar, FiExternalLink, FiPlus, FiUsers, FiX } from "react-icons/fi";
 import { projectColor } from "@/lib/admin/project-colors";
 import type { ProjectKind } from "@/lib/admin/project-kinds";
+import { api } from "@/components/admin/api";
 
 type Project = { id: string; name: string; kind: ProjectKind };
 type Followup = { id: string; title: string; status: string; due_date: string | null; archived: number };
 export type Meeting = {
-  id: string; project_id: string; project_name: string; project_kind: ProjectKind;
+  id: string; project_id: string; project_name: string; project_kind: ProjectKind; updated_at: string;
   title: string; meeting_date: string; start_time: string; attendees: string;
   location: string; agenda: string; decisions: string; tasks: Followup[];
 };
@@ -17,12 +18,6 @@ type Draft = Pick<Meeting, "project_id" | "title" | "meeting_date" | "start_time
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
 const newDraft = (projectId: string): Draft => ({ project_id: projectId, title: "", meeting_date: today(), start_time: "10:00", attendees: "", location: "", agenda: "", decisions: "" });
 
-async function api<T>(url: string, method = "GET", body?: unknown): Promise<T> {
-  const response = await fetch(url, { method, headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || "요청을 완료하지 못했어요.");
-  return data as T;
-}
 async function fetchData(projectId: string) {
   const [meetings, active, finished, cancelled] = await Promise.all([
     api<Meeting[]>(`/api/admin/meetings${projectId ? `?project=${encodeURIComponent(projectId)}` : ""}`),
@@ -85,7 +80,7 @@ export default function MeetingsPage({ initialProjectId = "", initialMeetingId =
     setSaving(true);
     setError("");
     try {
-      await api(editingId ? `/api/admin/meetings/${editingId}` : "/api/admin/meetings", editingId ? "PATCH" : "POST", draft);
+      await api(editingId ? `/api/admin/meetings/${editingId}` : "/api/admin/meetings", editingId ? "PATCH" : "POST", editingId ? { ...draft, expected_updated_at: meetings.find((meeting) => meeting.id === editingId)?.updated_at } : draft);
       await load();
       setDraft(null);
       setNotice(editingId ? "미팅 기록을 수정했어요." : "미팅을 등록했어요.");

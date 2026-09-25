@@ -4,16 +4,17 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { FiArrowLeft, FiFileText, FiPlus, FiPrinter, FiX } from "react-icons/fi";
 import { projectColor } from "@/lib/admin/project-colors";
+import { api } from "@/components/admin/api";
 
 type Item = { name: string; quantity: number; unit_price: number };
 type Quote = {
   id: string; project_id: string; project_name: string; number: string; title: string;
   sender: string; recipient: string; issue_date: string; valid_until: string | null;
-  status: string; items: Item[]; tax_amount: number; note: string;
+  status: string; items: Item[]; tax_amount: number; note: string; updated_at: string;
   imported_item_count: number;
 };
 type Project = { id: string; name: string; client: string };
-type Draft = Omit<Quote, "id" | "project_name" | "number" | "imported_item_count">;
+type Draft = Omit<Quote, "id" | "project_name" | "number" | "imported_item_count" | "updated_at">;
 const won = (value: number) => new Intl.NumberFormat("ko-KR").format(value) + "원";
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
 const newDraft = (project?: Project, sender = ""): Draft => ({
@@ -21,12 +22,6 @@ const newDraft = (project?: Project, sender = ""): Draft => ({
   sender, recipient: project?.client || "", issue_date: today(), valid_until: null,
   status: "초안", items: [{ name: "", quantity: 1, unit_price: 0 }], tax_amount: 0, note: "",
 });
-async function api<T>(url: string, method = "GET", body?: unknown): Promise<T> {
-  const response = await fetch(url, { method, headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || "요청을 완료하지 못했습니다.");
-  return data as T;
-}
 async function fetchQuoteData() {
   const [quotes, active, finished, cancelled] = await Promise.all([
     api<Quote[]>("/api/admin/quotes"),
@@ -93,7 +88,7 @@ export default function QuotesPage({ initialProjectId = "" }: { initialProjectId
     setSaving(true);
     setError("");
     try {
-      await api(editingId ? `/api/admin/quotes/${editingId}` : "/api/admin/quotes", editingId ? "PATCH" : "POST", draft);
+      await api(editingId ? `/api/admin/quotes/${editingId}` : "/api/admin/quotes", editingId ? "PATCH" : "POST", editingId ? { ...draft, expected_updated_at: quotes.find((quote) => quote.id === editingId)?.updated_at } : draft);
       await load();
       setDraft(null);
       setEditingId(null);

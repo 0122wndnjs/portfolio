@@ -10,15 +10,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FiArrowLeft,
   FiCalendar,
-  FiCheck,
   FiCheckSquare,
-  FiChevronDown,
-  FiClock,
   FiExternalLink,
   FiMoreHorizontal,
   FiPlus,
   FiX,
 } from "react-icons/fi";
+import { api } from "@/components/admin/api";
 
 type Checklist = Array<{ id: string; text: string; done: boolean }>;
 export type Task = {
@@ -36,6 +34,7 @@ export type Task = {
   completed_at: string | null;
   archived: boolean;
   created_at: string;
+  updated_at: string;
 };
 type Invoice = {
   id: string;
@@ -68,6 +67,7 @@ type Project = {
   contract_amount: number | null;
   memo: string;
   links: Array<{ name: string; url: string }>;
+  updated_at: string;
   tasks: Task[];
   invoices: Invoice[];
 };
@@ -83,16 +83,6 @@ const dateLabel = (value: string | null) =>
     : "마감 없음";
 const today = () =>
   new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
-async function api<T>(url: string, method = "GET", body?: unknown): Promise<T> {
-  const response = await fetch(url, {
-    method,
-    headers: body ? { "Content-Type": "application/json" } : {},
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || "요청 실패");
-  return data as T;
-}
 function Input({
   name,
   label,
@@ -155,7 +145,8 @@ export default function AdminProject({ projectId }: { projectId: string }) {
     }
   }, [projectId, taskFromQuery, tabFromQuery]);
   useEffect(() => {
-    void load();
+    const timer = setTimeout(() => void load(), 0);
+    return () => clearTimeout(timer);
   }, [load]);
   const flash = (text: string) => {
     setToast(text);
@@ -357,9 +348,11 @@ export default function AdminProject({ projectId }: { projectId: string }) {
                 const status = e.target.value;
                 setProject({ ...project, status });
                 try {
-                  await api(`/api/admin/projects/${project.id}`, "PATCH", {
+                  const result = await api<{ updated_at: string }>(`/api/admin/projects/${project.id}`, "PATCH", {
                     status,
                   });
+                  // 이후 개요 저장 시 수정 충돌로 오인하지 않도록 새 버전을 반영한다.
+                  setProject((current) => current && { ...current, status, updated_at: result.updated_at });
                   window.dispatchEvent(new Event("admin:projects-changed"));
                 } catch (err) {
                   setError(
@@ -613,7 +606,7 @@ export default function AdminProject({ projectId }: { projectId: string }) {
           project={project}
           onSave={async (body) => {
             try {
-              await api(`/api/admin/projects/${project.id}`, "PATCH", body);
+              await api(`/api/admin/projects/${project.id}`, "PATCH", { ...body, expected_updated_at: project.updated_at });
               window.dispatchEvent(new Event("admin:projects-changed"));
               flash("프로젝트 정보 저장했어요.");
               await load();
@@ -735,7 +728,7 @@ export default function AdminProject({ projectId }: { projectId: string }) {
           project={project}
           onSave={async (body) => {
             try {
-              await api(`/api/admin/projects/${project.id}`, "PATCH", body);
+              await api(`/api/admin/projects/${project.id}`, "PATCH", { ...body, expected_updated_at: project.updated_at });
               flash("저장했어요.");
               await load();
             } catch (e) {
@@ -897,7 +890,7 @@ export function TaskEditor({
   const [checkText, setCheckText] = useState("");
   async function update(body: Record<string, unknown>) {
     try {
-      await api(`/api/admin/tasks/${task.id}`, "PATCH", body);
+      await api(`/api/admin/tasks/${task.id}`, "PATCH", { ...body, expected_updated_at: task.updated_at });
       await refresh();
       onToast("작업 업데이트했어요.");
     } catch (e) {

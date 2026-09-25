@@ -3,6 +3,9 @@ import { headers } from "next/headers";
 import { db } from "@/lib/admin/db";
 
 export async function relyingParty() {
+  // 운영에서 Host 헤더로 출처를 추정하면 헤더 조작에 취약하므로 명시 설정을 강제한다.
+  if (process.env.NODE_ENV === "production" && !process.env.ADMIN_ORIGIN)
+    throw new Error("운영 환경에는 ADMIN_ORIGIN 환경변수가 필요합니다.");
   const headerStore = await headers();
   const fallbackProtocol =
     process.env.NODE_ENV === "development" ? "http" : "https";

@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server";
-import { hash } from "@/lib/admin/auth";
+import { hash, safeEqual } from "@/lib/admin/auth";
 import { db } from "@/lib/admin/db";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  if (
-    !secret ||
-    request.headers.get("x-telegram-bot-api-secret-token") !== secret
-  )
+  if (!safeEqual(request.headers.get("x-telegram-bot-api-secret-token"), secret))
     return NextResponse.json({ ok: false }, { status: 403 });
   const update = (await request.json().catch(() => ({}))) as {
     message?: { text?: string; chat?: { id?: number } };

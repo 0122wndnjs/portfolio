@@ -4,14 +4,22 @@ import { NextResponse } from "next/server";
 import {
   checkRateLimit,
   isAuthenticated,
+  requireRecentAuth,
+  safeEqual,
   requestAddress,
   saveChallenge,
 } from "@/lib/admin/auth";
-import { credentials, relyingParty } from "@/lib/admin/webauthn";
+import { errorResponse } from "@/lib/admin/http";
+import { assertOrigin, credentials, relyingParty } from "@/lib/admin/webauthn";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  try {
+    await assertOrigin(request);
+  } catch {
+    return NextResponse.json({ error: "잘못된 요청 출처입니다." }, { status: 403 });
+  }
   if (!await checkRateLimit(`register:${requestAddress(request)}`, 5, 60 * 60_000))
     return NextResponse.json(
       { error: "패스키 등록 시도가 많습니다. 잠시 후 다시 시도하세요." },
@@ -25,8 +33,7 @@ export async function POST(request: Request) {
   if (
     existing.length === 0 &&
     !authenticated &&
-    (!process.env.ADMIN_BOOTSTRAP_TOKEN ||
-      body.bootstrapToken !== process.env.ADMIN_BOOTSTRAP_TOKEN)
+    !safeEqual(body.bootstrapToken, process.env.ADMIN_BOOTSTRAP_TOKEN)
   ) {
     return NextResponse.json(
       { error: "최초 관리자 등록 토큰이 올바르지 않습니다." },
@@ -38,6 +45,13 @@ export async function POST(request: Request) {
       { error: "로그인이 필요합니다." },
       { status: 401 },
     );
+  if (existing.length > 0) {
+    try {
+      await requireRecentAuth();
+    } catch (error) {
+      return errorResponse(error, "패스키 등록을 준비하지 못했습니다.");
+    }
+  }
   const rp = await relyingParty();
   const options = await generateRegistrationOptions({
     rpName: rp.rpName,

@@ -7,6 +7,7 @@ import {
   createSession,
   isAuthenticated,
   requestAddress,
+  safeEqual,
 } from "@/lib/admin/auth";
 import { db } from "@/lib/admin/db";
 import { assertOrigin, credentials, relyingParty } from "@/lib/admin/webauthn";
@@ -32,8 +33,7 @@ export async function POST(request: Request) {
     if (
       existing.length === 0 &&
       !authenticated &&
-      (!process.env.ADMIN_BOOTSTRAP_TOKEN ||
-        body.bootstrapToken !== process.env.ADMIN_BOOTSTRAP_TOKEN)
+      !safeEqual(body.bootstrapToken, process.env.ADMIN_BOOTSTRAP_TOKEN)
     ) {
       return NextResponse.json(
         { error: "최초 관리자 등록 토큰이 올바르지 않습니다." },

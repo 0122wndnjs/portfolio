@@ -1,113 +1,58 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
+import { safeEqual } from "@/lib/admin/auth";
 import { db } from "@/lib/admin/db";
+import {
+  type ReminderInvoice,
+  type ReminderTask,
+  buildReminders,
+} from "@/lib/admin/reminders";
+import { getPreferences, getSetting, sendTelegram } from "@/lib/admin/settings";
+import { seoulDate, seoulTime } from "@/lib/admin/validation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-const todaySeoul = () =>
-  new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
-const addDay = (date: string, days: number) =>
-  new Date(
-    new Date(`${date}T00:00:00+09:00`).getTime() + days * 86400000,
-  ).toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
 
-export async function POST(request: Request) {
-  if (
-    !process.env.ADMIN_CRON_SECRET ||
-    request.headers.get("authorization") !==
-      `Bearer ${process.env.ADMIN_CRON_SECRET}`
-  )
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const chatId = (
-    await db
-      .prepare("SELECT value FROM settings WHERE key='telegram_chat_id'")
-      .get() as { value: string } | undefined
-  )?.value;
+/**
+ * Vercel Cron은 GET + `Authorization: Bearer ${CRON_SECRET}`으로 호출한다(Hobby: 하루 1회).
+ * 외부 cron은 POST + ADMIN_CRON_SECRET으로 15분마다 호출할 수 있다.
+ */
+function authorized(request: Request) {
+  const header = request.headers.get("authorization") || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+  return [process.env.CRON_SECRET, process.env.ADMIN_CRON_SECRET].some(
+    (secret) => !!secret && safeEqual(token, secret),
+  );
+}
+
+async function run(forceDigest: boolean) {
+  const chatId = await getSetting("telegram_chat_id");
   if (!chatId || !process.env.TELEGRAM_BOT_TOKEN)
     return NextResponse.json({ sent: 0, skipped: "telegram not connected" });
-  const prefs = JSON.parse(
-    (
-      await db.prepare("SELECT value FROM settings WHERE key='preferences'").get() as
-        { value: string } | undefined
-    )?.value || "{}",
-  );
-  if (!prefs.notifications)
+  const preferences = await getPreferences();
+  if (!preferences.notifications)
     return NextResponse.json({ sent: 0, skipped: "notifications disabled" });
-  const today = todaySeoul(),
-    tomorrow = addDay(today, 1),
-    waitingDate = addDay(today, -(Number(prefs.overdueDays) || 3));
-  const tasks = await db
-    .prepare(
-      `SELECT t.id,t.title,t.status,t.due_date,t.waiting_since,p.name AS project_name FROM tasks t JOIN projects p ON p.id=t.project_id WHERE t.archived=0 AND t.status!='완료' AND p.status IN ('준비 중','진행 중')`,
-    )
-    .all() as Array<{
-    id: string;
-    title: string;
-    status: string;
-    due_date: string | null;
-    waiting_since: string | null;
-    project_name: string;
-  }>;
-  const invoiceRows = await db
-    .prepare(
-      `SELECT i.id,i.title,i.due_date,p.name AS project_name,i.amount,(SELECT COALESCE(SUM(amount),0) FROM payments WHERE invoice_id=i.id) AS paid FROM invoices i JOIN projects p ON p.id=i.project_id`,
-    )
-    .all() as Array<{
-    id: string;
-    title: string;
-    due_date: string | null;
-    project_name: string;
-    amount: number;
-    paid: number;
-  }>;
-  const messages: Array<{ key: string; text: string }> = [];
-  for (const task of tasks) {
-    if (prefs.deadlineAlerts && task.due_date && task.due_date === tomorrow)
-      messages.push({
-        key: `deadline:${task.id}:${task.due_date}:lead`,
-        text: `내일 마감 · ${task.project_name} / ${task.title}`,
-      });
-    if (prefs.deadlineAlerts && task.due_date && task.due_date <= today)
-      messages.push({
-        key: `deadline:${task.id}:${task.due_date}:today`,
-        text: `마감 확인 · ${task.project_name} / ${task.title} (${task.due_date})`,
-      });
-    if (
-      task.status === "확인 대기" &&
-      task.waiting_since &&
-      task.waiting_since.slice(0, 10) <= waitingDate
-    )
-      messages.push({
-        key: `waiting:${task.id}:${task.waiting_since}`,
-        text: `고객 확인 대기 · ${task.project_name} / ${task.title}`,
-      });
-  }
-  if (prefs.paymentAlerts)
-    for (const invoice of invoiceRows) {
-      if (Number(invoice.paid) >= Number(invoice.amount) || !invoice.due_date)
-        continue;
-      if (invoice.due_date === today)
-        messages.push({
-          key: `payment:${invoice.id}:${invoice.due_date}:due`,
-          text: `입금 예정 · ${invoice.project_name} / ${invoice.title}`,
-        });
-      else if (invoice.due_date < today)
-        messages.push({
-          key: `payment:${invoice.id}:${invoice.due_date}:overdue`,
-          text: `입금 확인 · ${invoice.project_name} / ${invoice.title} (${invoice.due_date})`,
-        });
-    }
-  const seoulTime = new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-    timeZone: "Asia/Seoul",
-  }).format(new Date());
-  if (messages.length && seoulTime >= String(prefs.digestTime || "09:00"))
-    messages.push({
-      key: `digest:${today}`,
-      text: `오늘 일정 ${messages.length}건 · 마감 작업 ${messages.filter((item) => item.key.startsWith("deadline:")).length}건 · 고객 확인 대기 ${messages.filter((item) => item.key.startsWith("waiting:")).length}건 · 입금 일정 ${messages.filter((item) => item.key.startsWith("payment:")).length}건`,
-    });
+  const [tasks, invoices] = await Promise.all([
+    db
+      .prepare(
+        `SELECT t.id,t.title,t.status,t.due_date,t.waiting_since,p.name AS project_name FROM tasks t JOIN projects p ON p.id=t.project_id WHERE t.archived=0 AND t.status<>'완료' AND p.status IN ('준비 중','진행 중')`,
+      )
+      .all() as Promise<ReminderTask[]>,
+    db
+      .prepare(
+        `SELECT i.id,i.title,i.due_date,p.name AS project_name,i.amount,(SELECT COALESCE(SUM(amount),0) FROM payments WHERE invoice_id=i.id) AS paid FROM invoices i JOIN projects p ON p.id=i.project_id`,
+      )
+      .all() as Promise<ReminderInvoice[]>,
+  ]);
+  const messages = buildReminders({
+    tasks,
+    invoices,
+    preferences,
+    today: seoulDate(),
+    time: seoulTime(),
+    forceDigest,
+  });
+
   const createClaim = db.prepare(
     "INSERT INTO notification_log(id,dedupe_key,message,sent_at,result) VALUES(?,?,?,?, 'sending') ON CONFLICT (dedupe_key) DO NOTHING",
   );
@@ -122,41 +67,35 @@ export async function POST(request: Request) {
   for (const item of messages) {
     const claimedAt = new Date().toISOString();
     const claimed =
-      (await createClaim.run(
-        randomBytes(16).toString("hex"),
-        item.key,
-        item.text,
-        claimedAt,
-      )).changes === 1;
+      (await createClaim.run(randomBytes(16).toString("hex"), item.key, item.text, claimedAt)).changes === 1;
     const staleClaim = new Date(Date.now() - 15 * 60_000).toISOString();
     const reclaimed =
-      !claimed &&
-      (await retryClaim.run(item.text, claimedAt, item.key, staleClaim)).changes === 1;
+      !claimed && (await retryClaim.run(item.text, claimedAt, item.key, staleClaim)).changes === 1;
     if (!claimed && !reclaimed) continue;
-    let response: Response | undefined;
+    let ok = false;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        response = await fetch(
-          `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              chat_id: chatId,
-              text: adminUrl ? `${item.text}\n${adminUrl}/admin` : item.text,
-              disable_web_page_preview: true,
-            }),
-          },
-        );
+        const response = await sendTelegram(chatId, adminUrl ? `${item.text}\n${adminUrl}/admin` : item.text);
+        ok = response.ok;
+        // 4xx(차단·잘못된 채팅 등)는 재시도해도 같은 결과이므로 중단한다.
         if (response.ok || response.status < 500) break;
       } catch {
         /* retry transient network failures */
       }
       await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
     }
-    const result = response?.ok ? "sent" : "failed";
-    await finishClaim.run(new Date().toISOString(), result, item.key);
-    if (result === "sent") sent++;
+    await finishClaim.run(new Date().toISOString(), ok ? "sent" : "failed", item.key);
+    if (ok) sent++;
   }
   return NextResponse.json({ sent, total: messages.length });
+}
+
+export async function GET(request: Request) {
+  if (!authorized(request)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  return run(true);
+}
+
+export async function POST(request: Request) {
+  if (!authorized(request)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  return run(false);
 }
