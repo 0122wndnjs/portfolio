@@ -70,7 +70,8 @@ async function connection(): Promise<Sql> {
     } catch {
       const replacement = createClient();
       if (client === current) client = replacement;
-      void current.end({ timeout: 1 }).catch(() => undefined);
+      // 대기열로 직렬화되어 있어 교체 시점에 이 연결에서 실행 중인 쿼리는 없다.
+      void current.end({ timeout: 5 }).catch(() => undefined);
       await withTimeout(replacement.unsafe("SELECT 1"), 5000);
       lastHealthyAt = Date.now();
       return replacement;
@@ -82,6 +83,20 @@ async function connection(): Promise<Sql> {
     healthCheck = undefined;
   }
 }
+
+/**
+ * 연결이 1개뿐이라 쿼리를 한 번에 하나씩만 보낸다. Supabase 풀러(Supavisor)는 한 연결에
+ * 여러 쿼리를 파이프라인으로 보내면 응답이 멈추는 경우가 있어(파라미터 없는 쿼리 동시 5개에서 재현),
+ * 호출 쪽 Promise.all도 여기서 순서대로 실행된다. 트랜잭션은 끝날 때까지 한 슬롯을 차지한다.
+ */
+let queue: Promise<unknown> = Promise.resolve();
+function serialize<T>(task: () => Promise<T>): Promise<T> {
+  const run = queue.then(task, task);
+  queue = run.catch(() => undefined);
+  return run;
+}
+
+const QUERY_TIMEOUT_MS = 20_000;
 
 function parameters(query: string, values: unknown[]) {
   let index = 0;
@@ -98,11 +113,21 @@ export const db = {
         if (["string", "number", "boolean"].includes(typeof value)) return value as Value;
         throw new Error("지원하지 않는 SQL 매개변수입니다.");
       });
+      const text = parameters(query, normalized);
       const active = transactionContext.getStore();
-      const sql = active ?? await connection();
-      const rows = await sql.unsafe(parameters(query, normalized), normalized);
-      lastHealthyAt = Date.now();
-      return rows;
+      if (active) return active.unsafe(text, normalized);
+      return serialize(async () => {
+        const sql = await connection();
+        try {
+          const rows = await withTimeout(sql.unsafe(text, normalized), QUERY_TIMEOUT_MS);
+          lastHealthyAt = Date.now();
+          return rows;
+        } catch (error) {
+          // 응답 없는 연결은 다음 호출에서 상태 확인 후 교체되도록 표시한다.
+          lastHealthyAt = 0;
+          throw error;
+        }
+      });
     };
     return {
       async get(...values: unknown[]): Promise<Record<string, unknown> | undefined> {
@@ -120,12 +145,18 @@ export const db = {
     };
   },
   async transaction<T>(callback: () => Promise<T>): Promise<T> {
-    const sql = await connection();
-    activeTransactions++;
-    try {
-      return await sql.begin((tx) => transactionContext.run(tx, callback)) as T;
-    } finally {
-      activeTransactions--;
-    }
+    // 이미 트랜잭션 안이면 같은 트랜잭션에서 실행한다(대기열 교착 방지).
+    if (transactionContext.getStore()) return callback();
+    return serialize(async () => {
+      const sql = await connection();
+      activeTransactions++;
+      try {
+        const result = await sql.begin((tx) => transactionContext.run(tx, callback)) as T;
+        lastHealthyAt = Date.now();
+        return result;
+      } finally {
+        activeTransactions--;
+      }
+    });
   },
 };
