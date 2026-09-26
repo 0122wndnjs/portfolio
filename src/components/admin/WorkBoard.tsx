@@ -11,6 +11,7 @@ import {
   FiColumns,
 } from "react-icons/fi";
 import { TaskEditor, type Task } from "./AdminProject";
+import TaskRelationBadges from "./TaskRelationBadges";
 import CalendarView from "./CalendarView";
 import type { Meeting } from "./MeetingsPage";
 import { projectColor } from "@/lib/admin/project-colors";
@@ -18,7 +19,7 @@ import { matchesProjectKind, PROJECT_KINDS, PROJECT_KIND_LABELS, type ProjectKin
 import { api } from "@/components/admin/api";
 
 type BoardTask = Task & { project_name: string };
-type Project = { id: string; name: string; client: string; kind: ProjectKind; due_date: string | null };
+type Project = { id: string; name: string; client: string; kind: ProjectKind; due_date: string | null; next_check_date: string | null };
 type Invoice = { id: string; project_id: string; project_name: string; title: string; due_date: string | null; balance: number };
 const columns = ["할 일", "진행 중", "확인 대기", "완료"];
 
@@ -93,6 +94,7 @@ export default function WorkBoard() {
   });
   const availableProjects = projects.filter((project) => matchesProjectKind(project.kind, kind));
   const availableProjectIds = new Set(availableProjects.map((project) => project.id));
+  const dueChecks = availableProjects.filter((project) => project.next_check_date && project.next_check_date <= today);
   const visible = tasks.filter(
     (task) =>
       availableProjectIds.has(task.project_id) &&
@@ -181,6 +183,7 @@ export default function WorkBoard() {
           <FiPlus /> 프로젝트 만들기
         </Link>
       </div>
+      {dueChecks.length > 0 && <div className="board-check-banner"><strong>확인 필요 {dueChecks.length}</strong>{dueChecks.map((project) => <Link key={project.id} href={`/admin/projects/${project.id}?tab=개요`}>{project.name} · {project.next_check_date}</Link>)}</div>}
       <div className="workbench-toolbar">
         <div className="board-view-switch" aria-label="보기 방식">
           <button type="button" aria-pressed={view === "board"} onClick={() => setView("board")}><FiColumns /> 보드</button>
@@ -322,7 +325,7 @@ export default function WorkBoard() {
                         setSelectedId(task.id);
                       }}
                     >
-                      <span className="work-card-project" style={{ backgroundColor: projectColor(task.project_id).soft, color: projectColor(task.project_id).strong }}>
+                      <span className="work-card-project" style={{ backgroundColor: projectColor(task.project_id).strong, color: "#fff" }}>
                         {task.project_name}
                       </span>
                       <span
@@ -335,6 +338,7 @@ export default function WorkBoard() {
                           {task.description}
                         </span>
                       )}
+                      <TaskRelationBadges task={task} tasks={tasks} />
                       <span className="work-card-meta">
                         {task.priority === "높음" && (
                           <span className="priority-tag">우선</span>

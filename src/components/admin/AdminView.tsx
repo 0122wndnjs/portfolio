@@ -24,6 +24,7 @@ import { Button, Field, PageTitle, Toast, dateLabel } from "@/components/admin/u
 type Project = {
   next_action: string;
   waiting_reason: string;
+  next_check_date: string | null;
   id: string;
   kind: ProjectKind;
   name: string;
@@ -81,14 +82,14 @@ const won = (value: number) =>
 const today = () =>
   new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
 const badge: Record<string, string> = {
-  "진행 중": "bg-blue-50 text-blue-700",
-  "준비 중": "bg-violet-50 text-violet-700",
-  보류: "bg-amber-50 text-amber-700",
-  완료: "bg-emerald-50 text-emerald-700",
-  취소: "bg-gray-100 text-gray-500",
-  "확인 대기": "bg-orange-50 text-orange-700",
-  지연: "bg-red-50 text-red-700",
-  "할 일": "bg-gray-100 text-gray-600",
+  "진행 중": "bg-blue-700 text-white",
+  "준비 중": "bg-violet-700 text-white",
+  보류: "bg-amber-600 text-white",
+  완료: "bg-emerald-700 text-white",
+  취소: "bg-gray-600 text-white",
+  "확인 대기": "bg-orange-600 text-white",
+  지연: "bg-red-700 text-white",
+  "할 일": "bg-gray-600 text-white",
 };
 
 function Empty({ title, detail }: { title: string; detail: string }) {
@@ -629,6 +630,7 @@ export default function AdminView({
                   <div className="project-tile-progress">
                     {project.next_action && <p className="mb-2 text-xs text-[#5035ba]">다음 · {project.next_action}</p>}
                     {project.waiting_reason && <p className="mb-2 text-xs text-amber-700">대기 · {project.waiting_reason}</p>}
+                    {project.next_check_date && <p className={`mb-2 text-xs font-semibold ${project.next_check_date <= today() ? "text-red-700" : "text-blue-700"}`}>{project.next_check_date <= today() ? "확인 필요" : "다음 확인"} · {project.next_check_date}</p>}
                     <div className="flex items-center justify-between gap-3">
                       <span>작업 진행</span>
                       <span>
@@ -728,7 +730,7 @@ export default function AdminView({
             {taskBuckets
               .filter((bucket) => bucket.rows.length > 0)
               .map((bucket) => (
-                <section className="task-group" key={bucket.title}>
+                <section className={`task-group ${bucket.title === "지난 일정" ? "is-overdue" : bucket.title === "오늘" ? "is-today" : bucket.title === "다가오는 일정" ? "is-upcoming" : ""}`} key={bucket.title}>
                   <header>
                     <h2>{bucket.title}</h2>
                     <span>{bucket.rows.length}</span>

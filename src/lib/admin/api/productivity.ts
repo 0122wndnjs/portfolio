@@ -1,16 +1,15 @@
 import "server-only";
 import { db } from "@/lib/admin/db";
-import { audit } from "@/lib/admin/auth";
+import { audit, requireRecentAuth } from "@/lib/admin/auth";
 import { HttpError, json } from "@/lib/admin/http";
 import { addDays, seoulDate, validDate } from "@/lib/admin/validation";
 import { type Route, type Row, now, newId } from "./common";
+import { backupFingerprint, backupTables, importBackup, inspectBackup, parseBackup } from "@/lib/admin/workspace-backup";
 
 export async function saveTrash(entity: "invoice" | "payment", row: Row) {
   await db.prepare("INSERT INTO admin_trash(id,entity,title,payload,deleted_at) VALUES(?,?,?,?,?)")
     .run(newId(), entity, String(row.title || `입금 ${row.amount}원`), JSON.stringify(row), now());
 }
-
-const exportTables = ["projects", "tasks", "invoices", "payments", "quotes", "quote_task_links", "meetings", "meeting_task_links", "admin_trash"] as const;
 
 export const productivityRoutes: Route[] = [
   {
@@ -21,16 +20,22 @@ export const productivityRoutes: Route[] = [
       if (query.length > 200) throw new HttpError(400, "검색어는 200자 이내로 입력하세요.");
       const q = `%${query.replace(/[\\%_]/g, "\\$&")}%`;
       const rows = await db.prepare(`
-        SELECT 'project' AS type,id,id AS project_id,name AS title,description || ' ' || memo AS excerpt FROM projects
-        WHERE name ILIKE ? OR client ILIKE ? OR description ILIKE ? OR memo ILIKE ?
+        WITH needle AS (SELECT ?::text AS term)
+        SELECT 'project' AS type,id,id AS project_id,name AS title,description || ' ' || memo AS excerpt FROM projects,needle
+        WHERE name ILIKE term OR client ILIKE term OR description ILIKE term OR memo ILIKE term
+          OR contact ILIKE term OR email ILIKE term OR next_action ILIKE term OR waiting_reason ILIKE term
         UNION ALL
-        SELECT 'task',id,project_id,title,description FROM tasks WHERE archived=0 AND (title ILIKE ? OR description ILIKE ?)
+        SELECT 'task',id,project_id,title,description FROM tasks,needle WHERE archived=0 AND (title ILIKE term OR description ILIKE term OR status ILIKE term)
         UNION ALL
-        SELECT 'meeting',id,project_id,title,agenda || ' ' || decisions FROM meetings WHERE title ILIKE ? OR agenda ILIKE ? OR decisions ILIKE ?
+        SELECT 'meeting',id,project_id,title,agenda || ' ' || decisions FROM meetings,needle WHERE title ILIKE term OR agenda ILIKE term OR decisions ILIKE term OR attendees ILIKE term OR location ILIKE term
         UNION ALL
-        SELECT 'quote',id,project_id,title,note FROM quotes WHERE title ILIKE ? OR note ILIKE ?
+        SELECT 'quote',id,project_id,title,note FROM quotes,needle WHERE title ILIKE term OR note ILIKE term OR number ILIKE term OR recipient ILIKE term
+        UNION ALL
+        SELECT 'invoice',i.id,i.project_id,i.title,i.memo FROM invoices i,needle WHERE i.title ILIKE term OR i.memo ILIKE term OR i.amount::text ILIKE term
+        UNION ALL
+        SELECT 'payment',pay.id,i.project_id,'입금 ' || pay.amount::text || '원',pay.memo || ' · ' || pay.paid_at FROM payments pay JOIN invoices i ON i.id=pay.invoice_id,needle WHERE pay.memo ILIKE term OR pay.amount::text ILIKE term OR pay.paid_at ILIKE term
         ORDER BY type,title LIMIT 100
-      `).all(...Array(11).fill(q));
+      `).all(q);
       return json(rows.map((row) => ({ ...row, excerpt: String(row.excerpt).slice(0, 180) })));
     },
   },
@@ -45,7 +50,7 @@ export const productivityRoutes: Route[] = [
       const toTime = new Date(after + "T00:00:00+09:00").toISOString();
       const tasks = await db.prepare("SELECT t.id,t.project_id,t.title,t.status,p.name AS project_name,p.kind FROM tasks t JOIN projects p ON p.id=t.project_id WHERE t.archived=0 AND t.status='완료' AND t.completed_at>=? AND t.completed_at<? ORDER BY p.name,t.completed_at").all(fromTime, toTime);
       const meetings = await db.prepare("SELECT m.id,m.project_id,m.title,m.decisions,p.name AS project_name,p.kind FROM meetings m JOIN projects p ON p.id=m.project_id WHERE m.meeting_date BETWEEN ? AND ? ORDER BY m.meeting_date").all(start, end);
-      const projects = await db.prepare("SELECT id,name,kind,next_action,waiting_reason FROM projects WHERE status IN ('준비 중','진행 중','보류') ORDER BY name").all();
+      const projects = await db.prepare("SELECT id,name,kind,next_action,waiting_reason,next_check_date FROM projects WHERE status IN ('준비 중','진행 중','보류') ORDER BY name").all();
       return json({ start, end, tasks, meetings, projects });
     },
   },
@@ -86,12 +91,33 @@ export const productivityRoutes: Route[] = [
     },
   },
   {
+    method: "POST", path: "import/preview",
+    async handler({ body }) {
+      if (JSON.stringify(body).length > 10_000_000) throw new HttpError(413, "백업 파일은 10MB 이하여야 합니다.");
+      const backup = parseBackup(body.backup);
+      const { added, skipped, conflicts, conflictCount } = await inspectBackup(backup);
+      return json({ fingerprint: backupFingerprint(backup), added, skipped, conflicts, conflictCount });
+    },
+  },
+  {
+    method: "POST", path: "import/apply",
+    async handler({ body }) {
+      await requireRecentAuth();
+      if (JSON.stringify(body).length > 10_000_000) throw new HttpError(413, "백업 파일은 10MB 이하여야 합니다.");
+      const backup = parseBackup(body.backup);
+      if (body.fingerprint !== backupFingerprint(backup)) throw new HttpError(400, "미리보기한 백업 파일과 다릅니다.");
+      const result = await importBackup(backup);
+      await audit("workspace.backup.imported", { added: result.added });
+      return json(result);
+    },
+  },
+  {
     method: "GET", path: "export",
     async handler() {
       const data = await db.transaction(async () => {
         await db.prepare("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY").run();
         const tables: Record<string, Row[]> = {};
-        for (const table of exportTables) tables[table] = await db.prepare(`SELECT * FROM ${table}`).all();
+        for (const table of backupTables) tables[table] = await db.prepare(`SELECT * FROM ${table}`).all();
         return tables;
       });
       return new Response(JSON.stringify({ version: 1, exported_at: now(), tables: data }, null, 2), {

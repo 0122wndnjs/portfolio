@@ -32,7 +32,7 @@ async function fetchQuoteData() {
   return { quotes, projects: [...active, ...finished, ...cancelled] };
 }
 
-export default function QuotesPage({ initialProjectId = "" }: { initialProjectId?: string }) {
+export default function QuotesPage({ initialProjectId = "", initialQuoteId = "" }: { initialProjectId?: string; initialQuoteId?: string }) {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -60,6 +60,7 @@ export default function QuotesPage({ initialProjectId = "" }: { initialProjectId
       if (!active) return;
       setQuotes(data.quotes);
       setProjects(data.projects);
+      if (initialQuoteId) setPreview(data.quotes.find((quote) => quote.id === initialQuoteId) || null);
       setLoading(false);
     }).catch((e: unknown) => {
       if (!active) return;
@@ -67,7 +68,7 @@ export default function QuotesPage({ initialProjectId = "" }: { initialProjectId
       setLoading(false);
     });
     return () => { active = false; };
-  }, []);
+  }, [initialQuoteId]);
 
   const openNew = () => {
     const project = projects.find((item) => item.id === filter) || projects[0];

@@ -70,6 +70,7 @@ export default function PaymentRow({
   if (editing) {
     return (
       <form
+        id={`payment-${payment.id}`}
         onSubmit={save}
         className="mt-3 grid gap-2 rounded-lg bg-[#f3f3f3] p-3 sm:grid-cols-[1fr_1fr_1.5fr_auto_auto] sm:items-end"
       >
@@ -121,7 +122,7 @@ export default function PaymentRow({
   }
 
   return (
-    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-black/[0.05] pt-3 text-[11px] text-[#777783]">
+    <div id={`payment-${payment.id}`} className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-black/[0.05] pt-3 text-[11px] text-[#777783]">
       <span>
         {date} · {new Intl.NumberFormat("ko-KR").format(payment.amount)}원
         {payment.memo && ` · ${payment.memo}`}

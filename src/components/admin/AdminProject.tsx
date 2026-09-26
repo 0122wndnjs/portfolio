@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import PaymentRow from "@/components/admin/PaymentRow";
 import MeetingsPage from "@/components/admin/MeetingsPage";
 import TaskRelations from "@/components/admin/TaskRelations";
+import TaskRelationBadges from "@/components/admin/TaskRelationBadges";
 import { projectColor } from "@/lib/admin/project-colors";
 import { isInternalProjectKind, PROJECT_KIND_LABELS, type ProjectKind } from "@/lib/admin/project-kinds";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -34,6 +35,8 @@ export type Task = {
   waiting_since: string | null;
   completed_at: string | null;
   archived: boolean;
+  parent_id: string | null;
+  depends_on_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -57,6 +60,7 @@ type Invoice = {
 type Project = {
   next_action: string;
   waiting_reason: string;
+  next_check_date: string | null;
   id: string;
   kind: ProjectKind;
   name: string;
@@ -120,7 +124,7 @@ export default function AdminProject({ projectId }: { projectId: string }) {
   const [project, setProject] = useState<Project | null>(null),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
-    [tab, setTab] = useState(tabFromQuery === "입금" ? "입금" : "보드"),
+    [tab, setTab] = useState(["입금", "개요", "미팅", "링크·메모"].includes(tabFromQuery || "") ? tabFromQuery! : "보드"),
     [newTask, setNewTask] = useState(false),
     [newTaskStatus, setNewTaskStatus] = useState("할 일"),
     [newInvoice, setNewInvoice] = useState(false),
@@ -151,6 +155,19 @@ export default function AdminProject({ projectId }: { projectId: string }) {
     const timer = setTimeout(() => void load(), 0);
     return () => clearTimeout(timer);
   }, [load]);
+  useEffect(() => {
+    if (!tabFromQuery || !["보드", "개요", "미팅", "입금", "링크·메모"].includes(tabFromQuery)) return;
+    const timer = setTimeout(() => setTab(tabFromQuery), 0);
+    return () => clearTimeout(timer);
+  }, [tabFromQuery]);
+  useEffect(() => {
+    if (!project || tab !== "입금") return;
+    const timer = setTimeout(() => {
+      const id = decodeURIComponent(window.location.hash.slice(1));
+      if (id.startsWith("invoice-") || id.startsWith("payment-")) document.getElementById(id)?.scrollIntoView({ block: "center" });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [project, tab]);
   const flash = (text: string) => {
     setToast(text);
     setTimeout(() => setToast(""), 2200);
@@ -363,7 +380,7 @@ export default function AdminProject({ projectId }: { projectId: string }) {
                   );
                 }
               }}
-              className="rounded-full border-0 bg-[#f0edff] px-2.5 py-1 text-[10px] font-semibold text-[#5035ba] outline-none"
+              className="rounded-full border-0 bg-[#4c2ac8] px-2.5 py-1 text-[10px] font-semibold text-white outline-none"
             >
               {["준비 중", "진행 중", "보류", "완료", "취소"].map((s) => (
                 <option key={s}>{s}</option>
@@ -379,6 +396,11 @@ export default function AdminProject({ projectId }: { projectId: string }) {
           >
             {project.description}
           </p>
+          {(project.next_action || project.waiting_reason || project.next_check_date) && <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            {project.next_action && <span className="project-action-chip">다음 · {project.next_action}</span>}
+            {project.waiting_reason && <span className="project-wait-chip">대기 · {project.waiting_reason}</span>}
+            {project.next_check_date && <span className={project.next_check_date <= today() ? "project-check-chip is-due" : "project-check-chip"}>{project.next_check_date <= today() ? "확인 필요" : "다음 확인"} · {project.next_check_date}</span>}
+          </div>}
         </div>
         <div className="flex gap-2">
           {project.kind === "외주" && <Link
@@ -535,6 +557,7 @@ export default function AdminProject({ projectId }: { projectId: string }) {
                             {task.description}
                           </p>
                         )}
+                        <TaskRelationBadges task={task} tasks={project.tasks} />
                         <div className="mt-3 flex flex-wrap items-center gap-1.5">
                           {task.due_date && (
                             <span
@@ -544,7 +567,7 @@ export default function AdminProject({ projectId }: { projectId: string }) {
                               {dateLabel(task.due_date)}
                             </span>
                           )}
-                          <span className="rounded-md bg-[#f5f5f8] px-1.5 py-1 text-[9px] text-[#777783]">
+                          <span className={task.priority === "높음" ? "task-priority-high" : "task-priority-normal"}>
                             우선순위 {task.priority}
                           </span>
                           {task.checklist.length > 0 && (
@@ -663,6 +686,7 @@ export default function AdminProject({ projectId }: { projectId: string }) {
             <div className="space-y-3">
               {project.invoices.map((invoice) => (
                 <div
+                  id={`invoice-${invoice.id}`}
                   key={invoice.id}
                   className="rounded-2xl border border-black/[0.055] bg-white p-5"
                 >
@@ -1073,6 +1097,7 @@ function ProjectOverview({
       <Input name="name" label="프로젝트명" value={project.name} required />
       <Input name="next_action" label="다음 행동" value={project.next_action || ""} />
       <Input name="waiting_reason" label="대기 사유 · 누구의 무엇을 기다리는지" value={project.waiting_reason || ""} />
+      <Input name="next_check_date" label="다음 확인일" type="date" value={project.next_check_date || ""} />
       <Input name="client" label={isInternalProjectKind(project.kind) ? "팀 / 조직" : "고객명"} value={project.client} required />
       <Input name="contact" label="연락처" value={project.contact} />
       <Input name="email" label="이메일" value={project.email} />

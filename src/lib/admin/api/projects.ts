@@ -24,6 +24,7 @@ import {
 const EDITABLE = [
   "next_action",
   "waiting_reason",
+  "next_check_date",
   "name",
   "client",
   "description",
@@ -160,6 +161,8 @@ export const projectRoutes: Route[] = [
         if (body[key] !== undefined && (typeof body[key] !== "string" || body[key].length > 1000))
           throw new HttpError(400, "다음 행동·대기 사유는 1,000자 이내로 입력하세요.");
       }
+      if (body.next_check_date !== undefined && !validDate(body.next_check_date))
+        throw new HttpError(400, "다음 확인일을 확인하세요.");
       if (!updates.length) throw new HttpError(400, "수정할 항목이 없습니다.");
       const current = await db
         .prepare("SELECT kind,start_date,due_date,updated_at FROM projects WHERE id=?")
@@ -204,6 +207,7 @@ export const projectRoutes: Route[] = [
         if (key === "contract_amount") return contract;
         if (key === "start_date") return startDate;
         if (key === "due_date") return dueDate;
+        if (key === "next_check_date") return dateOrNull(body.next_check_date);
         if (key === "name" || key === "client") return String(body[key]).trim();
         return body[key] === null || body[key] === undefined ? "" : String(body[key]);
       });

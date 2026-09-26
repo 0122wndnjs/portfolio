@@ -989,6 +989,62 @@
   .quote-document { padding: 24px; min-height: 0; }
   .quote-preview-backdrop { padding: 0; }
 }
+
+/* Clear semantic color: status is visible before the card is opened. */
+.admin-workspace { --workspace-accent: #6545e8; --workspace-accent-strong: #4c2ac8; }
+.project-tile-mark { background: var(--project-strong, #4c2ac8); color: white; }
+.workbench-lane { --lane-color: #475569; }
+.workbench-lane.lane-1 { --lane-color: #1d4ed8; }
+.workbench-lane.lane-2 { --lane-color: #c2410c; }
+.workbench-lane.lane-3 { --lane-color: #047857; }
+.workbench-lane > header,
+.workbench-lane.lane-1 > header,
+.workbench-lane.lane-2 > header,
+.workbench-lane.lane-3 > header { background: var(--lane-color); color: white; border-bottom: 0; }
+.workbench-lane .lane-dot { background: white; }
+.workbench-lane .lane-count { background: #ffffff30; color: white; }
+.workbench-lane > header > button { color: white; }
+.workbench-lane > header > button:hover { background: #ffffff30; }
+.workbench-lane .work-card { border-left: 3px solid var(--lane-color); }
+.work-card-meta .priority-tag,
+.task-priority-high { display: inline-flex; align-items: center; border-radius: 5px; padding: 4px 7px; background: #b91c1c; color: white; font-size: 11px; font-weight: 700; }
+.task-priority { background: #b91c1c; color: white; font-weight: 700; }
+.task-group.is-overdue > header { background: #b91c1c; color: white; }
+.task-group.is-today > header { background: #1d4ed8; color: white; }
+.task-group.is-upcoming > header { background: #047857; color: white; }
+.task-group:is(.is-overdue, .is-today, .is-upcoming) > header span { background: #ffffff30; color: white; }
+.task-group.is-overdue .task-item-date { color: #b91c1c; font-weight: 700; }
+.work-card-meta .date-late,
+.project-kanban article .bg-red-50 { border-radius: 5px; padding: 4px 7px; background: #b91c1c; color: white; font-weight: 700; }
+.task-priority-normal { display: inline-flex; align-items: center; border-radius: 5px; padding: 4px 7px; background: #e7e7ed; color: #475569; font-size: 11px; }
+.project-kanban > div:nth-child(1) > div:first-child { background: #475569; color: white; }
+.project-kanban > div:nth-child(2) > div:first-child { background: #1d4ed8; color: white; }
+.project-kanban > div:nth-child(3) > div:first-child { background: #c2410c; color: white; }
+.project-kanban > div:nth-child(4) > div:first-child { background: #047857; color: white; }
+.project-kanban > div > div:first-child .text-xs,
+.project-kanban > div > div:first-child .text-\[10px\],
+.project-kanban > div > div:first-child button { color: white; }
+.project-kanban > div:nth-child(1) article { border-left: 3px solid #475569; }
+.project-kanban > div:nth-child(2) article { border-left: 3px solid #1d4ed8; }
+.project-kanban > div:nth-child(3) article { border-left: 3px solid #c2410c; }
+.project-kanban > div:nth-child(4) article { border-left: 3px solid #047857; }
+.relation-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.relation-chip { display: inline-flex; border-radius: 5px; padding: 4px 7px; background: #e5e7eb; color: #374151; font-size: 11px; font-weight: 650; }
+.relation-chip.is-blocked { background: #c2410c; color: white; }
+.relation-chip.is-ready { background: #047857; color: white; }
+.project-action-chip, .project-wait-chip, .project-check-chip { display: inline-flex; border-radius: 6px; padding: 5px 8px; font-weight: 650; }
+.project-action-chip { background: #4c2ac8; color: white; }
+.project-wait-chip { background: #c2410c; color: white; }
+.project-check-chip { background: #1d4ed8; color: white; }
+.project-check-chip.is-due { background: #b91c1c; }
+.board-check-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 9px 20px; border-top: 1px solid #fecaca; background: #fff7f7; font-size: 12px; }
+.board-check-banner strong { color: #b91c1c; }
+.board-check-banner a { border-radius: 5px; padding: 4px 7px; background: #b91c1c; color: white; font-weight: 600; }
+[id^="invoice-"], [id^="payment-"] { scroll-margin-top: 24px; }
+[id^="invoice-"]:target { border-color: #6545e8; box-shadow: 0 0 0 2px #6545e840; }
+[id^="payment-"]:target { border-radius: 6px; background: #f0edff; }
+.admin-workspace :is(.board-primary, .board-secondary, .project-tile, .work-card, .relation-chip):active { transform: scale(.98); }
+@media (prefers-reduced-motion: reduce) { .admin-workspace :is(.board-primary, .board-secondary, .project-tile, .work-card, .relation-chip):active { transform: none; } }
 @media print {
   @page { size: A4; margin: 16mm; }
   .admin-workspace:has(.quote-preview-backdrop) { background: white; min-height: 0; }

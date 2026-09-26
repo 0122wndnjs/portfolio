@@ -52,6 +52,14 @@ export default function MeetingsPage({ initialProjectId = "", initialMeetingId =
       if (!active) return;
       setMeetings(data.meetings);
       setProjects(data.projects);
+      if (initialMeetingId) {
+        const meeting = data.meetings.find((item) => item.id === initialMeetingId);
+        if (meeting) {
+          setDraft({ project_id: meeting.project_id, title: meeting.title, meeting_date: meeting.meeting_date, start_time: meeting.start_time, attendees: meeting.attendees, location: meeting.location, agenda: meeting.agenda, decisions: meeting.decisions });
+          setEditingId(meeting.id);
+          requestAnimationFrame(() => document.getElementById(`meeting-${initialMeetingId}`)?.scrollIntoView({ block: "center" }));
+        }
+      }
       setLoading(false);
     }).catch((e: unknown) => {
       if (!active) return;
@@ -59,10 +67,7 @@ export default function MeetingsPage({ initialProjectId = "", initialMeetingId =
       setLoading(false);
     });
     return () => { active = false; };
-  }, [filter]);
-  useEffect(() => {
-    if (!loading && initialMeetingId) document.getElementById(`meeting-${initialMeetingId}`)?.scrollIntoView({ block: "center" });
-  }, [initialMeetingId, loading]);
+  }, [filter, initialMeetingId]);
 
   const openNew = () => {
     setDraft(newDraft(filter || projects[0]?.id || ""));
