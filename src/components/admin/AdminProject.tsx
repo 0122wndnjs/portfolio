@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import PaymentRow from "@/components/admin/PaymentRow";
 import MeetingsPage from "@/components/admin/MeetingsPage";
+import TaskRelations from "@/components/admin/TaskRelations";
 import { projectColor } from "@/lib/admin/project-colors";
 import { isInternalProjectKind, PROJECT_KIND_LABELS, type ProjectKind } from "@/lib/admin/project-kinds";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -54,6 +55,8 @@ type Invoice = {
   }>;
 };
 type Project = {
+  next_action: string;
+  waiting_reason: string;
   id: string;
   kind: ProjectKind;
   name: string;
@@ -919,6 +922,7 @@ export function TaskEditor({
   }
   return (
     <Modal title="작업 상세" close={close}>
+      <TaskRelations key={task.id} taskId={task.id} projectId={task.project_id} refresh={refresh} />
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -1067,6 +1071,8 @@ function ProjectOverview({
       className="mt-5 grid gap-4 rounded-2xl border border-black/[0.055] bg-white p-5 sm:grid-cols-2"
     >
       <Input name="name" label="프로젝트명" value={project.name} required />
+      <Input name="next_action" label="다음 행동" value={project.next_action || ""} />
+      <Input name="waiting_reason" label="대기 사유 · 누구의 무엇을 기다리는지" value={project.waiting_reason || ""} />
       <Input name="client" label={isInternalProjectKind(project.kind) ? "팀 / 조직" : "고객명"} value={project.client} required />
       <Input name="contact" label="연락처" value={project.contact} />
       <Input name="email" label="이메일" value={project.email} />

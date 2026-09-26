@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "@/lib/admin/db";
 import { HttpError, json } from "@/lib/admin/http";
+import { hasRelationCycle, type TaskRelation } from "@/lib/admin/task-relations";
 import {
   TASK_PRIORITIES,
   TASK_STATUSES,
@@ -108,6 +109,55 @@ async function saveChecklist(taskId: string, checklist: Checklist) {
 }
 
 export const taskRoutes: Route[] = [
+  {
+    method: "POST", path: "tasks/:id/children",
+    async handler({ params, body }) {
+      const title = String(body.title || "").trim();
+      if (!title || title.length > 200) throw new HttpError(400, "하위 작업 제목은 1~200자로 입력하세요.");
+      const id = await db.transaction(async () => {
+        const parent = await db.prepare("SELECT project_id FROM tasks WHERE id=? AND archived=0 FOR UPDATE").get(params.id);
+        if (!parent) throw new HttpError(404, "상위 작업을 찾을 수 없습니다.");
+        const childId = await insertTask({ projectId: String(parent.project_id), title });
+        await db.prepare("UPDATE tasks SET parent_id=? WHERE id=?").run(params.id, childId);
+        return childId;
+      });
+      return json({ id }, 201);
+    },
+  },
+  {
+    method: "GET",
+    path: "tasks/:id/relations",
+    async handler({ params }) {
+      const task = await db.prepare("SELECT project_id,parent_id,depends_on_id FROM tasks WHERE id=? AND archived=0").get(params.id);
+      if (!task) throw new HttpError(404, "작업을 찾을 수 없습니다.");
+      const options = await db.prepare("SELECT id,title,status,parent_id,depends_on_id,archived FROM tasks WHERE project_id=? ORDER BY created_at").all(task.project_id);
+      return json({ ...task, options });
+    },
+  },
+  {
+    method: "PATCH",
+    path: "tasks/:id/relations",
+    async handler({ params, body }) {
+      await db.transaction(async () => {
+        const task = await db.prepare("SELECT project_id FROM tasks WHERE id=? AND archived=0").get(params.id);
+        if (!task) throw new HttpError(404, "작업을 찾을 수 없습니다.");
+        await db.prepare("SELECT id FROM projects WHERE id=? FOR UPDATE").get(task.project_id);
+        const rows = await db.prepare("SELECT id,parent_id,depends_on_id,archived FROM tasks WHERE project_id=?").all(task.project_id) as (TaskRelation & { archived: number })[];
+        const current = rows.find((row) => row.id === params.id)!;
+        const links = { parent_id: current.parent_id, depends_on_id: current.depends_on_id };
+        for (const field of ["parent_id", "depends_on_id"] as const) {
+          if (!(field in body)) continue;
+          const value = body[field];
+          if (value !== null && typeof value !== "string") throw new HttpError(400, "작업 연결 형식이 올바르지 않습니다.");
+          if (value && (!rows.some((row) => row.id === value && !row.archived) || hasRelationCycle(rows, params.id, value, field)))
+            throw new HttpError(400, "같은 프로젝트의 작업을 선택하세요. 자신 또는 순환 관계로 연결할 수 없습니다.");
+          links[field] = value || null;
+        }
+        await db.prepare("UPDATE tasks SET parent_id=?,depends_on_id=?,updated_at=? WHERE id=?").run(links.parent_id, links.depends_on_id, now(), params.id);
+      });
+      return json({ ok: true });
+    },
+  },
   {
     method: "GET",
     path: "tasks",

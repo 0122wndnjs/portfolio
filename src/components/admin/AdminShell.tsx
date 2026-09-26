@@ -13,9 +13,11 @@ import {
   FiUsers,
   FiFileText,
   FiSettings,
+  FiTool,
   FiX,
 } from "react-icons/fi";
 import RecoveryManager from "@/components/admin/RecoveryManager";
+import UndoTask from "@/components/admin/UndoTask";
 import { projectColor } from "@/lib/admin/project-colors";
 import type { ProjectKind } from "@/lib/admin/project-kinds";
 import "./workspace.css";
@@ -28,6 +30,7 @@ const links = [
   { href: "/admin/quotes", label: "견적서", icon: FiFileText },
   { href: "/admin/payments", label: "입금", icon: FiCreditCard },
   { href: "/admin/settings", label: "설정", icon: FiSettings },
+  { href: "/admin/tools", label: "업무 도구", icon: FiTool },
 ];
 
 export default function AdminShell({ children }: { children: ReactNode }) {
@@ -67,6 +70,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   }
   return (
     <div className="admin-workspace min-h-screen bg-[#f5f5fa] text-[#30303d]">
+      <UndoTask />
       {open && (
         <button
           aria-label="메뉴 닫기"

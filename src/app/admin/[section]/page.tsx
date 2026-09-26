@@ -2,9 +2,10 @@ import { notFound } from "next/navigation";
 import AdminView from "@/components/admin/AdminView";
 import QuotesPage from "@/components/admin/QuotesPage";
 import MeetingsPage from "@/components/admin/MeetingsPage";
+import WorkspaceTools from "@/components/admin/WorkspaceTools";
 import { isProjectKind } from "@/lib/admin/project-kinds";
 
-const sections = ["projects", "tasks", "meetings", "quotes", "payments", "settings"];
+const sections = ["projects", "tasks", "meetings", "quotes", "payments", "settings", "tools"];
 
 export default async function AdminSection({
   params,
@@ -15,6 +16,7 @@ export default async function AdminSection({
 }) {
   const [{ section }, query] = await Promise.all([params, searchParams]);
   if (!sections.includes(section)) notFound();
+  if (section === "tools") return <WorkspaceTools />;
   if (section === "meetings") return <MeetingsPage key={`${query.project || "all"}:${query.meeting || "list"}`} initialProjectId={query.project || ""} initialMeetingId={query.meeting || ""} />;
   if (section === "quotes") return <QuotesPage key={query.project || "all"} initialProjectId={query.project || ""} />;
   return (

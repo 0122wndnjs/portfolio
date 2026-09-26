@@ -3,6 +3,7 @@ import { billingRoutes } from "@/lib/admin/api/billing";
 import type { Body, Method } from "@/lib/admin/api/common";
 import { documentRoutes } from "@/lib/admin/api/documents";
 import { projectRoutes } from "@/lib/admin/api/projects";
+import { productivityRoutes } from "@/lib/admin/api/productivity";
 import { findRoute } from "@/lib/admin/api/router";
 import { taskRoutes } from "@/lib/admin/api/tasks";
 import { workspaceRoutes } from "@/lib/admin/api/workspace";
@@ -14,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 type Context = { params: Promise<{ path: string[] }> };
 
-const routes = [...projectRoutes, ...taskRoutes, ...billingRoutes, ...documentRoutes, ...workspaceRoutes];
+const routes = [...projectRoutes, ...taskRoutes, ...billingRoutes, ...documentRoutes, ...workspaceRoutes, ...productivityRoutes];
 const fallbackMessage: Record<Method, string> = {
   GET: "불러오지 못했습니다.",
   POST: "저장하지 못했습니다.",

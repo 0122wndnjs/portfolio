@@ -6,6 +6,7 @@ import { HttpError, json } from "@/lib/admin/http";
 import { isInternalProjectKind } from "@/lib/admin/project-kinds";
 import { seoulDate, validDate } from "@/lib/admin/validation";
 import { type Route, type Row, dateOrNull, newId, now } from "./common";
+import { saveTrash } from "./productivity";
 
 export async function invoicesWithPayments(projectId?: string) {
   const [rows, payments] = await Promise.all([
@@ -178,7 +179,8 @@ export const billingRoutes: Route[] = [
           .prepare("SELECT COUNT(*) AS count FROM payments WHERE invoice_id=?")
           .get(params.id) as { count: number };
         if (payments.count) throw new HttpError(409, "입금 내역을 먼저 정정하거나 삭제하세요.");
-        await db.prepare("DELETE FROM invoices WHERE id=?").run(params.id);
+        const row = await db.prepare("DELETE FROM invoices WHERE id=? RETURNING *").get(params.id);
+        if (row) await saveTrash("invoice", row);
       });
       await audit("invoice.deleted", { invoiceId: params.id });
       return json({ ok: true });
@@ -188,10 +190,15 @@ export const billingRoutes: Route[] = [
     method: "DELETE",
     path: "payments/:id",
     async handler({ params }) {
-      const row = await db.prepare("DELETE FROM payments WHERE id=? RETURNING amount").get(params.id) as
-        | { amount: number }
-        | undefined;
-      if (!row) throw new HttpError(404, "입금 내역을 찾을 수 없습니다.");
+      const row = await db.transaction(async () => {
+        const payment = await db.prepare("SELECT invoice_id FROM payments WHERE id=?").get(params.id);
+        if (!payment) throw new HttpError(404, "입금 내역을 찾을 수 없습니다.");
+        await lockInvoice(String(payment.invoice_id));
+        const deleted = await db.prepare("DELETE FROM payments WHERE id=? RETURNING *").get(params.id);
+        if (!deleted) throw new HttpError(404, "입금 내역을 찾을 수 없습니다.");
+        await saveTrash("payment", deleted);
+        return deleted;
+      });
       await audit("payment.deleted", { paymentId: params.id, amount: row.amount });
       return json({ ok: true });
     },

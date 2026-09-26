@@ -10,6 +10,7 @@ import path from "node:path";
 
 const RETENTION_DAYS = 30;
 const TABLES = [
+  "admin_trash",
   "projects", "tasks", "invoices", "payments", "quotes", "quote_task_links",
   "meetings", "meeting_task_links", "settings", "notification_log", "audit_log",
   "credentials", "sessions", "recovery_codes", "challenges", "rate_limits",

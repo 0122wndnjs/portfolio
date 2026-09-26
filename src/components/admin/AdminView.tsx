@@ -4,6 +4,7 @@ import Link from "next/link";
 import PaymentRow from "@/components/admin/PaymentRow";
 import { projectColor } from "@/lib/admin/project-colors";
 import { PROJECT_KINDS, PROJECT_KIND_LABELS, type ProjectKind } from "@/lib/admin/project-kinds";
+import { PROJECT_TEMPLATES } from "@/lib/admin/templates";
 import { useCallback, useEffect, useState } from "react";
 import {
   FiArrowDownRight,
@@ -21,6 +22,8 @@ import SettingsView from "@/components/admin/SettingsView";
 import { Button, Field, PageTitle, Toast, dateLabel } from "@/components/admin/ui";
 
 type Project = {
+  next_action: string;
+  waiting_reason: string;
   id: string;
   kind: ProjectKind;
   name: string;
@@ -534,6 +537,13 @@ export default function AdminView({
               </select>
             </label>
             <Field name="name" label="프로젝트명" required />
+            <label className="text-xs text-[#71717f]">
+              시작 템플릿
+              <select name="template_id" className="mt-1.5 block w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm">
+                <option value="">빈 프로젝트</option>
+                {PROJECT_TEMPLATES.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.tasks.length}개 작업</option>)}
+              </select>
+            </label>
             <Field name="client" label={newProjectKind === "외주" ? "고객명" : "팀 / 조직"} required />
             <Field name="due_date" label="마감일" type="date" />
             {newProjectKind === "외주" && <Field
@@ -617,6 +627,8 @@ export default function AdminView({
                     <div className="project-tile-badges"><span className={`project-kind-badge ${project.kind !== "외주" ? "is-company" : ""}`}>{PROJECT_KIND_LABELS[project.kind]}</span><StatusBadge value={project.status} /></div>
                   </div>
                   <div className="project-tile-progress">
+                    {project.next_action && <p className="mb-2 text-xs text-[#5035ba]">다음 · {project.next_action}</p>}
+                    {project.waiting_reason && <p className="mb-2 text-xs text-amber-700">대기 · {project.waiting_reason}</p>}
                     <div className="flex items-center justify-between gap-3">
                       <span>작업 진행</span>
                       <span>

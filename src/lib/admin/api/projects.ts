@@ -5,6 +5,8 @@ import { HttpError, json } from "@/lib/admin/http";
 import { isInternalProjectKind, isProjectKind } from "@/lib/admin/project-kinds";
 import { PROJECT_STATUSES, isOneOf, validDate, validLinks } from "@/lib/admin/validation";
 import { invoicesWithPayments } from "./billing";
+import { insertTask } from "./tasks";
+import { PROJECT_TEMPLATES } from "@/lib/admin/templates";
 import {
   CONFLICT_MESSAGE,
   type Context,
@@ -20,6 +22,8 @@ import {
 } from "./common";
 
 const EDITABLE = [
+  "next_action",
+  "waiting_reason",
   "name",
   "client",
   "description",
@@ -116,6 +120,9 @@ export const projectRoutes: Route[] = [
         throw new HttpError(400, "마감일은 시작일보다 빠를 수 없습니다.");
       const projectId = newId();
       const timestamp = now();
+      const template = PROJECT_TEMPLATES.find((item) => item.id === body.template_id);
+      if (body.template_id && !template) throw new HttpError(400, "템플릿을 확인하세요.");
+      await db.transaction(async () => {
       await db.prepare(
         "INSERT INTO projects(id,name,client,description,contact,email,kind,status,start_date,due_date,contract_amount,memo,links,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
       ).run(
@@ -135,6 +142,10 @@ export const projectRoutes: Route[] = [
         timestamp,
         timestamp,
       );
+      if (template) {
+        for (const title of template.tasks) await insertTask({ projectId, title });
+      }
+      });
       await audit("project.created", { projectId });
       return json({ id: projectId }, 201);
     },
@@ -145,6 +156,10 @@ export const projectRoutes: Route[] = [
     async handler({ params, body }) {
       const projectId = params.id;
       const updates = EDITABLE.filter((key) => key in body);
+      for (const key of ["next_action", "waiting_reason"]) {
+        if (body[key] !== undefined && (typeof body[key] !== "string" || body[key].length > 1000))
+          throw new HttpError(400, "다음 행동·대기 사유는 1,000자 이내로 입력하세요.");
+      }
       if (!updates.length) throw new HttpError(400, "수정할 항목이 없습니다.");
       const current = await db
         .prepare("SELECT kind,start_date,due_date,updated_at FROM projects WHERE id=?")

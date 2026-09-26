@@ -21,6 +21,8 @@ async function send(url: string, method: string, body: unknown) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok)
     throw new ApiError(data.error || "요청을 완료하지 못했습니다.", response.status, data.code);
+  const archived = method === "DELETE" && url.match(/^\/api\/admin\/tasks\/([^/]+)$/);
+  if (archived) window.dispatchEvent(new CustomEvent("admin:task-archived", { detail: archived[1] }));
   return data;
 }
 
