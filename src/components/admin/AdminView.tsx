@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import PaymentRow from "@/components/admin/PaymentRow";
+import PaymentAmountFields from "@/components/admin/PaymentAmountFields";
 import { projectColor } from "@/lib/admin/project-colors";
 import { PROJECT_KINDS, PROJECT_KIND_LABELS, type ProjectKind } from "@/lib/admin/project-kinds";
 import { PROJECT_TEMPLATES } from "@/lib/admin/templates";
@@ -56,6 +57,8 @@ type Invoice = {
   title: string;
   amount: number;
   paid_amount: number;
+  withholding_amount: number;
+  net_received_amount: number;
   balance: number;
   due_date: string | null;
   status: string;
@@ -63,6 +66,7 @@ type Invoice = {
   payments: Array<{
     id: string;
     amount: number;
+    withholding_amount: number;
     paid_at: string;
     memo: string;
   }>;
@@ -903,7 +907,7 @@ export default function AdminView({
               0,
             );
             const receivedTotal = invoices.reduce(
-              (sum, invoice) => sum + invoice.paid_amount,
+              (sum, invoice) => sum + invoice.net_received_amount,
               0,
             );
             return (
@@ -918,7 +922,7 @@ export default function AdminView({
                     <strong>{receiving.length}건</strong>
                   </div>
                   <div>
-                    <span>받은 금액</span>
+                    <span>실수령액</span>
                     <strong>{won(receivedTotal)}</strong>
                   </div>
                 </div>
@@ -959,8 +963,11 @@ export default function AdminView({
                               : "입금 완료"}
                           </strong>
                           <span>
-                            {won(invoice.paid_amount)} / {won(invoice.amount)}
+                            청구 처리 {won(invoice.paid_amount)} / {won(invoice.amount)}
                           </span>
+                          {invoice.withholding_amount > 0 && (
+                            <span>실수령 {won(invoice.net_received_amount)} · 공제 {won(invoice.withholding_amount)}</span>
+                          )}
                         </div>
                       </div>
                       <div className="invoice-progress">
@@ -1000,18 +1007,7 @@ export default function AdminView({
                                 void savePayment(invoice, event.currentTarget);
                               }}
                             >
-                              <label>
-                                입금액
-                                <input
-                                  name="amount"
-                                  type="number"
-                                  min={1}
-                                  max={invoice.balance}
-                                  step={1}
-                                  required
-                                  placeholder={`${new Intl.NumberFormat("ko-KR").format(invoice.balance)}원 이하`}
-                                />
-                              </label>
+                              <PaymentAmountFields max={invoice.balance} />
                               <label>
                                 입금일
                                 <input

@@ -2,8 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { api } from "@/components/admin/api";
+import PaymentAmountFields from "@/components/admin/PaymentAmountFields";
 
-type Payment = { id: string; amount: number; paid_at: string; memo: string };
+type Payment = { id: string; amount: number; withholding_amount: number; paid_at: string; memo: string };
 
 
 export default function PaymentRow({
@@ -17,7 +18,6 @@ export default function PaymentRow({
 }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [amount, setAmount] = useState(String(payment.amount));
   const [paidAt, setPaidAt] = useState(payment.paid_at.slice(0, 10));
   const [memo, setMemo] = useState(payment.memo);
   const date = new Intl.DateTimeFormat("ko-KR", {
@@ -28,10 +28,12 @@ export default function PaymentRow({
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const values = new FormData(event.currentTarget);
     setSaving(true);
     try {
       await api(`/api/admin/payments/${payment.id}`, "PATCH", {
-        amount: Number(amount),
+        amount: Number(values.get("amount")),
+        withholding_amount: Number(values.get("withholding_amount")),
         paid_at: paidAt,
         memo,
       });
@@ -72,20 +74,9 @@ export default function PaymentRow({
       <form
         id={`payment-${payment.id}`}
         onSubmit={save}
-        className="mt-3 grid gap-2 rounded-lg bg-[#f3f3f3] p-3 sm:grid-cols-[1fr_1fr_1.5fr_auto_auto] sm:items-end"
+        className="mt-3 grid gap-2 rounded-lg bg-[#f3f3f3] p-3 sm:grid-cols-[minmax(0,1.5fr)_1fr_1.5fr_auto_auto] sm:items-start"
       >
-        <label className="text-[10px] text-[#777783]">
-          금액
-          <input
-            required
-            min={1}
-            step={1}
-            type="number"
-            value={amount}
-            onChange={(event) => setAmount(event.target.value)}
-            className="mt-1 block w-full rounded-lg border border-black/10 bg-white px-2 py-2 text-xs"
-          />
-        </label>
+        <PaymentAmountFields initialAmount={String(payment.amount)} initialWithholding={payment.withholding_amount} />
         <label className="text-[10px] text-[#777783]">
           입금일
           <input
@@ -124,7 +115,8 @@ export default function PaymentRow({
   return (
     <div id={`payment-${payment.id}`} className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-black/[0.05] pt-3 text-[11px] text-[#777783]">
       <span>
-        {date} · {new Intl.NumberFormat("ko-KR").format(payment.amount)}원
+        {date} · 실수령 {new Intl.NumberFormat("ko-KR").format(payment.amount - payment.withholding_amount)}원
+        {payment.withholding_amount > 0 && ` · 공제 ${new Intl.NumberFormat("ko-KR").format(payment.withholding_amount)}원 · 청구 처리 ${new Intl.NumberFormat("ko-KR").format(payment.amount)}원`}
         {payment.memo && ` · ${payment.memo}`}
       </span>
       <span className="flex gap-2">

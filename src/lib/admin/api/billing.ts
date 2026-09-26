@@ -82,8 +82,11 @@ export const billingRoutes: Route[] = [
     path: "invoices/:id/payments",
     async handler({ params, body }) {
       const amount = Number(body.amount);
+      const withholding = Number(body.withholding_amount ?? 0);
       if (!Number.isSafeInteger(amount) || amount < 1)
         throw new HttpError(400, "입금액은 1원 이상의 정수여야 합니다.");
+      if (!Number.isSafeInteger(withholding) || withholding < 0 || withholding >= amount)
+        throw new HttpError(400, "공제액은 0원 이상이며 청구 처리액보다 작아야 합니다.");
       if (!validDate(body.paid_at) || String(body.memo || "").length > 1000)
         throw new HttpError(400, "입금일 또는 메모 형식이 올바르지 않습니다.");
       const paymentId = newId();
@@ -92,10 +95,10 @@ export const billingRoutes: Route[] = [
         if (!fitsInvoice(Number(invoice.amount), await paidTotal(params.id), amount))
           throw new HttpError(400, "누적 입금액이 청구 금액을 넘을 수 없습니다.");
         await db.prepare(
-          "INSERT INTO payments(id,invoice_id,amount,paid_at,memo,created_at) VALUES(?,?,?,?,?,?)",
-        ).run(paymentId, params.id, amount, dateOrNull(body.paid_at) || seoulDate(), String(body.memo || ""), now());
+          "INSERT INTO payments(id,invoice_id,amount,withholding_amount,paid_at,memo,created_at) VALUES(?,?,?,?,?,?,?)",
+        ).run(paymentId, params.id, amount, withholding, dateOrNull(body.paid_at) || seoulDate(), String(body.memo || ""), now());
       });
-      await audit("payment.created", { invoiceId: params.id, amount });
+      await audit("payment.created", { invoiceId: params.id, amount, withholding, netAmount: amount - withholding });
       return json({ id: paymentId }, 201);
     },
   },
@@ -141,24 +144,29 @@ export const billingRoutes: Route[] = [
     path: "payments/:id",
     async handler({ params, body }) {
       const amount = body.amount === undefined ? undefined : Number(body.amount);
+      const withholding = body.withholding_amount === undefined ? undefined : Number(body.withholding_amount);
       if (amount !== undefined && (!Number.isSafeInteger(amount) || amount < 1))
         throw new HttpError(400, "입금액은 1원 이상의 정수여야 합니다.");
+      if (withholding !== undefined && (!Number.isSafeInteger(withholding) || withholding < 0))
+        throw new HttpError(400, "공제액은 0원 이상의 정수여야 합니다.");
       if (body.paid_at !== undefined && (!body.paid_at || !validDate(body.paid_at)))
         throw new HttpError(400, "입금일 형식이 올바르지 않습니다.");
       if (body.memo !== undefined && String(body.memo).length > 1000)
         throw new HttpError(400, "메모는 1,000자 이내로 입력하세요.");
-      const fields = (["amount", "paid_at", "memo"] as const).filter((key) => key in body);
+      const fields = (["amount", "withholding_amount", "paid_at", "memo"] as const).filter((key) => key in body);
       if (!fields.length) throw new HttpError(400, "수정할 항목이 없습니다.");
       const before = await db.transaction(async () => {
-        const row = await db.prepare("SELECT invoice_id,amount FROM payments WHERE id=?").get(params.id) as
-          | { invoice_id: string; amount: number }
+        const row = await db.prepare("SELECT invoice_id,amount,withholding_amount FROM payments WHERE id=?").get(params.id) as
+          | { invoice_id: string; amount: number; withholding_amount: number }
           | undefined;
         if (!row) throw new HttpError(404, "입금 내역을 찾을 수 없습니다.");
+        if ((withholding ?? Number(row.withholding_amount)) >= (amount ?? Number(row.amount)))
+          throw new HttpError(400, "공제액은 청구 처리액보다 작아야 합니다.");
         const invoice = await lockInvoice(row.invoice_id);
         if (amount !== undefined && !fitsInvoice(Number(invoice.amount), await paidTotal(row.invoice_id, params.id), amount))
           throw new HttpError(400, "누적 입금액이 청구 금액을 넘을 수 없습니다.");
         const values = fields.map((key) =>
-          key === "amount" ? amount : key === "paid_at" ? String(body.paid_at) : String(body.memo ?? ""),
+          key === "amount" ? amount : key === "withholding_amount" ? withholding : key === "paid_at" ? String(body.paid_at) : String(body.memo ?? ""),
         );
         await db
           .prepare(`UPDATE payments SET ${fields.map((key) => `${key}=?`).join(",")} WHERE id=?`)

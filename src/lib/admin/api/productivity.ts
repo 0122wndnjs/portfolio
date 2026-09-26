@@ -82,7 +82,7 @@ export const productivityRoutes: Route[] = [
           if (!invoice) throw new HttpError(409, "청구 항목부터 복구하세요.");
           const paid = await db.prepare("SELECT COALESCE(SUM(amount),0) AS total FROM payments WHERE invoice_id=?").get(row.invoice_id);
           if (Number(paid?.total) + Number(row.amount) > Number(invoice.amount)) throw new HttpError(409, "복구하면 청구 금액을 초과합니다. 현재 입금 내역을 확인하세요.");
-          await db.prepare("INSERT INTO payments(id,invoice_id,amount,paid_at,memo,created_at) VALUES(?,?,?,?,?,?)").run(row.id,row.invoice_id,row.amount,row.paid_at,row.memo,row.created_at);
+          await db.prepare("INSERT INTO payments(id,invoice_id,amount,withholding_amount,paid_at,memo,created_at) VALUES(?,?,?,?,?,?,?)").run(row.id,row.invoice_id,row.amount,row.withholding_amount ?? 0,row.paid_at,row.memo,row.created_at);
         }
         await db.prepare("DELETE FROM admin_trash WHERE id=?").run(params.id);
       });

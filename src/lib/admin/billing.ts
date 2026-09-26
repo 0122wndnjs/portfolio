@@ -3,6 +3,11 @@ export type InvoiceStatus = "미입금" | "부분 입금" | "입금 완료";
 type InvoiceRow = { id: unknown; amount: unknown; due_date: unknown } & Record<string, unknown>;
 type PaymentRow = { invoice_id: unknown; amount: unknown } & Record<string, unknown>;
 
+/** 3.3% 예상 공제액. 실제 원천징수액이 다르면 입금 기록에서 수정할 수 있다. */
+export function estimatedWithholding(amount: number) {
+  return Number.isSafeInteger(amount) && amount > 0 ? Math.floor(amount * 33 / 1000) : 0;
+}
+
 export function invoiceStatus(amount: number, paid: number): InvoiceStatus {
   if (paid === 0) return "미입금";
   return paid < amount ? "부분 입금" : "입금 완료";
@@ -24,14 +29,21 @@ export function summarizeInvoices<I extends InvoiceRow, P extends PaymentRow>(
     const items = byInvoice.get(invoice.id) ?? [];
     const amount = Number(invoice.amount);
     const paid = items.reduce((sum, payment) => sum + Number(payment.amount), 0);
+    const withheld = items.reduce((sum, payment) => sum + Number(payment.withholding_amount ?? 0), 0);
     return {
       ...invoice,
       amount,
       paid_amount: paid,
+      withholding_amount: withheld,
+      net_received_amount: paid - withheld,
       balance: amount - paid,
       status: invoiceStatus(amount, paid),
       overdue: amount > paid && !!invoice.due_date && String(invoice.due_date) < today,
-      payments: items,
+      payments: items.map((payment) => ({
+        ...payment,
+        withholding_amount: Number(payment.withholding_amount ?? 0),
+        net_amount: Number(payment.amount) - Number(payment.withholding_amount ?? 0),
+      })),
     };
   });
 }

@@ -16,7 +16,7 @@ const columns: Record<Table, string[]> = {
   projects: ["id", "name", "client", "description", "contact", "email", "kind", "status", "start_date", "due_date", "contract_amount", "memo", "links", "created_at", "updated_at", "next_action", "waiting_reason", "next_check_date"],
   tasks: ["id", "project_id", "title", "description", "status", "priority", "due_date", "position", "checklist", "links", "waiting_since", "completed_at", "archived", "created_at", "updated_at", "parent_id", "depends_on_id"],
   invoices: ["id", "project_id", "title", "amount", "due_date", "memo", "created_at"],
-  payments: ["id", "invoice_id", "amount", "paid_at", "memo", "created_at"],
+  payments: ["id", "invoice_id", "amount", "withholding_amount", "paid_at", "memo", "created_at"],
   quotes: ["id", "project_id", "number", "title", "sender", "recipient", "issue_date", "valid_until", "status", "items", "tax_amount", "note", "created_at", "updated_at"],
   quote_task_links: ["quote_id", "item_index", "task_id"],
   meetings: ["id", "project_id", "title", "meeting_date", "start_time", "attendees", "location", "agenda", "decisions", "created_at", "updated_at"],
@@ -57,6 +57,9 @@ export function parseBackup(value: unknown): Backup {
       const record = row as Row;
       if (Object.keys(record).some((key) => !columns[table].includes(key))) throw new HttpError(400, `${table}에 알 수 없는 필드가 있습니다.`);
       if (required[table].some((key) => record[key] === undefined || record[key] === null)) throw new HttpError(400, `${table}에 필수 필드가 없습니다.`);
+      if (table === "payments" && record.withholding_amount !== undefined &&
+        (!Number.isSafeInteger(record.withholding_amount) || Number(record.withholding_amount) < 0 || Number(record.withholding_amount) >= Number(record.amount)))
+        throw new HttpError(400, "payments 공제액이 올바르지 않습니다.");
       if (keys[table].some((key) => record[key] === undefined || record[key] === null)) throw new HttpError(400, `${table} 식별자가 없습니다.`);
       if (keys[table].some((key) => key === "item_index" ? !Number.isSafeInteger(record[key]) || Number(record[key]) < 0 : typeof record[key] !== "string" || !record[key]))
         throw new HttpError(400, `${table} 식별자 형식이 올바르지 않습니다.`);
@@ -89,7 +92,7 @@ export async function inspectBackup(backup: Backup): Promise<Inspection> {
     for (const row of backup.tables[table]) {
       const saved = byId.get(rowKey(table, row));
       if (!saved) pending[table].push(row);
-      else if (identical(saved, row)) skipped[table]++;
+      else if (identical(saved, row) && (table !== "payments" || (row.withholding_amount ?? 0) === (saved.withholding_amount ?? 0))) skipped[table]++;
       else {
         conflictCount++;
         if (conflicts.length < 20) conflicts.push(`${table}: ${rowKey(table, row)}`);

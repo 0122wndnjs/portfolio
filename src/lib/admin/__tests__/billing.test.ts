@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fitsInvoice, invoiceStatus, summarizeInvoices } from "@/lib/admin/billing";
+import { estimatedWithholding, fitsInvoice, invoiceStatus, summarizeInvoices } from "@/lib/admin/billing";
 
 describe("invoiceStatus", () => {
   it("누적 입금액에 따라 미입금·부분 입금·입금 완료를 구분한다", () => {
@@ -31,6 +31,20 @@ describe("summarizeInvoices", () => {
     expect(a.payments).toHaveLength(2);
   });
 
+  it("원천징수액과 실수령액을 청구 처리액과 분리한다", () => {
+    const [invoice] = summarizeInvoices(
+      [{ id: "freelance", amount: 1_000_000, due_date: null }],
+      [{ invoice_id: "freelance", amount: 1_000_000, withholding_amount: 33_000 }],
+      "2026-09-27",
+    );
+    expect(invoice.paid_amount).toBe(1_000_000);
+    expect(invoice.withholding_amount).toBe(33_000);
+    expect(invoice.net_received_amount).toBe(967_000);
+    expect(invoice.balance).toBe(0);
+    expect(invoice.status).toBe("입금 완료");
+    expect(invoice.payments[0].net_amount).toBe(967_000);
+  });
+
   it("문자열 금액(BIGINT)도 숫자로 계산한다", () => {
     expect(b.amount).toBe(2_000_000);
     expect(b.balance).toBe(2_000_000);
@@ -54,6 +68,13 @@ describe("summarizeInvoices", () => {
   it("예정일 당일은 연체가 아니다", () => {
     const [today] = summarizeInvoices([{ id: "x", amount: 10, due_date: "2026-09-25" }], [], "2026-09-25");
     expect(today.overdue).toBe(false);
+  });
+});
+
+describe("estimatedWithholding", () => {
+  it("공제액의 예상값을 계산한다", () => {
+    expect(estimatedWithholding(1_000_000)).toBe(33_000);
+    expect(estimatedWithholding(100_001)).toBe(3_300);
   });
 });
 

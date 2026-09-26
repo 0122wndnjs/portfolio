@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import PaymentRow from "@/components/admin/PaymentRow";
+import PaymentAmountFields from "@/components/admin/PaymentAmountFields";
 import MeetingsPage from "@/components/admin/MeetingsPage";
 import TaskRelations from "@/components/admin/TaskRelations";
 import TaskRelationBadges from "@/components/admin/TaskRelationBadges";
@@ -46,6 +47,8 @@ type Invoice = {
   title: string;
   amount: number;
   paid_amount: number;
+  withholding_amount: number;
+  net_received_amount: number;
   balance: number;
   due_date: string | null;
   memo: string;
@@ -53,6 +56,7 @@ type Invoice = {
   payments: Array<{
     id: string;
     amount: number;
+    withholding_amount: number;
     paid_at: string;
     memo: string;
   }>;
@@ -705,6 +709,11 @@ export default function AdminProject({ projectId }: { projectId: string }) {
                       <p className="mt-1 text-[10px] text-[#8b8b98]">
                         {invoice.status}
                       </p>
+                      {invoice.paid_amount > 0 && (
+                        <p className="mt-1 text-[10px] text-[#8b8b98]">
+                          청구 처리 {won(invoice.paid_amount)} · 실수령 {won(invoice.net_received_amount)}
+                        </p>
+                      )}
                     </div>
                   </div>
                   {invoice.payments.map((payment) => (
@@ -720,12 +729,7 @@ export default function AdminProject({ projectId }: { projectId: string }) {
                       onSubmit={(e) => void payment(invoice, e)}
                       className="mt-4 grid gap-2 border-t border-black/[0.05] pt-4 sm:grid-cols-4"
                     >
-                      <Input
-                        name="amount"
-                        label="이번 입금액"
-                        type="number"
-                        required
-                      />
+                      <PaymentAmountFields max={invoice.balance} />
                       <Input
                         name="paid_at"
                         label="입금일"

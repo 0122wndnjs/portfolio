@@ -432,7 +432,7 @@
 .invoice-history > div {
   margin-top: 0;
 }
-.invoice-disclosures form {
+.record-payment form {
   display: flex;
   align-items: flex-end;
   flex-wrap: wrap;
@@ -440,7 +440,7 @@
   border-top: 1px solid #eeeeee;
   padding: 12px 0 8px;
 }
-.invoice-disclosures form label,
+.record-payment form > label,
 .invoice-create-form label {
   display: flex;
   min-width: 130px;
@@ -450,7 +450,7 @@
   color: #606060;
   font-size: 12px;
 }
-.invoice-disclosures form input,
+.record-payment form input:not([type="checkbox"]),
 .invoice-create-form input,
 .invoice-create-form select {
   width: 100%;
@@ -461,6 +461,9 @@
   padding: 0 10px;
   color: #303030;
   font-size: 14px;
+}
+.record-payment form > .payment-amount-fields {
+  flex: 1 1 220px;
 }
 .invoice-create-form {
   display: flex;
