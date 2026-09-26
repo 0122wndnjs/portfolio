@@ -5,8 +5,6 @@ import { HttpError, json } from "@/lib/admin/http";
 import { isInternalProjectKind, isProjectKind } from "@/lib/admin/project-kinds";
 import { PROJECT_STATUSES, isOneOf, validDate, validLinks } from "@/lib/admin/validation";
 import { invoicesWithPayments } from "./billing";
-import { insertTask } from "./tasks";
-import { PROJECT_TEMPLATES } from "@/lib/admin/templates";
 import {
   CONFLICT_MESSAGE,
   type Context,
@@ -70,7 +68,7 @@ export const projectRoutes: Route[] = [
       const q = `%${url.searchParams.get("q") || ""}%`;
       const rows = await db
         .prepare(
-          `SELECT p.*, COUNT(t.id) AS task_count, SUM(CASE WHEN t.status='완료' THEN 1 ELSE 0 END) AS done_count FROM projects p LEFT JOIN tasks t ON t.project_id=p.id AND t.archived=0 WHERE ((?='' AND p.status IN ('준비 중','진행 중','보류')) OR (?<>'' AND p.status=?)) AND (?='' OR p.kind=? OR (?='회사' AND p.kind='회사 마케팅')) AND (p.name LIKE ? OR p.client LIKE ?) GROUP BY p.id ORDER BY CASE p.status WHEN '진행 중' THEN 0 WHEN '준비 중' THEN 1 WHEN '보류' THEN 2 ELSE 3 END, COALESCE(p.due_date,'9999-12-31'),p.updated_at DESC`,
+          `SELECT p.*, COUNT(t.id) AS task_count, SUM(CASE WHEN t.status='완료' THEN 1 ELSE 0 END) AS done_count FROM projects p LEFT JOIN tasks t ON t.project_id=p.id AND t.archived=0 WHERE (?='전체' OR (?='' AND p.status IN ('준비 중','진행 중','보류')) OR p.status=?) AND (?='' OR p.kind=? OR (?='회사' AND p.kind='회사 마케팅')) AND (p.name LIKE ? OR p.client LIKE ?) GROUP BY p.id ORDER BY CASE p.status WHEN '진행 중' THEN 0 WHEN '준비 중' THEN 1 WHEN '보류' THEN 2 WHEN '완료' THEN 3 WHEN '취소' THEN 4 ELSE 5 END, COALESCE(p.due_date,'9999-12-31'),p.updated_at DESC`,
         )
         .all(status, status, status, kind, kind, kind, q, q) as Row[];
       return json(rows.map(safeProject));
@@ -121,9 +119,6 @@ export const projectRoutes: Route[] = [
         throw new HttpError(400, "마감일은 시작일보다 빠를 수 없습니다.");
       const projectId = newId();
       const timestamp = now();
-      const template = PROJECT_TEMPLATES.find((item) => item.id === body.template_id);
-      if (body.template_id && !template) throw new HttpError(400, "템플릿을 확인하세요.");
-      await db.transaction(async () => {
       await db.prepare(
         "INSERT INTO projects(id,name,client,description,contact,email,kind,status,start_date,due_date,contract_amount,memo,links,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
       ).run(
@@ -143,10 +138,6 @@ export const projectRoutes: Route[] = [
         timestamp,
         timestamp,
       );
-      if (template) {
-        for (const title of template.tasks) await insertTask({ projectId, title });
-      }
-      });
       await audit("project.created", { projectId });
       return json({ id: projectId }, 201);
     },

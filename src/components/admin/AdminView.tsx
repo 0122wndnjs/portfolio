@@ -5,7 +5,6 @@ import PaymentRow from "@/components/admin/PaymentRow";
 import PaymentAmountFields from "@/components/admin/PaymentAmountFields";
 import { projectColor } from "@/lib/admin/project-colors";
 import { PROJECT_KINDS, PROJECT_KIND_LABELS, type ProjectKind } from "@/lib/admin/project-kinds";
-import { PROJECT_TEMPLATES } from "@/lib/admin/templates";
 import { useCallback, useEffect, useState } from "react";
 import {
   FiArrowDownRight,
@@ -136,6 +135,7 @@ export default function AdminView({
     [query, setQuery] = useState(""),
     [taskQuery, setTaskQuery] = useState(""),
     [status, setStatus] = useState(""),
+    [projectStatus, setProjectStatus] = useState("전체"),
     [projectKind, setProjectKind] = useState(initialProjectKind),
     [newProjectKind, setNewProjectKind] = useState<ProjectKind>(initialProjectKind || "외주"),
     [taskPriority, setTaskPriority] = useState(""),
@@ -156,7 +156,7 @@ export default function AdminView({
       if (section === "projects")
         setProjects(
           await api<Project[]>(
-            `/api/admin/projects?q=${encodeURIComponent(query)}&status=${encodeURIComponent(status)}&kind=${encodeURIComponent(projectKind)}`,
+            `/api/admin/projects?q=${encodeURIComponent(query)}&status=${encodeURIComponent(projectStatus)}&kind=${encodeURIComponent(projectKind)}`,
           ),
         );
       if (section === "tasks") {
@@ -199,6 +199,7 @@ export default function AdminView({
     section,
     query,
     status,
+    projectStatus,
     projectKind,
     taskPriority,
     taskProject,
@@ -542,13 +543,6 @@ export default function AdminView({
               </select>
             </label>
             <Field name="name" label="프로젝트명" required />
-            <label className="text-xs text-[#71717f]">
-              시작 템플릿
-              <select name="template_id" className="mt-1.5 block w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm">
-                <option value="">빈 프로젝트</option>
-                {PROJECT_TEMPLATES.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.tasks.length}개 작업</option>)}
-              </select>
-            </label>
             <Field name="client" label={newProjectKind === "외주" ? "고객명" : "팀 / 조직"} required />
             <Field name="due_date" label="마감일" type="date" />
             {newProjectKind === "외주" && <Field
@@ -591,10 +585,11 @@ export default function AdminView({
             />
           </label>
           <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            value={projectStatus}
+            onChange={(e) => setProjectStatus(e.target.value)}
             className="rounded-xl border border-black/[0.07] bg-white px-3 text-xs"
           >
+            <option value="전체">전체</option>
             <option value="">진행 중 · 준비 중 · 보류</option>
             {["준비 중", "진행 중", "보류", "완료", "취소"].map((s) => (
               <option key={s}>{s}</option>
