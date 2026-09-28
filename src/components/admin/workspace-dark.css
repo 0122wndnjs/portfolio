@@ -1,0 +1,474 @@
+/* Neutral-charcoal workspace theme. Login and printable quote paper stay separate. */
+.admin-workspace {
+  color-scheme: dark;
+  --workspace-bg: #141414;
+  --workspace-sidebar: #1b1b1d;
+  --workspace-lane: #1d1d1f;
+  --workspace-surface: #242426;
+  --workspace-raised: #2b2b2e;
+  --workspace-hover: #333337;
+  --workspace-input: #1c1c1e;
+  --workspace-border: #38383d;
+  --workspace-text: #f2f2f3;
+  --workspace-muted: #aaaab1;
+  --workspace-subtle: #85858e;
+  --workspace-accent: #5b9dff;
+  --workspace-accent-strong: #87b6ff;
+  --workspace-accent-soft: #243247;
+  background: var(--workspace-bg);
+  color: var(--workspace-text);
+}
+
+.admin-workspace .workspace-sidebar {
+  background: var(--workspace-sidebar);
+  border-color: var(--workspace-border);
+}
+.admin-workspace .sidebar-brand-mark {
+  filter: invert(1);
+  mix-blend-mode: screen;
+}
+.admin-workspace .sidebar-signature {
+  color: var(--workspace-text);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: .01em;
+  white-space: nowrap;
+}
+@media (max-width: 1023px) {
+  .admin-workspace .workspace-sidebar > div:first-child > a { gap: 8px; }
+  .admin-workspace .sidebar-brand-mark { width: 32px; height: 32px; }
+  .admin-workspace .sidebar-signature { font-size: 22px; }
+}
+.admin-workspace .workspace-sidebar nav a:not([aria-current="page"]),
+.admin-workspace .sidebar-projects > a,
+.admin-workspace .sidebar-section-label,
+.admin-workspace .sidebar-projects > p {
+  color: var(--workspace-muted);
+}
+.admin-workspace .workspace-sidebar nav a:hover,
+.admin-workspace .sidebar-projects > a:hover,
+.admin-workspace .sidebar-projects > a[aria-current="page"],
+.admin-workspace .workspace-sidebar > button:hover {
+  background: var(--workspace-hover);
+  color: var(--workspace-text);
+}
+.admin-workspace .workspace-sidebar nav a[aria-current="page"] {
+  background: var(--workspace-accent-soft);
+  color: var(--workspace-accent-strong);
+  box-shadow: inset 3px 0 0 var(--workspace-accent);
+}
+.admin-workspace [class~="bg-[#6853d7]"],
+.admin-workspace [class~="bg-[#5035ba]"],
+.admin-workspace [class~="bg-[#4c2ac8]"],
+.admin-workspace .workspace-mobile-menu,
+.admin-workspace .board-primary {
+  background: var(--workspace-accent);
+  color: #101820;
+}
+.admin-workspace [class~="bg-[#6853d7]"]:hover,
+.admin-workspace .board-primary:hover {
+  background: var(--workspace-accent-strong);
+}
+
+/* Existing admin components use literal light Tailwind utilities. Keep this scoped
+   to the authenticated workspace, leaving the portfolio and login untouched. */
+.admin-workspace :is(
+  [class~="bg-white"], [class~="bg-white/60"],
+  [class~="bg-[#f5f5fa]"], [class~="bg-[#f5f5f8]"],
+  [class~="bg-[#f7f7f9]"], [class~="bg-[#f7f8fc]"],
+  [class~="bg-[#f3f3f3]"], [class~="bg-[#f0edff]"],
+  [class~="bg-[#f5f3ff]"], [class~="bg-gray-50"],
+  [class~="bg-gray-100"], [class~="bg-violet-50"]
+) { background-color: var(--workspace-surface); }
+.admin-workspace :is(
+  [class~="hover:bg-white"], [class~="hover:bg-white/60"],
+  [class~="hover:bg-gray-50"]
+):hover { background-color: var(--workspace-hover); }
+.admin-workspace :is([class~="bg-black/5"], [class~="bg-black/[0.06]"]) {
+  background-color: var(--workspace-raised);
+}
+.admin-workspace :is(
+  [class~="border-black/10"], [class~="border-black/[0.09]"],
+  [class~="border-black/[0.07]"], [class~="border-black/[0.055]"],
+  [class~="border-black/[0.045]"], [class~="border-black/[0.04]"],
+  [class~="border-black/[0.05]"], [class~="border-black/5"],
+  [class~="border-t"], [class~="border-b"]
+) { border-color: var(--workspace-border); }
+.admin-workspace :is(
+  [class~="text-[#30303d]"], [class~="text-[#333341]"],
+  [class~="text-[#3a3a49]"], [class~="text-[#4e4e5c]"],
+  [class~="text-[#555562]"], [class~="text-[#555565]"],
+  [class~="text-[#606060]"], [class~="text-[#606070]"]
+) { color: var(--workspace-text); }
+.admin-workspace :is(
+  [class~="text-[#71717f]"], [class~="text-[#737382]"],
+  [class~="text-[#767676]"], [class~="text-[#777]"],
+  [class~="text-[#777783]"], [class~="text-[#777785]"],
+  [class~="text-[#838390]"], [class~="text-[#858591]"],
+  [class~="text-[#858592]"], [class~="text-[#888894]"],
+  [class~="text-[#8b8b98]"], [class~="text-[#8d8d9a]"],
+  [class~="text-[#92929f]"], [class~="text-[#93939e]"],
+  [class~="text-[#9999a4]"], [class~="text-[#9999a5]"],
+  [class~="text-[#9a9aa5]"], [class~="text-[#9b9ba7]"],
+  [class~="text-[#a0a0ac]"], [class~="text-[#a5a5af]"],
+  [class~="text-[#aaaab3]"]
+) { color: var(--workspace-muted); }
+.admin-workspace :is(
+  [class~="text-[#5035ba]"], [class~="text-[#625bd5]"],
+  [class~="text-[#6853d7]"], [class~="text-[#6862ce]"]
+) { color: var(--workspace-accent-strong); }
+.admin-workspace :is([class~="text-gray-500"], [class~="text-gray-600"]) {
+  color: var(--workspace-muted);
+}
+.admin-workspace [class~="bg-black/[0.04]"] { background-color: var(--workspace-hover); }
+.admin-workspace :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+  background-color: var(--workspace-input);
+  border-color: var(--workspace-border);
+  color: var(--workspace-text);
+}
+.admin-workspace :is(input, textarea)::placeholder { color: var(--workspace-subtle); }
+.admin-workspace :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):focus-visible {
+  border-color: var(--workspace-accent);
+}
+.admin-workspace :is(input[type="checkbox"], input[type="radio"]) {
+  accent-color: var(--workspace-accent);
+}
+
+/* Project, task and payment surfaces. */
+.admin-workspace :is(
+  .project-tile, .project-workspace-header, .task-group, .payment-overview,
+  .invoice-item, .invoice-create-form, .workbench-heading, .workbench-toolbar,
+  .quotes-heading, .quotes-toolbar, .quote-card, .quotes-empty,
+  .admin-section-heading, .admin-section-controls, .project-detail-tabs,
+  .settings-quote-note,
+  .meetings-heading, .meetings-toolbar, .meetings-empty, .meeting-card,
+  .calendar-panel, .calendar-agenda, .workspace-metrics
+) {
+  background: var(--workspace-surface);
+  border-color: var(--workspace-border);
+  color: var(--workspace-text);
+}
+.admin-workspace :is(.project-tile:hover, .meeting-card:target) {
+  border-color: var(--project-solid, var(--workspace-accent));
+}
+.admin-workspace :is(
+  .project-tile-top p, .project-tile-progress, .project-tile-foot,
+  .task-item-project, .task-item-meta, .payment-overview span,
+  .payment-list-heading, .invoice-project, .invoice-due,
+  .invoice-totals span, .invoice-disclosures summary,
+  .workbench-eyebrow, .workbench h1 > span,
+  .quotes-heading p, .quotes-toolbar, .quote-card p, .quote-number,
+  .meetings-heading p, .meetings-toolbar, .meeting-card-identity small,
+  .meeting-meta, .meeting-notes strong, .meeting-task-list small,
+  .record-payment form > label, .invoice-create-form label,
+  .task-search, .task-closed-toggle
+) { color: var(--workspace-muted); }
+.admin-workspace :is(.settings-quote-note-heading p, .settings-quote-note > p) { color: var(--workspace-muted); }
+.admin-workspace :is(
+  .task-item-title, .payment-overview strong, .invoice-item-main h2,
+  .invoice-totals strong, .meeting-notes p
+) { color: var(--workspace-text); }
+.admin-workspace :is(
+  .project-tile-foot, .task-status-filter, .task-group > header,
+  .task-item, .payment-overview > div, .payment-list-heading,
+  .invoice-history, .record-payment form, .workbench-heading,
+  .workbench-toolbar, .meeting-notes, .meeting-followups
+) { border-color: var(--workspace-border); }
+.admin-workspace :is(.project-progress-track, .invoice-progress) {
+  background: var(--workspace-border);
+}
+.admin-workspace :is(.task-search, .task-closed-toggle) {
+  background: var(--workspace-input);
+  border-color: var(--workspace-border);
+}
+.admin-workspace :is(.project-kind-filter, .board-view-switch, .workbench h1 > span) {
+  background: var(--workspace-input);
+}
+.admin-workspace :is(.project-kind-filter button[aria-pressed="true"], .board-view-switch button[aria-pressed="true"]) {
+  background: var(--workspace-raised);
+  color: var(--workspace-accent-strong);
+  box-shadow: none;
+}
+.admin-workspace :is(.project-kind-filter button, .board-view-switch button, .task-status-filter button, .payment-filters button, .board-filters button) {
+  color: var(--workspace-muted);
+}
+.admin-workspace :is(.task-status-filter button[aria-pressed="true"], .payment-filters button[aria-pressed="true"]) {
+  color: var(--workspace-accent-strong);
+}
+.admin-workspace .board-filters button[aria-pressed="true"] {
+  background: var(--workspace-raised);
+  color: var(--workspace-text);
+}
+.admin-workspace .board-filters button:hover { background: var(--workspace-hover); }
+.admin-workspace :is(.task-group > header span, .task-priority-normal, .relation-chip) {
+  background: var(--workspace-raised);
+  color: var(--workspace-muted);
+}
+.admin-workspace .task-group:is(.is-overdue, .is-today, .is-upcoming) > header span {
+  background: #ffffff30;
+  color: #fff;
+}
+.admin-workspace .task-group.is-overdue .task-item-date { color: #ff8a8a; }
+.admin-workspace .task-quick-form,
+.admin-workspace .task-work-queue .task-group-rows {
+  background: var(--workspace-surface);
+  border-color: var(--workspace-border);
+}
+.admin-workspace .task-quick-form label { color: var(--workspace-muted); }
+.admin-workspace .task-more-filters summary,
+.admin-workspace .task-more-panel {
+  background: var(--workspace-surface);
+  border-color: var(--workspace-border);
+  color: var(--workspace-muted);
+}
+.admin-workspace .task-more-panel > label:first-child { color: var(--workspace-muted); }
+.admin-workspace .task-more-panel { box-shadow: 0 14px 32px #0007; }
+.admin-workspace .task-work-queue .task-group { background: transparent; border: 0; }
+.admin-workspace .task-work-queue .task-group.is-today { --task-group-color: #7dadff; }
+.admin-workspace .task-work-queue .task-group.is-overdue { --task-group-color: #ff9da4; }
+.admin-workspace .task-work-queue .task-group.is-upcoming { --task-group-color: #75c99e; }
+.admin-workspace .task-work-queue .task-group > header,
+.admin-workspace .task-work-queue .task-group:is(.is-overdue, .is-today, .is-upcoming) > header {
+  background: transparent;
+  color: var(--workspace-text);
+  border: 0;
+}
+.admin-workspace .task-work-queue .task-group > header span,
+.admin-workspace .task-work-queue .task-group:is(.is-overdue, .is-today, .is-upcoming) > header span {
+  background: var(--workspace-raised);
+  color: var(--workspace-muted);
+}
+.admin-workspace .task-work-queue .task-item:hover { background: var(--workspace-hover); }
+.admin-workspace :is(.task-priority, .task-priority-high) { background: #a63c3c; color: #fff; }
+.admin-workspace .project-kind-badge { background: #362e47; color: #d5b7ff; }
+.admin-workspace .project-kind-badge.is-company { background: #243247; color: #9fc6ff; }
+.admin-workspace .project-tile-mark,
+.admin-workspace .meeting-card-icon {
+  background: color-mix(in srgb, var(--project-solid, var(--workspace-accent)) 20%, var(--workspace-surface));
+  color: color-mix(in srgb, var(--project-solid, var(--workspace-accent)) 55%, white);
+}
+.admin-workspace .project-index-list {
+  background: var(--workspace-surface);
+  border-color: var(--workspace-border);
+}
+.admin-workspace .project-index-row {
+  color: var(--workspace-text);
+  border-color: var(--workspace-border);
+}
+.admin-workspace .project-index-row:hover { background: var(--workspace-hover); }
+.admin-workspace .project-index-count {
+  background: var(--workspace-raised);
+  color: var(--workspace-muted);
+}
+.admin-workspace .project-index-name > span,
+.admin-workspace .project-index-progress,
+.admin-workspace .project-index-date,
+.admin-workspace .project-index-open { color: var(--workspace-muted); }
+.admin-workspace .project-index-focus > strong.is-empty,
+.admin-workspace .project-index-date small { color: var(--workspace-subtle); }
+.admin-workspace .project-index-signals .is-waiting { color: #ffc391; }
+.admin-workspace .project-index-signals .is-check { color: #a7d0ff; }
+.admin-workspace .project-index-signals .is-check-due { color: #ff9da4; }
+.admin-workspace .project-index-group[data-status="진행 중"] { --project-group-color: #7dadff; }
+.admin-workspace .project-index-group[data-status="준비 중"] { --project-group-color: #bea3ff; }
+.admin-workspace .project-index-group[data-status="보류"] { --project-group-color: #ffbd78; }
+.admin-workspace .project-index-group[data-status="완료"] { --project-group-color: #75c99e; }
+.admin-workspace .project-index-group[data-status="취소"] { --project-group-color: #aaaab1; }
+.admin-workspace .board-check-banner {
+  background: #3a2527;
+  border-color: #793c41;
+  color: var(--workspace-text);
+}
+.admin-workspace .board-check-banner strong { color: #ff9da4; }
+
+/* Kanban lanes are inset; cards sit a step above them. */
+.admin-workspace .workbench-lane,
+.admin-workspace .project-kanban > div {
+  background: var(--workspace-lane);
+  border-color: var(--workspace-border);
+  box-shadow: none;
+}
+.admin-workspace .workbench-lane.is-over {
+  background: var(--workspace-accent-soft);
+  border-color: var(--workspace-accent);
+}
+.admin-workspace .workbench-lane { --lane-color: #a5aab5; }
+.admin-workspace .workbench-lane.lane-1 { --lane-color: #7dadff; }
+.admin-workspace .workbench-lane.lane-2 { --lane-color: #ffb367; }
+.admin-workspace .workbench-lane.lane-3 { --lane-color: #75c99e; }
+.admin-workspace .workbench-lane > header {
+  background: transparent;
+  color: var(--workspace-text);
+  border-bottom: 1px solid var(--workspace-border);
+  box-shadow: inset 0 3px 0 var(--lane-color);
+}
+.admin-workspace .workbench-lane .lane-dot { background: var(--lane-color); }
+.admin-workspace .workbench-lane .lane-count {
+  background: var(--workspace-raised);
+  color: var(--workspace-muted);
+}
+.admin-workspace .workbench-lane > header > button { color: var(--workspace-muted); }
+.admin-workspace .workbench-lane > header > button:hover { background: var(--workspace-hover); color: var(--workspace-text); }
+.admin-workspace :is(.work-card, .board-composer, .project-kanban article) {
+  background: var(--workspace-surface);
+  border-color: var(--workspace-border);
+  box-shadow: none;
+}
+.admin-workspace :is(.work-card:hover, .project-kanban article:hover) {
+  border-color: #62626c;
+  box-shadow: 0 4px 14px #0003;
+}
+.admin-workspace :is(.work-card-project, .work-card-meta, .card-status, .lane-add, .lane-empty) {
+  color: var(--workspace-muted);
+}
+.admin-workspace .work-card-project { background: var(--workspace-accent-soft); }
+.admin-workspace .work-card-title { color: var(--workspace-text); }
+.admin-workspace :is(.work-card-description, .work-card-title.is-complete) { color: var(--workspace-muted); }
+.admin-workspace .work-card-meta .priority-tag { background: #493227; color: #ffc391; }
+.admin-workspace .work-card-meta .date-late { color: #ff9090; }
+.admin-workspace .card-status { border-color: var(--workspace-border); }
+.admin-workspace .lane-add:hover { background: var(--workspace-hover); color: var(--workspace-text); }
+.admin-workspace .lane-empty { border-color: var(--workspace-border); }
+.admin-workspace .board-skeleton { background: var(--workspace-raised); }
+.admin-workspace .project-kanban > div > div:first-child {
+  border-color: var(--workspace-border);
+}
+.admin-workspace .project-kanban > div:nth-child(1) > div:first-child { background: #414650; }
+.admin-workspace .project-kanban > div:nth-child(2) > div:first-child { background: #265ea9; }
+.admin-workspace .project-kanban > div:nth-child(3) > div:first-child { background: #a45725; }
+.admin-workspace .project-kanban > div:nth-child(4) > div:first-child { background: #237957; }
+
+/* Calendar, meetings and quote editing. */
+.admin-workspace .calendar-grid { background: var(--workspace-border); }
+.admin-workspace .calendar-weekday { background: var(--workspace-raised); color: var(--workspace-muted); }
+.admin-workspace .calendar-weekday:first-child { color: #ff9ca5; }
+.admin-workspace .calendar-day { background: var(--workspace-surface); color: var(--workspace-text); }
+.admin-workspace .calendar-day:hover { background: var(--workspace-hover); }
+.admin-workspace .calendar-day.is-selected { background: var(--workspace-accent-soft); }
+.admin-workspace .calendar-day.is-outside { background: var(--workspace-lane); color: var(--workspace-subtle); }
+.admin-workspace .calendar-date.is-today { color: #101820; }
+.admin-workspace .calendar-event {
+  background: color-mix(in srgb, var(--event-color) 21%, var(--workspace-surface));
+  color: var(--workspace-text);
+  box-shadow: inset 2px 0 0 var(--event-color);
+}
+.admin-workspace :is(.calendar-header p, .calendar-payment-toggle, .calendar-agenda-header span, .calendar-more, .calendar-agenda-item small, .calendar-empty) {
+  color: var(--workspace-muted);
+}
+.admin-workspace :is(.calendar-actions button, .calendar-agenda-header button, .quote-card-actions button, .quote-card-actions a, .board-secondary) {
+  background: var(--workspace-raised);
+  border-color: var(--workspace-border);
+  color: var(--workspace-text);
+}
+.admin-workspace .calendar-agenda-item:hover { background: var(--workspace-hover); }
+.admin-workspace .calendar-agenda-item strong.is-complete { color: var(--workspace-subtle); }
+.admin-workspace .quote-card-icon { background: var(--workspace-accent-soft); color: var(--workspace-accent-strong); }
+.admin-workspace .quote-status { background: #3b3050; color: #d0b7ff; }
+.admin-workspace .quote-status.status-수락 { background: #234236; color: #8de3b5; }
+.admin-workspace .quote-status.status-거절 { background: var(--workspace-raised); color: var(--workspace-muted); }
+.admin-workspace .quote-status.status-발송 { background: #253f5a; color: #a7d0ff; }
+.admin-workspace .quotes-notice { color: #8de3b5; }
+.admin-workspace :is(.meeting-task-list a, .quote-item) {
+  background: var(--workspace-raised);
+  color: var(--workspace-text);
+}
+.admin-workspace .meeting-task-list a:hover { background: var(--workspace-hover); }
+.admin-workspace .meeting-task-list a.is-archived { color: var(--workspace-subtle); }
+.admin-workspace .meeting-timeline-list {
+  background: var(--workspace-surface);
+  border-color: var(--workspace-border);
+}
+.admin-workspace .meeting-timeline-heading > span {
+  background: var(--workspace-raised);
+  color: var(--workspace-muted);
+}
+.admin-workspace .meeting-timeline-list .meeting-card {
+  background: transparent;
+  border-color: var(--workspace-border);
+}
+.admin-workspace .meeting-card-toggle:hover { background: var(--workspace-hover); }
+.admin-workspace :is(.meeting-card-date, .meeting-card-preview, .meeting-card-followup-count, .meeting-card-summary small) {
+  color: var(--workspace-muted);
+}
+.admin-workspace .meeting-card-date small,
+.admin-workspace .meeting-card-chevron { color: var(--workspace-subtle); }
+.admin-workspace .meeting-card-detail { border-color: var(--workspace-border); }
+.admin-workspace .payment-search,
+.admin-workspace .payment-filter-empty,
+.admin-workspace .invoice-item-toggle {
+  background: var(--workspace-surface);
+  border-color: var(--workspace-border);
+  color: var(--workspace-muted);
+}
+.admin-workspace .payment-search { background: var(--workspace-input); }
+.admin-workspace .invoice-item-toggle:hover { background: var(--workspace-hover); color: var(--workspace-text); }
+.admin-workspace .invoice-item-expanded { background: var(--workspace-lane); border-color: var(--workspace-border); }
+.admin-workspace .invoice-item-date,
+.admin-workspace .invoice-item-date small,
+.admin-workspace .invoice-expanded-summary { color: var(--workspace-muted); }
+.admin-workspace .invoice-expanded-summary strong { color: var(--workspace-text); }
+.admin-workspace :is(.quote-editor-backdrop, .quote-preview-backdrop, .meeting-editor-backdrop) {
+  background: #000b;
+}
+.admin-workspace :is(.quote-editor, .meeting-editor, .quote-preview-dialog) {
+  background: var(--workspace-bg);
+  color: var(--workspace-text);
+}
+.admin-workspace :is(.quote-editor-heading, .meeting-editor-heading) {
+  background: var(--workspace-surface);
+  border-color: var(--workspace-border);
+}
+.admin-workspace :is(.quote-editor-heading p, .quote-form label, .quote-items-locked, .quote-totals, .meeting-editor-heading p, .meeting-form label, .meeting-followups-heading strong span) {
+  color: var(--workspace-muted);
+}
+.admin-workspace .quote-totals strong { color: var(--workspace-text); }
+.admin-workspace .meeting-editor-error,
+.admin-workspace .board-error { background: #3a2527; border-color: #793c41; color: #ffadb2; }
+.admin-workspace .quote-preview-controls button:first-child { color: var(--workspace-muted); }
+
+/* Drawers and contextual feedback. */
+.admin-workspace .workspace-drawer {
+  color-scheme: dark;
+  background: var(--workspace-sidebar);
+  border-color: var(--workspace-border);
+  color: var(--workspace-text);
+  box-shadow: -16px 0 50px #0008;
+}
+.admin-workspace .workspace-drawer::backdrop { background: #000b; }
+.admin-workspace :is([class~="bg-red-50"], [class~="hover:bg-red-50"]:hover, [class~="bg-[#fff1f1]"]) {
+  background-color: #442729;
+  color: #ffb1b4;
+}
+.admin-workspace :is([class~="bg-amber-50"], [class~="bg-orange-50"]) {
+  background-color: #49351f;
+  color: #ffd397;
+}
+.admin-workspace [class~="bg-emerald-50"] { background-color: #223e32; color: #a6ebc2; }
+.admin-workspace :is([class~="text-red-700"], [class~="text-red-600"], [class~="text-[#c83238]"]) { color: #ff9da4; }
+.admin-workspace :is([class~="text-amber-700"], [class~="text-amber-800"], [class~="text-amber-900"], [class~="text-amber-950"], [class~="text-orange-600"]) { color: #ffd397; }
+.admin-workspace :is([class~="text-emerald-600"], [class~="text-emerald-700"], [class~="text-[#217b55]"]) { color: #9ee5be; }
+.admin-workspace :is([class~="text-blue-700"], [class~="text-violet-600"]) { color: var(--workspace-accent-strong); }
+.admin-workspace :is([class~="border-red-100"], [class~="border-[#efb8ba]"]) { border-color: #793c41; }
+.admin-workspace [class~="border-amber-200"] { border-color: #78603e; }
+.admin-workspace [id^="payment-"]:target { background: var(--workspace-accent-soft); }
+.admin-workspace :is([class~="bg-[#24243b]"], [class~="bg-[#25253b]"], [class~="bg-[#303030]"]) {
+  background-color: var(--workspace-raised);
+  color: var(--workspace-text);
+}
+
+/* The quote is a document, not part of the dark UI: preserve screen/PDF paper. */
+.admin-workspace .quote-document {
+  color-scheme: light;
+  background: #fff;
+  color: #242434;
+}
+.admin-workspace .quote-document :is([class~="bg-white"], [class~="bg-[#f5f5fa]"]) {
+  background: #fff;
+}
+@media print {
+  .admin-workspace { color-scheme: light; background: #fff; color: #242434; }
+  .admin-workspace .quote-preview-backdrop { background: #fff; }
+  .admin-workspace .quote-preview-dialog { background: #fff; }
+  .admin-workspace .quote-document { box-shadow: none; }
+}

@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import { Great_Vibes } from "next/font/google";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
@@ -21,6 +23,7 @@ import UndoTask from "@/components/admin/UndoTask";
 import { projectColor } from "@/lib/admin/project-colors";
 import type { ProjectKind } from "@/lib/admin/project-kinds";
 import "./workspace.css";
+import "./workspace-dark.css";
 
 const links = [
   { href: "/admin", label: "내 작업 보드", icon: FiGrid },
@@ -32,6 +35,8 @@ const links = [
   { href: "/admin/settings", label: "설정", icon: FiSettings },
   { href: "/admin/tools", label: "업무 도구", icon: FiTool },
 ];
+
+const signatureFont = Great_Vibes({ weight: "400", subsets: ["latin"], display: "swap" });
 
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -87,13 +92,15 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             className="flex items-center gap-3"
             onClick={() => setOpen(false)}
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#6853d7] text-sm font-bold text-white">
-              JK
-            </span>
-            <span>
-              <span className="block text-base font-semibold tracking-tight">
-                내 작업실
-              </span>
+            <Image
+              src="/apple-icon.png"
+              alt=""
+              width={40}
+              height={40}
+              className="sidebar-brand-mark"
+            />
+            <span className={`${signatureFont.className} sidebar-signature`}>
+              Joowon Kim
             </span>
           </Link>
           <button
