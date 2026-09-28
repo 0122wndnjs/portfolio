@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 export function generateMetadata() {
   return {
     title: "Workspace · Joowon Kim",
+    manifest: "/admin-manifest.json",
     robots: { index: false, follow: false, noarchive: true },
   };
 }
