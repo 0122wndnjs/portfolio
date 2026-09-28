@@ -406,7 +406,7 @@ export default function AdminProject({ projectId }: { projectId: string }) {
             {project.next_check_date && <span className={project.next_check_date <= today() ? "project-check-chip is-due" : "project-check-chip"}>{project.next_check_date <= today() ? "확인 필요" : "다음 확인"} · {project.next_check_date}</span>}
           </div>}
         </div>
-        <div className="flex gap-2">
+        <div className="project-detail-actions flex flex-wrap gap-2">
           {project.kind === "외주" && <Link
             href={`/admin/quotes?project=${project.id}`}
             className="inline-flex items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-2.5 text-xs font-semibold"
@@ -456,7 +456,7 @@ export default function AdminProject({ projectId }: { projectId: string }) {
         />}
         {project.kind === "외주" && <Stat label="미입금" value={won(unpaid)} sub="청구 항목 잔액" />}
       </div>
-      <div className="mt-3 flex gap-1 overflow-x-auto border-b border-black/[0.07]">
+      <div className="project-detail-tabs mt-3 flex gap-1 overflow-x-auto border-b border-black/[0.07]">
         {(isInternalProjectKind(project.kind) ? ["보드", "개요", "미팅", "링크·메모"] : ["보드", "개요", "미팅", "입금", "링크·메모"]).map((item) => (
           <button
             key={item}

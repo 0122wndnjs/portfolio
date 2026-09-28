@@ -53,10 +53,12 @@ export default function WorkspaceTools() {
     try { await action(); } catch (e) { setError(e instanceof Error ? e.message : "처리 실패"); }
     finally { setBusy(false); }
   }
-  return <div className="space-y-4">
-    <h1 className="text-xl font-semibold">업무 도구</h1>
-    <div className="flex flex-wrap gap-2" role="tablist" aria-label="업무 도구">
-      {[["search", "통합 검색"], ["report", "주간 보고"], ["trash", "휴지통·복구"], ["export", "내보내기"]].map(([id, title]) => <button role="tab" aria-selected={tab === id} key={id} onClick={() => { setTab(id); setError(""); setNotice(""); }} className={tab === id ? buttonClass : fieldClass}>{title}</button>)}
+  return <div className="workspace-tools-page space-y-4">
+    <div className="workspace-tools-header">
+      <header className="admin-section-heading"><h1>업무 도구</h1></header>
+      <div className="admin-section-controls workspace-tools-tabs" role="tablist" aria-label="업무 도구">
+        {[["search", "통합 검색"], ["report", "주간 보고"], ["trash", "휴지통·복구"], ["export", "내보내기"]].map(([id, title]) => <button type="button" role="tab" aria-selected={tab === id} key={id} onClick={() => { setTab(id); setError(""); setNotice(""); }} className={tab === id ? buttonClass : fieldClass}>{title}</button>)}
+      </div>
     </div>
     {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
     {notice && <p role="status" className="text-sm text-[#5035ba]">{notice}</p>}

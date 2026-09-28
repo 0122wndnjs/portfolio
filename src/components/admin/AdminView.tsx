@@ -142,8 +142,12 @@ export default function AdminView({
     [taskProject, setTaskProject] = useState(""),
     [includeClosedProjects, setIncludeClosedProjects] = useState(false),
     [showForm, setShowForm] = useState(initialCreateProject),
+    [showTaskForm, setShowTaskForm] = useState(false),
+    [taskRefreshToken, setTaskRefreshToken] = useState(0),
     [showInvoiceForm, setShowInvoiceForm] = useState(false),
     [paymentFilter, setPaymentFilter] = useState("받을 금액"),
+    [paymentQuery, setPaymentQuery] = useState(""),
+    [expandedInvoiceId, setExpandedInvoiceId] = useState<string | null>(null),
     [saving, setSaving] = useState(false),
     [toast, setToast] = useState(""),
     [renderedAt] = useState(() => Date.now());
@@ -166,28 +170,21 @@ export default function AdminView({
           project: taskProject,
           includeClosed: String(includeClosedProjects),
         });
-        const [taskRows, activeProjects, completedProjects, cancelledProjects] =
+        const [taskRows, projectRows] =
           await Promise.all([
             api<Task[]>(`/api/admin/tasks?${params}`),
-            api<Project[]>("/api/admin/projects"),
-            api<Project[]>("/api/admin/projects?status=완료"),
-            api<Project[]>("/api/admin/projects?status=취소"),
+            api<Project[]>("/api/admin/projects?status=전체"),
           ]);
         setTasks(taskRows);
-        setProjects([
-          ...activeProjects,
-          ...completedProjects,
-          ...cancelledProjects,
-        ]);
+        setProjects(projectRows);
       }
       if (section === "payments") {
-        const [rows, activeProjects, completedProjects] = await Promise.all([
+        const [rows, projectRows] = await Promise.all([
           api<Invoice[]>("/api/admin/payments"),
-          api<Project[]>("/api/admin/projects"),
-          api<Project[]>("/api/admin/projects?status=완료"),
+          api<Project[]>("/api/admin/projects?status=전체"),
         ]);
         setInvoices(rows);
-        setProjects([...activeProjects, ...completedProjects]);
+        setProjects(projectRows.filter((project) => project.kind === "외주" && project.status !== "취소"));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "불러오지 못했습니다.");
@@ -209,7 +206,7 @@ export default function AdminView({
     // 검색어 입력 중 매 글자마다 요청하지 않도록 짧게 모아서 불러온다.
     const timer = setTimeout(() => void load(), 150);
     return () => clearTimeout(timer);
-  }, [load]);
+  }, [load, taskRefreshToken]);
   const flash = (message: string) => {
     setToast(message);
     setTimeout(() => setToast(""), 2500);
@@ -236,6 +233,31 @@ export default function AdminView({
       setSaving(false);
     }
   };
+  const saveTask = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const values = Object.fromEntries(new FormData(event.currentTarget).entries());
+    const projectId = String(values.project || "");
+    if (!projectId) return;
+    setSaving(true);
+    setError("");
+    try {
+      await api(`/api/admin/projects/${projectId}/tasks`, "POST", {
+        title: String(values.title || "").trim(),
+        due_date: String(values.due_date || ""),
+      });
+      setShowTaskForm(false);
+      setStatus("할 일");
+      setTaskProject(projectId);
+      setTaskPriority("");
+      setTaskQuery("");
+      setTaskRefreshToken((value) => value + 1);
+      flash("작업을 추가했어요.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "작업을 추가하지 못했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  };
   const savePayment = async (invoice: Invoice, form: HTMLFormElement) => {
     const fd = new FormData(form);
     try {
@@ -244,8 +266,9 @@ export default function AdminView({
         "POST",
         Object.fromEntries(fd.entries()),
       );
+      form.reset();
       flash("입금 기록했어요.");
-      void load();
+      await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "저장 실패");
     }
@@ -319,6 +342,16 @@ export default function AdminView({
     },
     { title: "날짜 미정", rows: visibleTasks.filter((task) => !task.due_date) },
   ];
+  const projectGroups = Array.from(new Set([
+    "진행 중", "준비 중", "보류", "완료", "취소",
+    ...projects.map((project) => project.status),
+  ]))
+    .map((status) => ({ status, rows: projects.filter((project) => project.status === status) }))
+    .filter((group) => group.rows.length > 0);
+  const activeTaskProjects = projects.filter((project) =>
+    ["준비 중", "진행 중", "보류"].includes(project.status),
+  );
+  const taskExtraFilterCount = Number(Boolean(taskPriority)) + Number(includeClosedProjects);
 
   if (section === "dashboard" && data) {
     const cards = [
@@ -520,16 +553,44 @@ export default function AdminView({
   if (section === "projects")
     return (
       <>
-        <PageTitle
-          eyebrow="CLIENT WORK"
-          title="프로젝트"
-          description="고객과 진행 상황을 프로젝트별로 관리하세요."
-          action={
-            <Button onClick={() => setShowForm(!showForm)}>
-              <FiPlus /> 새 프로젝트
-            </Button>
-          }
-        />
+        <header className="admin-section-heading">
+          <PageTitle
+            eyebrow="CLIENT WORK"
+            title="프로젝트"
+            description="고객과 진행 상황을 프로젝트별로 관리하세요."
+            action={
+              <Button onClick={() => setShowForm(!showForm)}>
+                <FiPlus /> 새 프로젝트
+              </Button>
+            }
+          />
+        </header>
+        <div className="admin-toolbar admin-section-controls project-index-toolbar flex flex-wrap gap-2">
+          <div className="project-kind-filter" aria-label="업무 유형 필터">
+            {[["", "전체"], ...PROJECT_KINDS.map((kind) => [kind, PROJECT_KIND_LABELS[kind]])].map(([value, label]) => <button type="button" key={label} aria-pressed={projectKind === value} onClick={() => { setProjectKind(value as ProjectKind | ""); if (value) setNewProjectKind(value as ProjectKind); }}>{label}</button>)}
+          </div>
+          <label className="flex min-w-[220px] flex-1 items-center gap-2 rounded-xl border border-black/[0.07] bg-white px-3">
+            <FiSearch className="text-[#a0a0ac]" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="프로젝트 또는 고객 검색"
+              className="w-full bg-transparent py-2.5 text-xs outline-none"
+            />
+          </label>
+          <select
+            aria-label="프로젝트 상태 필터"
+            value={projectStatus}
+            onChange={(e) => setProjectStatus(e.target.value)}
+            className="rounded-xl border border-black/[0.07] bg-white px-3 text-xs"
+          >
+            <option value="전체">전체 상태</option>
+            <option value="">진행 중 · 준비 중 · 보류</option>
+            {["준비 중", "진행 중", "보류", "완료", "취소"].map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
+        </div>
         {alert}
         {showForm && (
           <form
@@ -571,94 +632,66 @@ export default function AdminView({
             </div>
           </form>
         )}
-        <div className="admin-toolbar mb-4 flex flex-wrap gap-2">
-          <div className="project-kind-filter" aria-label="업무 유형 필터">
-            {[["", "전체"], ...PROJECT_KINDS.map((kind) => [kind, PROJECT_KIND_LABELS[kind]])].map(([value, label]) => <button type="button" key={label} aria-pressed={projectKind === value} onClick={() => { setProjectKind(value as ProjectKind | ""); if (value) setNewProjectKind(value as ProjectKind); }}>{label}</button>)}
-          </div>
-          <label className="flex min-w-[220px] flex-1 items-center gap-2 rounded-xl border border-black/[0.07] bg-white px-3">
-            <FiSearch className="text-[#a0a0ac]" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="프로젝트 또는 고객 검색"
-              className="w-full bg-transparent py-2.5 text-xs outline-none"
-            />
-          </label>
-          <select
-            value={projectStatus}
-            onChange={(e) => setProjectStatus(e.target.value)}
-            className="rounded-xl border border-black/[0.07] bg-white px-3 text-xs"
-          >
-            <option value="전체">전체</option>
-            <option value="">진행 중 · 준비 중 · 보류</option>
-            {["준비 중", "진행 중", "보류", "완료", "취소"].map((s) => (
-              <option key={s}>{s}</option>
-            ))}
-          </select>
-        </div>
         {projects.length ? (
-          <div className="project-shelf">
-            {projects.map((project) => {
-              const progress = project.task_count
-                ? Math.round(
-                    (100 * (Number(project.done_count) || 0)) /
-                      Number(project.task_count),
-                  )
-                : 0;
-              return (
-                <Link
-                  href={`/admin/projects/${project.id}`}
-                  key={project.id}
-                  className="project-tile"
-                  style={{
-                    "--project-solid": projectColor(project.id).solid,
-                    "--project-soft": projectColor(project.id).soft,
-                    "--project-strong": projectColor(project.id).strong,
-                  } as React.CSSProperties}
-                >
-                  <div className="project-tile-top">
-                    <div className="project-tile-identity">
-                      <span className="project-tile-mark" aria-hidden="true">{project.name.trim().charAt(0)}</span>
-                      <div className="min-w-0">
-                        <h2 className="truncate">{project.name}</h2>
-                        <p className="truncate">{project.client}</p>
-                      </div>
-                    </div>
-                    <div className="project-tile-badges"><span className={`project-kind-badge ${project.kind !== "외주" ? "is-company" : ""}`}>{PROJECT_KIND_LABELS[project.kind]}</span><StatusBadge value={project.status} /></div>
-                  </div>
-                  <div className="project-tile-progress">
-                    {project.next_action && <p className="mb-2 text-xs text-[#5035ba]">다음 · {project.next_action}</p>}
-                    {project.waiting_reason && <p className="mb-2 text-xs text-amber-700">대기 · {project.waiting_reason}</p>}
-                    {project.next_check_date && <p className={`mb-2 text-xs font-semibold ${project.next_check_date <= today() ? "text-red-700" : "text-blue-700"}`}>{project.next_check_date <= today() ? "확인 필요" : "다음 확인"} · {project.next_check_date}</p>}
-                    <div className="flex items-center justify-between gap-3">
-                      <span>작업 진행</span>
-                      <span>
-                        {project.done_count || 0} / {project.task_count || 0}{" "}
-                        완료
-                      </span>
-                    </div>
-                    <div className="project-progress-track">
-                      <span style={{ width: `${progress}%` }} />
-                    </div>
-                  </div>
-                  <div className="project-tile-foot">
-                    <span>
-                      <FiCalendar /> {dateLabel(project.due_date)}
-                    </span>
-                    {project.kind === "외주" && <span>
-                      {project.contract_amount
-                        ? won(project.contract_amount)
-                        : "금액 미등록"}
-                    </span>}
-                  </div>
-                </Link>
-              );
-            })}
+          <div className="project-index">
+            {projectGroups.map(({ status: groupStatus, rows }) => (
+              <section className="project-index-group" data-status={groupStatus} key={groupStatus} aria-label={`${groupStatus} 프로젝트 ${rows.length}개`}>
+                <header className="project-index-group-heading">
+                  <span className="project-index-status-dot" aria-hidden="true" />
+                  <h2>{groupStatus}</h2>
+                  <span className="project-index-count">{rows.length}</span>
+                </header>
+                <div className="project-index-list">
+                  {rows.map((project) => {
+                    const taskCount = Number(project.task_count) || 0;
+                    const doneCount = Number(project.done_count) || 0;
+                    const progress = taskCount ? Math.round((100 * doneCount) / taskCount) : 0;
+                    return (
+                      <Link
+                        href={`/admin/projects/${project.id}`}
+                        key={project.id}
+                        className="project-index-row"
+                        style={{ "--project-solid": projectColor(project.id).solid } as React.CSSProperties}
+                      >
+                        <div className="project-index-identity">
+                          <span className="project-index-color" aria-hidden="true" />
+                          <div className="project-index-name">
+                            <strong title={project.name}>{project.name}</strong>
+                            <span title={project.client}>{project.client}</span>
+                          </div>
+                          <span className={`project-kind-badge ${project.kind !== "외주" ? "is-company" : ""}`}>{PROJECT_KIND_LABELS[project.kind]}</span>
+                        </div>
+                        <div className="project-index-focus">
+                          <strong className={project.next_action ? "" : "is-empty"} title={project.next_action || undefined}>
+                            {project.next_action ? `다음 · ${project.next_action}` : "다음 할 일 미입력"}
+                          </strong>
+                          {(project.waiting_reason || project.next_check_date) && (
+                            <span className="project-index-signals">
+                              {project.waiting_reason && <span className="is-waiting" title={project.waiting_reason}>대기 · {project.waiting_reason}</span>}
+                              {project.next_check_date && <span className={project.next_check_date <= today() ? "is-check-due" : "is-check"}>{project.next_check_date <= today() ? "확인 필요" : "다음 확인"} · {project.next_check_date}</span>}
+                            </span>
+                          )}
+                        </div>
+                        <div className="project-index-progress" aria-label={`작업 ${doneCount}개 완료, 전체 ${taskCount}개`}>
+                          <span>{taskCount ? `${doneCount} / ${taskCount} 완료` : "작업 없음"}</span>
+                          <span className="project-progress-track" aria-hidden="true"><span style={{ width: `${progress}%` }} /></span>
+                        </div>
+                        <div className="project-index-date">
+                          <span><FiCalendar aria-hidden="true" /> {project.due_date ? dateLabel(project.due_date) : "마감 미정"}</span>
+                          {project.kind === "외주" && <small>{project.contract_amount ? won(project.contract_amount) : "금액 미등록"}</small>}
+                        </div>
+                        <FiArrowUpRight className="project-index-open" aria-hidden="true" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
           </div>
         ) : (
           <Empty
-            title="프로젝트가 아직 없어요"
-            detail="첫 프로젝트를 등록하면 작업 보드와 입금 일정을 함께 관리할 수 있어요."
+            title={query || projectKind || projectStatus !== "전체" ? "조건에 맞는 프로젝트가 없어요" : "프로젝트가 아직 없어요"}
+            detail={query || projectKind || projectStatus !== "전체" ? "검색어 또는 필터를 바꿔보세요." : "첫 프로젝트를 등록하면 작업 보드와 입금 일정을 함께 관리할 수 있어요."}
           />
         )}
         {toast && <Toast text={toast} />}
@@ -668,64 +701,101 @@ export default function AdminView({
   if (section === "tasks")
     return (
       <>
-        <PageTitle eyebrow="TASKS" title="작업" />
-        <div className="task-status-filter" aria-label="작업 상태">
-          {["", "할 일", "진행 중", "확인 대기", "완료"].map((item) => (
-            <button
-              key={item || "all"}
-              onClick={() => setStatus(item)}
-              aria-pressed={status === item}
+        <header className="admin-section-heading">
+          <PageTitle
+            eyebrow="TASKS"
+            title="작업"
+            action={<Button onClick={() => setShowTaskForm((open) => !open)} disabled={!activeTaskProjects.length}><FiPlus /> 새 작업</Button>}
+          />
+        </header>
+        <div className="admin-section-controls admin-task-controls">
+          <div className="task-status-filter" aria-label="작업 상태">
+            {["", "할 일", "진행 중", "확인 대기", "완료"].map((item) => (
+              <button
+                key={item || "all"}
+                onClick={() => setStatus(item)}
+                aria-pressed={status === item}
+              >
+                {item || "진행할 작업"}
+              </button>
+            ))}
+          </div>
+          <div className="admin-toolbar task-toolbar flex flex-wrap gap-2">
+            <label className="task-search">
+              <FiSearch />
+              <input
+                aria-label="작업 검색"
+                value={taskQuery}
+                onChange={(event) => setTaskQuery(event.target.value)}
+                placeholder="작업이나 프로젝트 검색"
+              />
+            </label>
+            <select
+              value={taskProject}
+              onChange={(event) => setTaskProject(event.target.value)}
+              aria-label="프로젝트 필터"
             >
-              {item || "진행할 작업"}
-            </button>
-          ))}
+              <option value="">모든 프로젝트</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+            <details className="task-more-filters">
+              <summary>상세 필터{taskExtraFilterCount > 0 && ` · ${taskExtraFilterCount}`} <FiChevronDown aria-hidden="true" /></summary>
+              <div className="task-more-panel">
+                <label>
+                  우선순위
+                  <select
+                    value={taskPriority}
+                    onChange={(event) => setTaskPriority(event.target.value)}
+                    aria-label="우선순위 필터"
+                  >
+                    <option value="">모든 우선순위</option>
+                    {["높음", "보통", "낮음"].map((priority) => (
+                      <option key={priority}>{priority}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="task-closed-toggle">
+                  <input
+                    type="checkbox"
+                    checked={includeClosedProjects}
+                    onChange={(event) => setIncludeClosedProjects(event.target.checked)}
+                  />
+                  완료 프로젝트 포함
+                </label>
+              </div>
+            </details>
+          </div>
         </div>
-        <div className="admin-toolbar mb-4 flex flex-wrap gap-2">
-          <label className="task-search">
-            <FiSearch />
-            <input
-              aria-label="작업 검색"
-              value={taskQuery}
-              onChange={(event) => setTaskQuery(event.target.value)}
-              placeholder="작업이나 프로젝트 검색"
-            />
-          </label>
-          <select
-            value={taskProject}
-            onChange={(event) => setTaskProject(event.target.value)}
-            aria-label="프로젝트 필터"
-          >
-            <option value="">모든 프로젝트</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={taskPriority}
-            onChange={(event) => setTaskPriority(event.target.value)}
-            aria-label="우선순위 필터"
-          >
-            <option value="">모든 우선순위</option>
-            {["높음", "보통", "낮음"].map((priority) => (
-              <option key={priority}>{priority}</option>
-            ))}
-          </select>
-          <label className="task-closed-toggle">
-            <input
-              type="checkbox"
-              checked={includeClosedProjects}
-              onChange={(event) =>
-                setIncludeClosedProjects(event.target.checked)
-              }
-            />
-            완료 프로젝트 포함
-          </label>
-        </div>
+        {showTaskForm && (
+          <form className="task-quick-form" onSubmit={saveTask}>
+            <label>
+              프로젝트
+              <select name="project" required defaultValue={activeTaskProjects.some((project) => project.id === taskProject) ? taskProject : ""}>
+                <option value="" disabled>프로젝트 선택</option>
+                {activeTaskProjects.map((project) => <option value={project.id} key={project.id}>{project.name}</option>)}
+              </select>
+            </label>
+            <label className="task-quick-title">
+              작업 제목
+              <input name="title" required maxLength={200} placeholder="해야 할 일을 적어주세요" autoFocus />
+            </label>
+            <label>
+              마감일 (선택)
+              <input name="due_date" type="date" />
+            </label>
+            <div className="task-quick-actions">
+              <Button kind="light" onClick={() => setShowTaskForm(false)}>취소</Button>
+              <Button type="submit" disabled={saving}>{saving ? "추가 중…" : "추가"}</Button>
+            </div>
+          </form>
+        )}
         {alert}
         {tasks.length && visibleTasks.length ? (
-          <div className="task-groups">
+          <div className="task-groups task-work-queue">
             {taskBuckets
               .filter((bucket) => bucket.rows.length > 0)
               .map((bucket) => (
@@ -736,7 +806,7 @@ export default function AdminView({
                   </header>
                   <div className="task-group-rows">
                     {bucket.rows.map((task) => (
-                      <article key={task.id} className="task-item">
+                      <article key={task.id} className="task-item" style={{ "--project-solid": projectColor(task.project_id).solid } as React.CSSProperties}>
                         <div className="task-item-main">
                           <Link
                             href={`/admin/projects/${task.project_id}?task=${task.id}`}
@@ -807,7 +877,7 @@ export default function AdminView({
                 </section>
               ))}
           </div>
-        ) : tasks.length ? (
+        ) : tasks.length || taskProject || taskPriority || status || taskQuery || includeClosedProjects ? (
           <Empty
             title="조건에 맞는 작업이 없어요"
             detail="검색어와 필터를 바꿔보세요."
@@ -824,19 +894,21 @@ export default function AdminView({
   if (section === "payments")
     return (
       <>
-        <PageTitle
-          eyebrow="PAYMENTS"
-          title="입금"
-          action={
-            <Button
-              onClick={() => setShowInvoiceForm((open) => !open)}
-              disabled={!projects.length}
-            >
-              <FiPlus />
-              청구 추가
-            </Button>
-          }
-        />
+        <header className="admin-section-heading admin-section-heading-standalone">
+          <PageTitle
+            eyebrow="PAYMENTS"
+            title="입금"
+            action={
+              <Button
+                onClick={() => setShowInvoiceForm((open) => !open)}
+                disabled={!projects.length}
+              >
+                <FiPlus />
+                청구 추가
+              </Button>
+            }
+          />
+        </header>
         {alert}
         {showInvoiceForm && (
           <form onSubmit={saveInvoice} className="invoice-create-form">
@@ -891,12 +963,15 @@ export default function AdminView({
           (() => {
             const receiving = invoices.filter((invoice) => invoice.balance > 0);
             const received = invoices.filter((invoice) => invoice.balance <= 0);
-            const visibleInvoices =
+            const statusInvoices =
               paymentFilter === "받을 금액"
                 ? receiving
                 : paymentFilter === "입금 완료"
                   ? received
                   : invoices;
+            const visibleInvoices = statusInvoices
+              .filter((invoice) => `${invoice.project_name} ${invoice.title}`.toLocaleLowerCase().includes(paymentQuery.toLocaleLowerCase()))
+              .sort((a, b) => paymentFilter === "전체" ? Number(a.balance <= 0) - Number(b.balance <= 0) : 0);
             const openBalance = receiving.reduce(
               (sum, invoice) => sum + invoice.balance,
               0,
@@ -933,13 +1008,14 @@ export default function AdminView({
                       </button>
                     ))}
                   </div>
+                  <label className="payment-search"><FiSearch aria-hidden="true" /><input value={paymentQuery} onChange={(event) => setPaymentQuery(event.target.value)} placeholder="프로젝트·청구 항목 검색" aria-label="입금 항목 검색" /></label>
                   <span>{visibleInvoices.length}건</span>
                 </div>
-                <div className="invoice-list">
+                {visibleInvoices.length ? <div className="invoice-list">
                   {visibleInvoices.map((invoice) => (
-                    <article key={invoice.id} className="invoice-item">
+                    <article key={invoice.id} className="invoice-item" id={`invoice-${invoice.id}`}>
                       <div className="invoice-item-main">
-                        <div className="min-w-0">
+                        <div className="invoice-item-identity">
                           <Link
                             href={`/admin/projects/${invoice.project_id}`}
                             className="invoice-project"
@@ -947,32 +1023,26 @@ export default function AdminView({
                             {invoice.project_name}
                           </Link>
                           <h2>{invoice.title}</h2>
-                          <span className="invoice-due">
-                            입금 예정 {dateLabel(invoice.due_date)}
-                          </span>
                         </div>
+                        <div className="invoice-item-date"><span>입금 예정 {invoice.due_date ? dateLabel(invoice.due_date) : "미정"}</span><small>청구 {won(invoice.amount)}</small></div>
                         <div className="invoice-totals">
+                          <span>{invoice.balance > 0 ? "남은 금액" : "정산 상태"}</span>
                           <strong>
                             {invoice.balance > 0
                               ? won(invoice.balance)
                               : "입금 완료"}
                           </strong>
-                          <span>
-                            청구 처리 {won(invoice.paid_amount)} / {won(invoice.amount)}
-                          </span>
-                          {invoice.withholding_amount > 0 && (
-                            <span>실수령 {won(invoice.net_received_amount)} · 공제 {won(invoice.withholding_amount)}</span>
-                          )}
                         </div>
+                        <button type="button" className="invoice-item-toggle" aria-expanded={expandedInvoiceId === invoice.id} aria-controls={expandedInvoiceId === invoice.id ? `invoice-detail-${invoice.id}` : undefined} onClick={() => setExpandedInvoiceId(expandedInvoiceId === invoice.id ? null : invoice.id)}>{invoice.balance > 0 ? "입금 기록" : "내역 보기"}<FiChevronDown aria-hidden="true" /></button>
                       </div>
-                      <div className="invoice-progress">
-                        <span
-                          style={{
-                            width: `${Math.min(100, (100 * invoice.paid_amount) / invoice.amount)}%`,
-                          }}
-                        />
-                      </div>
-                      <div className="invoice-disclosures">
+                      {expandedInvoiceId === invoice.id && <div className="invoice-item-expanded" id={`invoice-detail-${invoice.id}`}>
+                        <div className="invoice-expanded-summary">
+                          <span>청구 처리 <strong>{won(invoice.paid_amount)} / {won(invoice.amount)}</strong></span>
+                          <span>실수령 <strong>{won(invoice.net_received_amount)}</strong></span>
+                          {invoice.withholding_amount > 0 && <span>공제 <strong>{won(invoice.withholding_amount)}</strong></span>}
+                        </div>
+                        <div className="invoice-progress"><span style={{ width: `${Math.min(100, (100 * invoice.paid_amount) / invoice.amount)}%` }} /></div>
+                        <div className="invoice-disclosures">
                         {!!invoice.payments.length && (
                           <details>
                             <summary>
@@ -992,17 +1062,15 @@ export default function AdminView({
                           </details>
                         )}
                         {invoice.balance > 0 && (
-                          <details className="record-payment">
-                            <summary>
-                              <FiPlus /> 입금 기록
-                            </summary>
+                          <div className="record-payment">
+                            <strong>입금 기록</strong>
                             <form
                               onSubmit={(event) => {
                                 event.preventDefault();
                                 void savePayment(invoice, event.currentTarget);
                               }}
                             >
-                              <PaymentAmountFields max={invoice.balance} />
+                              <PaymentAmountFields key={`${invoice.id}:${invoice.paid_amount}`} max={invoice.balance} />
                               <label>
                                 입금일
                                 <input
@@ -1021,12 +1089,14 @@ export default function AdminView({
                                 기록 저장
                               </Button>
                             </form>
-                          </details>
+                          </div>
                         )}
+                        </div>
                       </div>
+                    }
                     </article>
                   ))}
-                </div>
+                </div> : <div className="payment-filter-empty">{paymentQuery ? "검색 결과가 없어요." : paymentFilter === "입금 완료" ? "완료된 입금이 없어요." : "받을 금액이 없어요."}</div>}
               </>
             );
           })()
