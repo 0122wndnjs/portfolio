@@ -5,6 +5,7 @@ import { startRegistration } from "@simplewebauthn/browser";
 import { FiDownload, FiPlus } from "react-icons/fi";
 import { api } from "@/components/admin/api";
 import { Button, Field, PageTitle, Toast, dateLabel } from "@/components/admin/ui";
+import { QUOTE_NOTE_LIMIT } from "@/lib/admin/quote-terms";
 
 export default function SettingsView({
   onError,
@@ -39,6 +40,9 @@ export default function SettingsView({
   } | null>(null);
   const [busy, setBusy] = useState(false),
     [toast, setToast] = useState("");
+  const [quoteNote, setQuoteNote] = useState("");
+  const [quoteNoteSaving, setQuoteNoteSaving] = useState(false);
+  const [quoteNoteLoaded, setQuoteNoteLoaded] = useState(false);
   const refresh = useCallback(async () => {
     try {
       setSettings(await api("/api/admin/settings"));
@@ -50,6 +54,13 @@ export default function SettingsView({
     const timer = setTimeout(() => void refresh(), 0);
     return () => clearTimeout(timer);
   }, [refresh]);
+  useEffect(() => {
+    let active = true;
+    void api<{ note: string }>("/api/admin/settings/quote-note")
+      .then((result) => { if (active) { setQuoteNote(result.note); setQuoteNoteLoaded(true); } })
+      .catch((e: unknown) => { if (active) onError(e instanceof Error ? e.message : "견적서 기본 문구를 불러오지 못했습니다."); });
+    return () => { active = false; };
+  }, [onError]);
   const flash = (value: string) => {
     setToast(value);
     setTimeout(() => setToast(""), 2500);
@@ -130,13 +141,27 @@ export default function SettingsView({
       onError(e instanceof Error ? e.message : "저장 실패");
     }
   }
+  async function saveQuoteNote(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setQuoteNoteSaving(true);
+    try {
+      await api("/api/admin/settings/quote-note", "POST", { note: quoteNote });
+      flash("견적서 기본 문구를 저장했어요. 새 견적서부터 적용됩니다.");
+    } catch (e) {
+      onError(e instanceof Error ? e.message : "기본 문구 저장 실패");
+    } finally {
+      setQuoteNoteSaving(false);
+    }
+  }
   return (
     <>
-      <PageTitle
-        eyebrow="PREFERENCES"
-        title="설정"
-        description="로그인 수단과 텔레그램 알림을 관리하세요."
-      />
+      <header className="admin-section-heading admin-section-heading-standalone">
+        <PageTitle
+          eyebrow="PREFERENCES"
+          title="설정"
+          description="로그인 수단과 텔레그램 알림을 관리하세요."
+        />
+      </header>
       {alert}
       <div className="grid gap-5 xl:grid-cols-2">
         <section className="rounded-2xl border border-black/[0.055] bg-white p-5 sm:p-6">
@@ -327,6 +352,25 @@ export default function SettingsView({
           <FiDownload /> 내보내기
         </Button>
       </section>
+      <form onSubmit={saveQuoteNote} className="settings-quote-note">
+        <div className="settings-quote-note-heading">
+          <div>
+            <h2>견적서 기본 문구</h2>
+            <p>새 견적서에 복사됩니다. 이미 저장한 견적서의 문구는 바뀌지 않습니다.</p>
+          </div>
+          <Button type="submit" disabled={quoteNoteSaving || !quoteNoteLoaded}>{quoteNoteSaving ? "저장 중…" : "기본 문구 저장"}</Button>
+        </div>
+        <textarea
+          aria-label="견적서 기본 안내 및 조건"
+          value={quoteNote}
+          onChange={(event) => setQuoteNote(event.target.value)}
+          maxLength={QUOTE_NOTE_LIMIT}
+          rows={7}
+          disabled={!quoteNoteLoaded}
+          placeholder="새 견적서에 사용할 안내 및 조건을 입력하세요."
+        />
+        <p>일반적인 안내 예시입니다. 거래마다 금액·검수·권리 조건을 확인해 수정하세요.</p>
+      </form>
       <form
         onSubmit={savePreferences}
         className="mt-5 rounded-2xl border border-black/[0.055] bg-white p-5 sm:p-6"

@@ -17,24 +17,26 @@ type Project = { id: string; name: string; client: string };
 type Draft = Omit<Quote, "id" | "project_name" | "number" | "imported_item_count" | "updated_at">;
 const won = (value: number) => new Intl.NumberFormat("ko-KR").format(value) + "원";
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
-const newDraft = (project?: Project, sender = ""): Draft => ({
+const newDraft = (project?: Project, sender = "", note = ""): Draft => ({
   project_id: project?.id || "", title: project ? `${project.name} 견적서` : "",
   sender, recipient: project?.client || "", issue_date: today(), valid_until: null,
-  status: "초안", items: [{ name: "", quantity: 1, unit_price: 0 }], tax_amount: 0, note: "",
+  status: "초안", items: [{ name: "", quantity: 1, unit_price: 0 }], tax_amount: 0, note,
 });
 async function fetchQuoteData() {
-  const [quotes, active, finished, cancelled] = await Promise.all([
+  const [quotes, active, finished, cancelled, defaults] = await Promise.all([
     api<Quote[]>("/api/admin/quotes"),
     api<Project[]>("/api/admin/projects?kind=외주"),
     api<Project[]>("/api/admin/projects?status=완료&kind=외주"),
     api<Project[]>("/api/admin/projects?status=취소&kind=외주"),
+    api<{ note: string }>("/api/admin/settings/quote-note"),
   ]);
-  return { quotes, projects: [...active, ...finished, ...cancelled] };
+  return { quotes, projects: [...active, ...finished, ...cancelled], defaultNote: defaults.note };
 }
 
 export default function QuotesPage({ initialProjectId = "", initialQuoteId = "" }: { initialProjectId?: string; initialQuoteId?: string }) {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [defaultNote, setDefaultNote] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [preview, setPreview] = useState<Quote | null>(null);
@@ -50,6 +52,7 @@ export default function QuotesPage({ initialProjectId = "", initialQuoteId = "" 
       const data = await fetchQuoteData();
       setQuotes(data.quotes);
       setProjects(data.projects);
+      setDefaultNote(data.defaultNote);
       setError("");
     } catch (e) { setError(e instanceof Error ? e.message : "견적서를 불러오지 못했어요."); }
     finally { setLoading(false); }
@@ -60,6 +63,7 @@ export default function QuotesPage({ initialProjectId = "", initialQuoteId = "" 
       if (!active) return;
       setQuotes(data.quotes);
       setProjects(data.projects);
+      setDefaultNote(data.defaultNote);
       if (initialQuoteId) setPreview(data.quotes.find((quote) => quote.id === initialQuoteId) || null);
       setLoading(false);
     }).catch((e: unknown) => {
@@ -72,7 +76,7 @@ export default function QuotesPage({ initialProjectId = "", initialQuoteId = "" 
 
   const openNew = () => {
     const project = projects.find((item) => item.id === filter) || projects[0];
-    setDraft(newDraft(project, quotes[0]?.sender || ""));
+    setDraft(newDraft(project, quotes[0]?.sender || "", defaultNote));
     setEditingId(null);
     setItemsLocked(false);
     setError("");
@@ -162,7 +166,7 @@ export default function QuotesPage({ initialProjectId = "", initialQuoteId = "" 
             <strong>{won(item.quantity * item.unit_price)}</strong>
             <button type="button" onClick={() => setDraft({ ...draft, items: draft.items.filter((_, itemIndex) => itemIndex !== index) })} disabled={itemsLocked || draft.items.length === 1} aria-label={`${index + 1}번 항목 삭제`}><FiX /></button>
           </div>)}</div>
-          <div className="quote-form-grid quote-form-bottom"><label>부가세 (직접 입력)<input type="number" min={0} value={draft.tax_amount} onChange={(event) => setDraft({ ...draft, tax_amount: Number(event.target.value) })} /></label><div className="quote-totals"><span>공급가액 {won(subtotal)}</span><span>부가세 {won(draft.tax_amount)}</span><strong>합계 {won(subtotal + draft.tax_amount)}</strong></div><label className="quote-span">안내 / 조건<textarea maxLength={5000} rows={3} value={draft.note} onChange={(event) => setDraft({ ...draft, note: event.target.value })} placeholder="작업 범위, 결제 조건, 유효기간 안내 등" /></label></div>
+          <div className="quote-form-grid quote-form-bottom"><label>부가세 (직접 입력)<input type="number" min={0} value={draft.tax_amount} onChange={(event) => setDraft({ ...draft, tax_amount: Number(event.target.value) })} /></label><div className="quote-totals"><span>공급가액 {won(subtotal)}</span><span>부가세 {won(draft.tax_amount)}</span><strong>합계 {won(subtotal + draft.tax_amount)}</strong></div><label className="quote-span">안내 / 조건 · 견적별 수정 가능<textarea maxLength={5000} rows={6} value={draft.note} onChange={(event) => setDraft({ ...draft, note: event.target.value })} placeholder="작업 범위, 결제 조건, 유효기간 안내 등" /></label></div>
           <div className="quote-editor-footer"><button type="button" className="board-secondary" onClick={() => setDraft(null)}>취소</button><button type="submit" className="board-primary" disabled={saving}>{saving ? "저장 중…" : "견적서 저장"}</button></div>
         </form>
       </section></div>}

@@ -6,6 +6,7 @@ import { db } from "@/lib/admin/db";
 import { HttpError, json } from "@/lib/admin/http";
 import { normalizePreferences } from "@/lib/admin/reminders";
 import { getPreferences, getSetting, sendTelegram, setSetting } from "@/lib/admin/settings";
+import { DEFAULT_QUOTE_NOTE, QUOTE_NOTE_LIMIT } from "@/lib/admin/quote-terms";
 import { addDays, seoulDate } from "@/lib/admin/validation";
 import { invoicesWithPayments } from "./billing";
 import { type Route, type Row, now } from "./common";
@@ -126,6 +127,24 @@ export const workspaceRoutes: Route[] = [
       if (!body.preferences || typeof body.preferences !== "object") throw new HttpError(400, "설정 데이터가 없습니다.");
       await setSetting("preferences", JSON.stringify(normalizePreferences(body.preferences)));
       await audit("settings.updated");
+      return json({ ok: true });
+    },
+  },
+  {
+    method: "GET",
+    path: "settings/quote-note",
+    async handler() {
+      return json({ note: await getSetting("quote_default_note", DEFAULT_QUOTE_NOTE) });
+    },
+  },
+  {
+    method: "POST",
+    path: "settings/quote-note",
+    async handler({ body }) {
+      if (typeof body.note !== "string" || body.note.length > QUOTE_NOTE_LIMIT)
+        throw new HttpError(400, `기본 안내 문구는 ${QUOTE_NOTE_LIMIT.toLocaleString("ko-KR")}자 이내여야 합니다.`);
+      await setSetting("quote_default_note", body.note.trim());
+      await audit("quote.default_note.updated");
       return json({ ok: true });
     },
   },
