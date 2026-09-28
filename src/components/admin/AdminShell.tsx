@@ -21,7 +21,7 @@ import {
 import RecoveryManager from "@/components/admin/RecoveryManager";
 import UndoTask from "@/components/admin/UndoTask";
 import { projectColor } from "@/lib/admin/project-colors";
-import type { ProjectKind } from "@/lib/admin/project-kinds";
+import { matchesProjectKind, PROJECT_KINDS, type ProjectKind } from "@/lib/admin/project-kinds";
 import "./workspace.css";
 import "./workspace-dark.css";
 
@@ -130,37 +130,39 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        {(["외주", "회사"] as const).map((kind) => <div className="sidebar-projects" key={kind}>
-          <div className="sidebar-section-label">
-            <span>{kind === "회사" ? "회사 업무" : "외주 프로젝트"}</span>
-            <Link href={`/admin/projects?kind=${encodeURIComponent(kind)}&new=1`} aria-label={`${kind} 프로젝트 만들기`} onClick={() => setOpen(false)}>+</Link>
-          </div>
-          {projects.filter((project) => kind === "회사" ? project.kind !== "외주" : project.kind === kind).map((project) => (
-            <Link
-              key={project.id}
-              href={`/admin/projects/${project.id}`}
-              onClick={() => setOpen(false)}
-              aria-current={
-                pathname === `/admin/projects/${project.id}`
-                  ? "page"
-                  : undefined
-              }
-            >
-              <span
-                className={`project-dot ${project.status === "보류" ? "is-paused" : ""}`}
-                style={project.status === "보류" ? undefined : { backgroundColor: projectColor(project.id).solid }}
-              />
-              <span className="truncate">{project.name}</span>
-            </Link>
-          ))}
-          {!projects.some((project) => kind === "회사" ? project.kind !== "외주" : project.kind === kind) && (
-            <p>
-              {projectError
-                ? "목록을 불러오지 못했어요."
-                : kind === "회사" ? "회사 프로젝트를 추가해보세요." : "프로젝트를 만들면 여기에 표시돼요."}
-            </p>
-          )}
-        </div>)}
+        <div className="sidebar-project-list">
+          {PROJECT_KINDS.map((kind) => <div className="sidebar-projects" key={kind}>
+            <div className="sidebar-section-label">
+              <span>{kind === "회사" ? "회사 업무" : kind === "개인" ? "개인 프로젝트" : "외주 프로젝트"}</span>
+              <Link href={`/admin/projects?kind=${encodeURIComponent(kind)}&new=1`} aria-label={`${kind} 프로젝트 만들기`} onClick={() => setOpen(false)}>+</Link>
+            </div>
+            {projects.filter((project) => matchesProjectKind(project.kind, kind)).map((project) => (
+              <Link
+                key={project.id}
+                href={`/admin/projects/${project.id}`}
+                onClick={() => setOpen(false)}
+                aria-current={
+                  pathname === `/admin/projects/${project.id}`
+                    ? "page"
+                    : undefined
+                }
+              >
+                <span
+                  className={`project-dot ${project.status === "보류" ? "is-paused" : ""}`}
+                  style={project.status === "보류" ? undefined : { backgroundColor: projectColor(project.id).solid }}
+                />
+                <span className="truncate">{project.name}</span>
+              </Link>
+            ))}
+            {!projects.some((project) => matchesProjectKind(project.kind, kind)) && (
+              <p>
+                {projectError
+                  ? "목록을 불러오지 못했어요."
+                  : kind === "회사" ? "회사 프로젝트를 추가해보세요." : "프로젝트를 만들면 여기에 표시돼요."}
+              </p>
+            )}
+          </div>)}
+        </div>
         <button
           onClick={logout}
           className="mt-auto flex items-center gap-3 rounded-lg px-3 py-3 text-left text-[13px] font-medium text-[#777783] hover:bg-white"

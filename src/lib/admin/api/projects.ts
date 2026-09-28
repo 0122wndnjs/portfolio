@@ -97,12 +97,12 @@ export const projectRoutes: Route[] = [
     path: "projects",
     async handler({ body }) {
       const name = String(body.name || "").trim();
-      const client = String(body.client || "").trim();
       const kind = String(body.kind || "외주");
+      const client = kind === "개인" ? "개인" : String(body.client || "").trim();
       const status = String(body.status || "준비 중");
       if (!isProjectKind(kind)) throw new HttpError(400, "업무 유형이 올바르지 않습니다.");
       if (!name || name.length > 100 || !client || client.length > 80)
-        throw new HttpError(400, "프로젝트명(1~100자)과 고객명(1~80자)을 입력하세요.");
+        throw new HttpError(400, kind === "개인" ? "프로젝트명은 1~100자로 입력하세요." : "프로젝트명(1~100자)과 고객/조직명(1~80자)을 입력하세요.");
       if (!isOneOf(PROJECT_STATUSES, status)) throw new HttpError(400, "프로젝트 상태가 올바르지 않습니다.");
       if (!validDate(body.start_date) || !validDate(body.due_date))
         throw new HttpError(400, "프로젝트 날짜 형식이 올바르지 않습니다.");
@@ -164,7 +164,7 @@ export const projectRoutes: Route[] = [
       const expected = expectedVersion(body);
       assertFresh(current.updated_at, expected);
       if (body.contract_amount !== undefined && isInternalProjectKind(current.kind))
-        throw new HttpError(400, "회사 업무에는 계약 금액을 입력할 수 없습니다.");
+        throw new HttpError(400, "외주 프로젝트에만 계약 금액을 입력할 수 있습니다.");
       if (body.name !== undefined && (!String(body.name).trim() || String(body.name).trim().length > 100))
         throw new HttpError(400, "프로젝트명은 1~100자로 입력하세요.");
       if (body.client !== undefined && (!String(body.client).trim() || String(body.client).trim().length > 80))

@@ -363,7 +363,7 @@ export default function AdminProject({ projectId }: { projectId: string }) {
           <div className="flex flex-wrap items-center gap-2">
             <span className="project-identity-dot" />
             <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#767676]">
-              {PROJECT_KIND_LABELS[project.kind]} · {project.client}
+              {project.kind === "개인" ? "개인 프로젝트" : `${PROJECT_KIND_LABELS[project.kind]} · ${project.client}`}
             </p>
             <span className="h-1 w-1 rounded-full bg-gray-300" />
             <select
@@ -1102,9 +1102,9 @@ function ProjectOverview({
       <Input name="next_action" label="다음 행동" value={project.next_action || ""} />
       <Input name="waiting_reason" label="대기 사유 · 누구의 무엇을 기다리는지" value={project.waiting_reason || ""} />
       <Input name="next_check_date" label="다음 확인일" type="date" value={project.next_check_date || ""} />
-      <Input name="client" label={isInternalProjectKind(project.kind) ? "팀 / 조직" : "고객명"} value={project.client} required />
-      <Input name="contact" label="연락처" value={project.contact} />
-      <Input name="email" label="이메일" value={project.email} />
+      {project.kind !== "개인" && <Input name="client" label={isInternalProjectKind(project.kind) ? "팀 / 조직" : "고객명"} value={project.client} required />}
+      {project.kind !== "개인" && <Input name="contact" label="연락처" value={project.contact} />}
+      {project.kind !== "개인" && <Input name="email" label="이메일" value={project.email} />}
       <Input
         name="start_date"
         label="시작일"

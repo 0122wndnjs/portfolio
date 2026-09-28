@@ -33,7 +33,7 @@ async function quoteInput(body: Body) {
     | { kind: string }
     | undefined;
   if (!project) throw new HttpError(400, "프로젝트를 선택하세요.");
-  if (isInternalProjectKind(project.kind)) throw new HttpError(400, "회사 업무에는 견적서를 만들 수 없습니다.");
+  if (isInternalProjectKind(project.kind)) throw new HttpError(400, "외주 프로젝트에만 견적서를 만들 수 있습니다.");
   if (!title || title.length > 120 || sender.length > 120 || !recipient || recipient.length > 120)
     throw new HttpError(400, "제목과 받는 사람을 입력하세요. 각 항목은 120자 이내여야 합니다.");
   if (!issueDate || !validDate(issueDate) || !validDate(validUntil) || (validUntil && validUntil < issueDate))

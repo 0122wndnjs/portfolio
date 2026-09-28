@@ -101,6 +101,7 @@
 .project-tile-badges { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; }
 .project-kind-badge { border-radius: 5px; padding: 5px 7px; background: #f0edff; color: #5035ba; font-size: 11px; font-weight: 600; }
 .project-kind-badge.is-company { background: #eaf3ff; color: #245caa; }
+.project-kind-badge.is-personal { background: #e6f6ee; color: #147653; }
 .project-kind-filter { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 3px; border-radius: 7px; background: #f2f0f9; padding: 3px; }
 .project-kind-filter button { min-height: 34px !important; border-radius: 5px; padding: 0 10px; color: #686777; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .project-kind-filter button[aria-pressed="true"] { background: white; color: var(--workspace-accent-strong); box-shadow: 0 1px 4px #34276916; }
@@ -675,12 +676,9 @@
   }
 }
 
-.sidebar-projects {
-  margin-top: 28px;
-  flex: 1;
-  min-height: 80px;
-  overflow-y: auto;
-}
+.sidebar-project-list { flex: 1; min-height: 0; overflow-y: auto; margin-top: 16px; }
+.sidebar-projects { margin-top: 16px; }
+.sidebar-projects:first-child { margin-top: 0; }
 .sidebar-section-label {
   display: flex;
   align-items: center;

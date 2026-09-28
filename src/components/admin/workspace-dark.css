@@ -243,6 +243,7 @@
 .admin-workspace :is(.task-priority, .task-priority-high) { background: #a63c3c; color: #fff; }
 .admin-workspace .project-kind-badge { background: #362e47; color: #d5b7ff; }
 .admin-workspace .project-kind-badge.is-company { background: #243247; color: #9fc6ff; }
+.admin-workspace .project-kind-badge.is-personal { background: #203c31; color: #86d9b0; }
 .admin-workspace .project-tile-mark,
 .admin-workspace .meeting-card-icon {
   background: color-mix(in srgb, var(--project-solid, var(--workspace-accent)) 20%, var(--workspace-surface));

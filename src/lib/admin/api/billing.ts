@@ -57,7 +57,7 @@ export const billingRoutes: Route[] = [
         | undefined;
       if (!project) throw new HttpError(404, "프로젝트를 찾을 수 없습니다.");
       if (isInternalProjectKind(project.kind))
-        throw new HttpError(400, "회사 업무에는 입금 항목을 만들 수 없습니다.");
+        throw new HttpError(400, "외주 프로젝트에만 입금 항목을 만들 수 있습니다.");
       const title = String(body.title || "").trim();
       const amount = Number(body.amount);
       if (

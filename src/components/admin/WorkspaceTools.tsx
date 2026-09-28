@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import { seoulDate, addDays } from "@/lib/admin/validation";
+import { matchesProjectKind } from "@/lib/admin/project-kinds";
 
 type Result = { id: string; type: string; project_id: string; title: string; excerpt: string };
 type Trash = { id: string; entity: string; title: string; deleted_at: string };
@@ -38,7 +39,7 @@ export default function WorkspaceTools() {
     api<Trash[]>("/api/admin/trash").then((rows) => { if (active) setTrash(rows); }).catch((e: Error) => { if (active) setError(e.message); });
     return () => { active = false; };
   }, [tab]);
-  const matches = (value: string) => !kind || (kind === "회사" ? value !== "외주" : value === "외주");
+  const matches = (value: string) => matchesProjectKind(value, kind);
   const reportText = report ? [
     `주간 업무 보고 · ${report.start} ~ ${report.end}`,
     "", "완료한 업무",
@@ -76,7 +77,7 @@ export default function WorkspaceTools() {
     {tab === "report" && <>
       <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); void run(async () => setReport(await api<Report>(`/api/admin/weekly-report?start=${start}`))); }}>
         <label className="text-xs">시작일 · 7일간<input aria-label="보고 시작일" required type="date" className={fieldClass + " ml-2"} value={start} onChange={(e) => { setStart(e.target.value); setReport(null); }} /></label>
-        <select aria-label="보고 업무 유형" className={fieldClass} value={kind} onChange={(e) => setKind(e.target.value)}><option value="회사">회사 업무</option><option value="외주">외주</option><option value="">전체</option></select>
+        <select aria-label="보고 업무 유형" className={fieldClass} value={kind} onChange={(e) => setKind(e.target.value)}><option value="회사">회사 업무</option><option value="외주">외주</option><option value="개인">개인</option><option value="">전체</option></select>
         <button className={buttonClass} disabled={busy}>보고 만들기</button>
       </form>
       <p className="text-xs text-gray-500">완료 작업·미팅은 선택한 기간 기준. 다음 행동·대기 사항은 현재 상태입니다.</p>

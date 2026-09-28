@@ -604,7 +604,7 @@ export default function AdminView({
               </select>
             </label>
             <Field name="name" label="프로젝트명" required />
-            <Field name="client" label={newProjectKind === "외주" ? "고객명" : "팀 / 조직"} required />
+            {newProjectKind !== "개인" && <Field name="client" label={newProjectKind === "외주" ? "고객명" : "팀 / 조직"} required />}
             <Field name="due_date" label="마감일" type="date" />
             {newProjectKind === "외주" && <Field
               name="contract_amount"
@@ -657,9 +657,9 @@ export default function AdminView({
                           <span className="project-index-color" aria-hidden="true" />
                           <div className="project-index-name">
                             <strong title={project.name}>{project.name}</strong>
-                            <span title={project.client}>{project.client}</span>
+                            <span title={project.kind === "개인" ? "개인 프로젝트" : project.client}>{project.kind === "개인" ? "개인 프로젝트" : project.client}</span>
                           </div>
-                          <span className={`project-kind-badge ${project.kind !== "외주" ? "is-company" : ""}`}>{PROJECT_KIND_LABELS[project.kind]}</span>
+                          <span className={`project-kind-badge ${project.kind === "회사" || project.kind === "회사 마케팅" ? "is-company" : project.kind === "개인" ? "is-personal" : ""}`}>{PROJECT_KIND_LABELS[project.kind]}</span>
                         </div>
                         <div className="project-index-focus">
                           <strong className={project.next_action ? "" : "is-empty"} title={project.next_action || undefined}>
