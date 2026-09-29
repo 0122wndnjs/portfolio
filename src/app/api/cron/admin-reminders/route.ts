@@ -4,11 +4,13 @@ import { safeEqual } from "@/lib/admin/auth";
 import { db } from "@/lib/admin/db";
 import {
   type ReminderInvoice,
+  type ReminderMeeting,
+  type ReminderProject,
   type ReminderTask,
   buildReminders,
 } from "@/lib/admin/reminders";
 import { getPreferences, getSetting, sendTelegram } from "@/lib/admin/settings";
-import { seoulDate, seoulTime } from "@/lib/admin/validation";
+import { addDays, seoulDate, seoulTime } from "@/lib/admin/validation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,26 +34,47 @@ async function run(forceDigest: boolean) {
   const preferences = await getPreferences();
   if (!preferences.notifications)
     return NextResponse.json({ sent: 0, skipped: "notifications disabled" });
-  const [tasks, invoices] = await Promise.all([
+  const today = seoulDate();
+  const time = seoulTime();
+  const yesterday = addDays(today, -1);
+  const yesterdayStart = new Date(`${yesterday}T00:00:00+09:00`).toISOString();
+  const todayStart = new Date(`${today}T00:00:00+09:00`).toISOString();
+  const reportDue = forceDigest || time >= preferences.digestTime;
+  const [tasks, invoices, completedTasks, meetings, projects] = await Promise.all([
     db
       .prepare(
-        `SELECT t.id,t.title,t.status,t.due_date,t.waiting_since,p.name AS project_name FROM tasks t JOIN projects p ON p.id=t.project_id WHERE t.archived=0 AND t.status<>'완료' AND p.status IN ('준비 중','진행 중')`,
+        `SELECT t.id,t.project_id,t.title,t.status,t.due_date,t.waiting_since,p.name AS project_name FROM tasks t JOIN projects p ON p.id=t.project_id WHERE t.archived=0 AND t.status<>'완료' AND p.status IN ('준비 중','진행 중')`,
       )
       .all() as Promise<ReminderTask[]>,
     db
       .prepare(
-        `SELECT i.id,i.title,i.due_date,p.name AS project_name,i.amount,(SELECT COALESCE(SUM(amount),0) FROM payments WHERE invoice_id=i.id) AS paid FROM invoices i JOIN projects p ON p.id=i.project_id`,
+        `SELECT i.id,i.project_id,i.title,i.due_date,p.name AS project_name,i.amount,(SELECT COALESCE(SUM(amount),0) FROM payments WHERE invoice_id=i.id) AS paid FROM invoices i JOIN projects p ON p.id=i.project_id`,
       )
       .all() as Promise<ReminderInvoice[]>,
+    reportDue ? db.prepare(
+      `SELECT t.id,t.project_id,t.title,t.status,t.due_date,t.waiting_since,p.name AS project_name FROM tasks t JOIN projects p ON p.id=t.project_id WHERE t.archived=0 AND t.status='완료' AND t.completed_at>=? AND t.completed_at<? ORDER BY t.completed_at DESC`,
+    ).all(yesterdayStart, todayStart) as Promise<ReminderTask[]> : Promise.resolve([]),
+    reportDue ? db.prepare(
+      `SELECT m.id,m.project_id,m.title,m.start_time,m.agenda,p.name AS project_name FROM meetings m JOIN projects p ON p.id=m.project_id WHERE m.meeting_date=? ORDER BY m.start_time,m.title`,
+    ).all(today) as Promise<ReminderMeeting[]> : Promise.resolve([]),
+    reportDue ? db.prepare(
+      `SELECT id,name,due_date,next_action,next_check_date FROM projects WHERE status IN ('준비 중','진행 중','보류') AND (due_date<=? OR next_check_date<=?) ORDER BY COALESCE(next_check_date,due_date),name`,
+    ).all(addDays(today, 1), today) as Promise<ReminderProject[]> : Promise.resolve([]),
   ]);
+  const adminUrl = process.env.ADMIN_ORIGIN?.replace(/\/$/, "");
   const messages = buildReminders({
     tasks,
     invoices,
+    completedTasks,
+    meetings,
+    projects,
     preferences,
-    today: seoulDate(),
-    time: seoulTime(),
+    today,
+    time,
     forceDigest,
+    adminUrl,
   });
+  const deliver = forceDigest ? messages.filter((item) => item.key.startsWith("digest:")) : messages;
 
   const createClaim = db.prepare(
     "INSERT INTO notification_log(id,dedupe_key,message,sent_at,result) VALUES(?,?,?,?, 'sending') ON CONFLICT (dedupe_key) DO NOTHING",
@@ -62,9 +85,8 @@ async function run(forceDigest: boolean) {
   const finishClaim = db.prepare(
     "UPDATE notification_log SET sent_at=?,result=? WHERE dedupe_key=? AND result='sending'",
   );
-  const adminUrl = process.env.ADMIN_ORIGIN?.replace(/\/$/, "");
   let sent = 0;
-  for (const item of messages) {
+  for (const item of deliver) {
     const claimedAt = new Date().toISOString();
     const claimed =
       (await createClaim.run(randomBytes(16).toString("hex"), item.key, item.text, claimedAt)).changes === 1;
@@ -87,7 +109,7 @@ async function run(forceDigest: boolean) {
     await finishClaim.run(new Date().toISOString(), ok ? "sent" : "failed", item.key);
     if (ok) sent++;
   }
-  return NextResponse.json({ sent, total: messages.length });
+  return NextResponse.json({ sent, total: deliver.length });
 }
 
 export async function GET(request: Request) {

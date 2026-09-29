@@ -10,6 +10,7 @@ import {
 
 const task = (overrides: Partial<ReminderTask>): ReminderTask => ({
   id: "t1",
+  project_id: "p1",
   title: "메인 화면",
   status: "진행 중",
   due_date: null,
@@ -19,6 +20,7 @@ const task = (overrides: Partial<ReminderTask>): ReminderTask => ({
 });
 const invoice = (overrides: Partial<ReminderInvoice>): ReminderInvoice => ({
   id: "i1",
+  project_id: "p1",
   title: "잔금",
   due_date: null,
   project_name: "A사",
@@ -98,7 +100,37 @@ describe("buildReminders", () => {
     expect(keys(buildReminders({ ...input, forceDigest: true }))).toContain("digest:2026-09-25");
   });
 
-  it("알림 대상이 없으면 요약도 보내지 않는다", () => {
-    expect(buildReminders({ ...base, time: "10:00", tasks: [], invoices: [] })).toEqual([]);
+  it("아침 업무 보고에 오늘 할 일, 확인 대기, 어제 완료와 다가오는 일정을 구체적으로 담는다", () => {
+    const result = buildReminders({
+      ...base,
+      time: "09:00",
+      adminUrl: "https://joowonkim.me",
+      tasks: [
+        task({ id: "due", title: "메인 화면 수정", due_date: "2026-09-25" }),
+        task({ id: "waiting", title: "시안 피드백", status: "확인 대기", waiting_since: "2026-09-20T00:00:00.000Z" }),
+        task({ id: "tomorrow", title: "배포", due_date: "2026-09-26" }),
+      ],
+      completedTasks: [task({ id: "done", title: "로그인 화면", status: "완료" })],
+      meetings: [{ id: "m1", project_id: "p1", project_name: "A사", title: "킥오프", start_time: "14:00", agenda: "요구사항 확인" }],
+      projects: [{ id: "p1", name: "A사", due_date: "2026-09-26", next_action: "고객에게 연락", next_check_date: "2026-09-25" }],
+      invoices: [invoice({ id: "pay", title: "잔금", due_date: "2026-09-26", amount: 1000, paid: 200 })],
+    });
+    const report = result.find((item) => item.key === "digest:2026-09-25")?.text || "";
+    expect(report).toContain("아침 업무 보고");
+    expect(report).toContain("14:00 [A사] 킥오프");
+    expect(report).toContain("메인 화면 수정 — 오늘 마감");
+    expect(report).toContain("시안 피드백 — 5일째 대기");
+    expect(report).toContain("로그인 화면 완료");
+    expect(report).toContain("고객에게 연락");
+    expect(report).toContain("프로젝트 — 내일 마감");
+    expect(report).toContain("잔액 800원");
+    expect(report).toContain("https://joowonkim.me/admin/projects/p1?task=due");
+    expect(report).not.toContain("오늘 일정");
+  });
+
+  it("알림 대상이 없는 날도 하루 한 번 빈 업무 보고를 만든다", () => {
+    expect(buildReminders({ ...base, time: "08:00", tasks: [], invoices: [] })).toEqual([]);
+    const result = buildReminders({ ...base, time: "10:00", tasks: [], invoices: [] });
+    expect(result).toEqual([{ key: "digest:2026-09-25", text: expect.stringContaining("오늘 확인할 일정이 없어요") }]);
   });
 });

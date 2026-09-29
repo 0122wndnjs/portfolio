@@ -377,8 +377,8 @@ export default function SettingsView({
       >
         <h2 className="text-sm font-semibold">알림 설정</h2>
         <p className="mt-1 text-xs text-[#767676]">
-          매일 오전 9시대(한국 시간)에 자동으로 확인해 알림과 요약을 보냅니다.
-          외부 cron을 15분마다 연결하면 설정한 요약 시각 이후에 보냅니다.
+          매일 오전 9시대(한국 시간)에 아침 업무 보고를 한 통 보냅니다.
+          외부 cron을 15분마다 연결하면 설정한 보고 시각 이후에 보내고, 개별 마감·입금 알림도 받을 수 있습니다.
         </p>
         <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <label className="flex items-center gap-2 text-xs">
@@ -415,7 +415,7 @@ export default function SettingsView({
           />
           <Field
             name="digestTime"
-            label="일일 요약 시간"
+            label="아침 업무 보고 시간"
             type="time"
             value={settings?.preferences.digestTime || "09:00"}
           />
