@@ -25,12 +25,12 @@ const columns = ["할 일", "진행 중", "확인 대기", "완료"];
 
 const request = <T,>(url: string, body?: unknown) => api<T>(url, body === undefined ? "GET" : "POST", body);
 
-export default function WorkBoard() {
+export default function WorkBoard({ initialView = "board", title = "내 작업 보드" }: { initialView?: "board" | "calendar"; title?: string } = {}) {
   const [tasks, setTasks] = useState<BoardTask[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
-  const [view, setView] = useState<"board" | "calendar">("board");
+  const [view, setView] = useState<"board" | "calendar">(initialView);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
@@ -175,7 +175,7 @@ export default function WorkBoard() {
       <div className="workbench-heading">
         <div>
           <h1>
-            내 작업 보드{" "}
+            {title}{" "}
             <span>{tasks.filter((task) => task.status !== "완료" && projects.some((project) => project.id === task.project_id && matchesProjectKind(project.kind, kind))).length}</span>
           </h1>
         </div>

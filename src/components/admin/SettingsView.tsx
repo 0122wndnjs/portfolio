@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { startRegistration } from "@simplewebauthn/browser";
 import { FiDownload, FiPlus } from "react-icons/fi";
+import RecoveryManager from "@/components/admin/RecoveryManager";
 import { api } from "@/components/admin/api";
 import { Button, Field, PageTitle, Toast, dateLabel } from "@/components/admin/ui";
 import { QUOTE_NOTE_LIMIT } from "@/lib/admin/quote-terms";
@@ -30,6 +31,7 @@ export default function SettingsView({
       digestTime: string;
       deadlineAlerts: boolean;
       paymentAlerts: boolean;
+      weeklyReport?: boolean;
     };
     logs: Array<{
       id: string;
@@ -132,6 +134,7 @@ export default function SettingsView({
           notifications: fd.get("notifications") === "on",
           deadlineAlerts: fd.get("deadlineAlerts") === "on",
           paymentAlerts: fd.get("paymentAlerts") === "on",
+          weeklyReport: fd.get("weeklyReport") === "on",
           overdueDays: fd.get("overdueDays"),
           digestTime: fd.get("digestTime"),
         },
@@ -162,12 +165,19 @@ export default function SettingsView({
           description="로그인 수단과 텔레그램 알림을 관리하세요."
         />
       </header>
+      <div className="rd-settings">
+      <nav className="rd-settings-nav" aria-label="설정 항목">
+        {[["settings-passkey", "보안·패스키"], ["settings-recovery", "복구 코드"], ["settings-telegram", "텔레그램"], ["settings-alerts", "알림"], ["settings-quote", "견적 기본값"], ["settings-backup", "백업"]].map(([id, label]) => (
+          <a key={id} href={`#${id}`}>{label}</a>
+        ))}
+      </nav>
+      <div className="rd-settings-body">
       {alert}
       <div className="grid gap-5 xl:grid-cols-2">
         <section className="rounded-2xl border border-black/[0.055] bg-white p-5 sm:p-6">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-sm font-semibold">패스키</h2>
+              <h2 id="settings-passkey" className="text-sm font-semibold">패스키</h2>
               <p className="mt-1 text-xs text-[#767676]">
                 지문, 얼굴 또는 기기 잠금으로 로그인
               </p>
@@ -230,7 +240,7 @@ export default function SettingsView({
         <section className="rounded-2xl border border-black/[0.055] bg-white p-5 sm:p-6">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-sm font-semibold">텔레그램</h2>
+              <h2 id="settings-telegram" className="text-sm font-semibold">텔레그램</h2>
               <p className="mt-1 text-xs text-[#767676]">
                 작업 마감과 입금 알림을 받으세요.
               </p>
@@ -342,7 +352,7 @@ export default function SettingsView({
       </div>
       <section className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/[0.055] bg-white p-5 sm:p-6">
         <div>
-          <h2 className="text-sm font-semibold">데이터 백업</h2>
+          <h2 id="settings-backup" className="text-sm font-semibold">데이터 백업</h2>
           <p className="mt-1 text-xs text-[#767676]">
             프로젝트·작업·입금·견적·미팅 전체를 JSON으로 내려받습니다. 패스키와 세션 정보는
             포함하지 않습니다. 고객 정보가 들어 있으니 안전한 곳에 보관하세요.
@@ -355,7 +365,7 @@ export default function SettingsView({
       <form onSubmit={saveQuoteNote} className="settings-quote-note">
         <div className="settings-quote-note-heading">
           <div>
-            <h2>견적서 기본 문구</h2>
+            <h2 id="settings-quote">견적서 기본 문구</h2>
             <p>새 견적서에 복사됩니다. 이미 저장한 견적서의 문구는 바뀌지 않습니다.</p>
           </div>
           <Button type="submit" disabled={quoteNoteSaving || !quoteNoteLoaded}>{quoteNoteSaving ? "저장 중…" : "기본 문구 저장"}</Button>
@@ -375,7 +385,7 @@ export default function SettingsView({
         onSubmit={savePreferences}
         className="mt-5 rounded-2xl border border-black/[0.055] bg-white p-5 sm:p-6"
       >
-        <h2 className="text-sm font-semibold">알림 설정</h2>
+        <h2 id="settings-alerts" className="text-sm font-semibold">알림 설정</h2>
         <p className="mt-1 text-xs text-[#767676]">
           매일 오전 9시대(한국 시간)에 아침 업무 보고를 한 통 보냅니다.
           외부 cron을 15분마다 연결하면 설정한 보고 시각 이후에 보내고, 개별 마감·입금 알림도 받을 수 있습니다.
@@ -405,6 +415,14 @@ export default function SettingsView({
             />
             <span>입금 알림</span>
           </label>
+          <label className="flex items-center gap-2 text-xs">
+            <input
+              name="weeklyReport"
+              type="checkbox"
+              defaultChecked={settings?.preferences.weeklyReport ?? true}
+            />
+            <span>주간 리포트 (일요일 밤 10시)</span>
+          </label>
           <Field
             name="overdueDays"
             label="확인 대기 알림 기준 (일)"
@@ -424,6 +442,9 @@ export default function SettingsView({
           <Button type="submit">설정 저장</Button>
         </div>
       </form>
+      <RecoveryManager />
+      </div>
+      </div>
       {toast && <Toast text={toast} />}
     </>
   );

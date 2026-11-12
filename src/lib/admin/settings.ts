@@ -19,13 +19,19 @@ export async function getPreferences() {
   return parsePreferences(await getSetting("preferences"));
 }
 
-export async function sendTelegram(chatId: string, text: string) {
+export async function sendTelegram(chatId: string, text: string, options: { html?: boolean; button?: { text: string; url: string } } = {}) {
   const response = await fetch(
     `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }),
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        disable_web_page_preview: true,
+        ...(options.html ? { parse_mode: "HTML" } : {}),
+        ...(options.button ? { reply_markup: { inline_keyboard: [[options.button]] } } : {}),
+      }),
       signal: AbortSignal.timeout(10_000),
     },
   );

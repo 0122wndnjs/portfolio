@@ -1,5 +1,5 @@
-import WorkBoard from "@/components/admin/WorkBoard";
+import HomeToday from "@/components/admin/HomeToday";
 
 export default function AdminHome() {
-  return <WorkBoard />;
+  return <HomeToday />;
 }

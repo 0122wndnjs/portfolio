@@ -53,7 +53,7 @@ export default function PaymentRow({
   async function remove() {
     if (
       !window.confirm(
-        "이 입금 내역을 삭제할까요? 미입금 잔액이 다시 계산됩니다.",
+        "이 입금 기록을 취소할까요? 받을 금액이 다시 계산되고, 휴지통에서 복구할 수 있어요.",
       )
     )
       return;
@@ -130,7 +130,7 @@ export default function PaymentRow({
           onClick={remove}
           className="min-h-10 rounded-md px-3 text-sm text-red-600 hover:bg-red-50"
         >
-          삭제
+          입금 취소
         </button>
       </span>
     </div>

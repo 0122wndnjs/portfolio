@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "backup:admin": "node --env-file=.env.local scripts/backup-admin.mjs"
+    "backup:admin": "node --env-file=.env.local scripts/backup-admin.mjs",
+    "sync:ai-usage": "node --env-file-if-exists=.env.local scripts/sync-ai-usage.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

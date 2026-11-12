@@ -3,7 +3,7 @@ import { audit } from "@/lib/admin/auth";
 import { db } from "@/lib/admin/db";
 import { HttpError, json } from "@/lib/admin/http";
 import { isInternalProjectKind, isProjectKind } from "@/lib/admin/project-kinds";
-import { PROJECT_STATUSES, isOneOf, validDate, validLinks } from "@/lib/admin/validation";
+import { PROJECT_STATUSES, addDays, isOneOf, seoulDate, validDate, validLinks } from "@/lib/admin/validation";
 import { invoicesWithPayments } from "./billing";
 import {
   CONFLICT_MESSAGE,
@@ -18,6 +18,12 @@ import {
   safeProject,
   safeTask,
 } from "./common";
+
+function addMonths(month: string, delta: number) {
+  const d = new Date(`${month}-01T00:00:00Z`);
+  d.setUTCMonth(d.getUTCMonth() + delta);
+  return d.toISOString().slice(0, 7);
+}
 
 const EDITABLE = [
   "next_action",
@@ -34,6 +40,7 @@ const EDITABLE = [
   "contract_amount",
   "memo",
   "links",
+  "ai_folder",
 ] as const;
 
 async function projectTasks(projectId: string) {
@@ -75,6 +82,49 @@ export const projectRoutes: Route[] = [
     },
   },
   { method: "GET", path: "projects/:id", handler: projectDetail },
+  {
+    method: "GET",
+    path: "ai-usage/summary",
+    async handler() {
+      const tokens = "SUM(u.input_tokens+u.cache_read_tokens+u.cache_write_tokens+u.output_tokens)::bigint";
+      const month = seoulDate().slice(0, 7);
+      const [totals, months, top, daily, synced] = await Promise.all([
+        db.prepare(`SELECT u.tool,${tokens} AS tokens,SUM(u.output_tokens)::bigint AS output,COUNT(DISTINCT u.usage_date)::int AS days FROM ai_usage u GROUP BY u.tool`).all(),
+        db.prepare(`SELECT SUBSTRING(u.usage_date,1,7) AS month,u.tool,${tokens} AS tokens FROM ai_usage u WHERE u.usage_date >= ? GROUP BY 1,2 ORDER BY 1`).all(`${addMonths(month, -5)}-01`),
+        db.prepare(`SELECT u.folder,MAX(p.id) AS project_id,MAX(p.name) AS project_name,${tokens} AS tokens,COUNT(DISTINCT u.usage_date)::int AS days,
+            SUM(CASE WHEN u.tool='claude' THEN u.input_tokens+u.cache_read_tokens+u.cache_write_tokens+u.output_tokens ELSE 0 END)::bigint AS claude
+          FROM ai_usage u LEFT JOIN projects p ON p.ai_folder<>'' AND p.ai_folder=u.folder
+          WHERE u.usage_date LIKE ? GROUP BY u.folder ORDER BY 4 DESC LIMIT 5`).all(`${month}-%`),
+        db.prepare(`SELECT u.usage_date,${tokens} AS tokens FROM ai_usage u WHERE u.usage_date >= ? GROUP BY 1 ORDER BY 1`).all(addDays(seoulDate(), -29)),
+        db.prepare("SELECT MAX(synced_at) AS synced_at FROM ai_usage").get() as Promise<{ synced_at: string | null } | undefined>,
+      ]);
+      const num = (rows: Row[]) => rows.map((row) => ({ ...row, ...Object.fromEntries(["tokens", "output", "claude"].filter((k) => k in row).map((k) => [k, Number(row[k])])) }));
+      return json({ month, totals: num(totals), months: num(months), top: num(top), daily: num(daily), synced_at: synced?.synced_at || null });
+    },
+  },
+  {
+    method: "GET",
+    path: "projects/:id/ai-usage",
+    async handler({ params }) {
+      const project = await db.prepare("SELECT ai_folder FROM projects WHERE id=?").get(params.id) as { ai_folder: string } | undefined;
+      if (!project) throw new HttpError(404, "프로젝트를 찾을 수 없습니다.");
+      const folder = project.ai_folder.trim();
+      if (!folder) return json({ folder: "", days: [], synced_at: null });
+      const days = await db.prepare(
+        `SELECT usage_date,tool,account,
+          SUM(input_tokens)::bigint AS input_tokens,SUM(cache_read_tokens)::bigint AS cache_read_tokens,
+          SUM(cache_write_tokens)::bigint AS cache_write_tokens,SUM(output_tokens)::bigint AS output_tokens,
+          SUM(requests)::int AS requests,COUNT(DISTINCT session_id)::int AS sessions
+        FROM ai_usage WHERE folder=? GROUP BY usage_date,tool,account ORDER BY usage_date DESC,tool,account`,
+      ).all(folder);
+      const synced = await db.prepare("SELECT MAX(synced_at) AS synced_at FROM ai_usage").get() as { synced_at: string | null } | undefined;
+      return json({
+        folder,
+        days: days.map((row) => ({ ...row, input_tokens: Number(row.input_tokens), cache_read_tokens: Number(row.cache_read_tokens), cache_write_tokens: Number(row.cache_write_tokens), output_tokens: Number(row.output_tokens) })),
+        synced_at: synced?.synced_at || null,
+      });
+    },
+  },
   { method: "GET", path: "projects/:id/detail", handler: projectDetail },
   {
     method: "GET",
@@ -154,6 +204,8 @@ export const projectRoutes: Route[] = [
       }
       if (body.next_check_date !== undefined && !validDate(body.next_check_date))
         throw new HttpError(400, "다음 확인일을 확인하세요.");
+      if (body.ai_folder !== undefined && (typeof body.ai_folder !== "string" || body.ai_folder.length > 100 || /[\\/]/.test(body.ai_folder)))
+        throw new HttpError(400, "로컬 폴더는 슬래시 없이 폴더 이름만 100자 이내로 입력하세요.");
       if (!updates.length) throw new HttpError(400, "수정할 항목이 없습니다.");
       const current = await db
         .prepare("SELECT kind,start_date,due_date,updated_at FROM projects WHERE id=?")

@@ -6,6 +6,8 @@ import PaymentRow from "@/components/admin/PaymentRow";
 import PaymentAmountFields from "@/components/admin/PaymentAmountFields";
 import MeetingsPage from "@/components/admin/MeetingsPage";
 import TaskRelations from "@/components/admin/TaskRelations";
+import ProjectAside from "./ProjectAside";
+import InvoiceEdit from "./InvoiceEdit";
 import TaskRelationBadges from "@/components/admin/TaskRelationBadges";
 import { projectColor } from "@/lib/admin/project-colors";
 import { isInternalProjectKind, PROJECT_KIND_LABELS, type ProjectKind } from "@/lib/admin/project-kinds";
@@ -15,7 +17,6 @@ import {
   FiCalendar,
   FiCheckSquare,
   FiExternalLink,
-  FiMoreHorizontal,
   FiPlus,
   FiX,
 } from "react-icons/fi";
@@ -78,6 +79,7 @@ type Project = {
   contract_amount: number | null;
   memo: string;
   links: Array<{ name: string; url: string }>;
+  ai_folder?: string;
   updated_at: string;
   tasks: Task[];
   invoices: Invoice[];
@@ -325,16 +327,6 @@ export default function AdminProject({ projectId }: { projectId: string }) {
         <p className="mt-8 text-sm">{error || "프로젝트가 없습니다."}</p>
       </div>
     );
-  const done = project.tasks.filter(
-      (task) => task.status === "완료" && !task.archived,
-    ).length,
-    openTasks = project.tasks.filter(
-      (task) => task.status !== "완료" && !task.archived,
-    ).length,
-    unpaid = project.invoices.reduce(
-      (sum, invoice) => sum + invoice.balance,
-      0,
-    );
   const errorBox = error && (
     <div
       role="alert"
@@ -346,140 +338,88 @@ export default function AdminProject({ projectId }: { projectId: string }) {
       </button>
     </div>
   );
+  const statusSelect = (
+    <select
+      aria-label="프로젝트 상태"
+      value={project.status}
+      onChange={async (e) => {
+        const status = e.target.value;
+        setProject({ ...project, status });
+        try {
+          const result = await api<{ updated_at: string }>(`/api/admin/projects/${project.id}`, "PATCH", {
+            status,
+          });
+          // 이후 개요 저장 시 수정 충돌로 오인하지 않도록 새 버전을 반영한다.
+          setProject((current) => current && { ...current, status, updated_at: result.updated_at });
+          window.dispatchEvent(new Event("admin:projects-changed"));
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "상태 저장 실패");
+        }
+      }}
+      className={`rd-status-select is-${project.status.replace(" ", "")}`}
+    >
+      {["준비 중", "진행 중", "보류", "완료", "취소"].map((s) => (
+        <option key={s}>{s}</option>
+      ))}
+    </select>
+  );
+  const tabs = isInternalProjectKind(project.kind) ? ["보드", "개요", "미팅", "링크·메모"] : ["보드", "개요", "미팅", "입금", "링크·메모"];
   return (
-    <>
-      <Link
-        href="/admin/projects"
-        className="mb-3 inline-flex items-center gap-2 text-xs font-medium text-[#8b8b98] hover:text-[#5035ba]"
+    <div className="rd-project">
+      <header
+        className="rd-project-head"
+        style={{
+          "--project-solid": projectColor(project.id).solid,
+          "--project-soft": projectColor(project.id).soft,
+        } as React.CSSProperties}
       >
-        <FiArrowLeft /> 프로젝트 목록
-      </Link>
-      {errorBox}
-      <div className="project-workspace-header flex flex-wrap items-start justify-between gap-4" style={{
-        "--project-solid": projectColor(project.id).solid,
-        "--project-soft": projectColor(project.id).soft,
-      } as React.CSSProperties}>
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="project-identity-dot" />
-            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#767676]">
-              {project.kind === "개인" ? "개인 프로젝트" : `${PROJECT_KIND_LABELS[project.kind]} · ${project.client}`}
-            </p>
-            <span className="h-1 w-1 rounded-full bg-gray-300" />
-            <select
-              value={project.status}
-              onChange={async (e) => {
-                const status = e.target.value;
-                setProject({ ...project, status });
-                try {
-                  const result = await api<{ updated_at: string }>(`/api/admin/projects/${project.id}`, "PATCH", {
-                    status,
-                  });
-                  // 이후 개요 저장 시 수정 충돌로 오인하지 않도록 새 버전을 반영한다.
-                  setProject((current) => current && { ...current, status, updated_at: result.updated_at });
-                  window.dispatchEvent(new Event("admin:projects-changed"));
-                } catch (err) {
-                  setError(
-                    err instanceof Error ? err.message : "상태 저장 실패",
-                  );
-                }
+        <nav className="rd-crumb" aria-label="위치">
+          <Link href="/admin/projects">프로젝트</Link>
+          <span aria-hidden="true">/</span>
+          <span>{project.kind === "개인" ? "개인 프로젝트" : `${PROJECT_KIND_LABELS[project.kind]}${project.client ? ` · ${project.client}` : ""}`}</span>
+        </nav>
+        <div className="rd-project-titlebar">
+          <div className="rd-project-title">
+            <span className="project-identity-dot" aria-hidden="true" />
+            <h1>{project.name}</h1>
+            {statusSelect}
+          </div>
+          <div className="rd-actions">
+            {project.kind === "외주" && <Link href={`/admin/money?tab=quotes&project=${project.id}`} className="rd-btn">견적서</Link>}
+            {project.kind === "외주" && <button type="button" className="rd-btn" onClick={() => setTab("입금")}>입금 기록</button>}
+            <button
+              type="button"
+              className="rd-btn is-primary"
+              onClick={() => {
+                setNewTaskStatus("할 일");
+                setNewTask(true);
               }}
-              className="rounded-full border-0 bg-[#4c2ac8] px-2.5 py-1 text-[10px] font-semibold text-white outline-none"
             >
-              {["준비 중", "진행 중", "보류", "완료", "취소"].map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
+              <FiPlus /> 작업 추가
+            </button>
           </div>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight">
-            {project.name}
-          </h1>
-          <p
-            className="mt-1 max-w-2xl truncate text-xs leading-5 text-[#606060]"
-            title={project.description}
-          >
-            {project.description}
-          </p>
-          {(project.next_action || project.waiting_reason || project.next_check_date) && <div className="mt-3 flex flex-wrap gap-2 text-xs">
-            {project.next_action && <span className="project-action-chip">다음 · {project.next_action}</span>}
-            {project.waiting_reason && <span className="project-wait-chip">대기 · {project.waiting_reason}</span>}
-            {project.next_check_date && <span className={project.next_check_date <= today() ? "project-check-chip is-due" : "project-check-chip"}>{project.next_check_date <= today() ? "확인 필요" : "다음 확인"} · {project.next_check_date}</span>}
-          </div>}
         </div>
-        <div className="project-detail-actions flex flex-wrap gap-2">
-          {project.kind === "외주" && <Link
-            href={`/admin/quotes?project=${project.id}`}
-            className="inline-flex items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-2.5 text-xs font-semibold"
-          >
-            견적서
-          </Link>}
-          <button
-            onClick={() => {
-              setNewTaskStatus("할 일");
-              setNewTask(true);
-            }}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#6853d7] px-4 py-2.5 text-xs font-semibold text-white"
-          >
-            <FiPlus /> 작업 추가
-          </button>
-          {project.kind === "외주" && <button
-            onClick={() => setTab("입금")}
-            className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-xs font-semibold"
-          >
-            입금 일정
-          </button>}
-        </div>
-      </div>
-      <div
-        className={`workspace-metrics mt-3 grid grid-cols-2 ${project.kind === "외주" ? "lg:grid-cols-4" : "lg:grid-cols-2"} ${tab === "보드" ? "project-board-summary" : ""}`}
-      >
-        <Stat
-          label="작업 진행"
-          value={`${done} / ${done + openTasks}`}
-          sub="완료된 작업"
-        />
-        <Stat
-          label="마감일"
-          value={dateLabel(project.due_date)}
-          sub={
-            project.due_date && project.due_date < today()
-              ? "마감일 지남"
-              : "프로젝트 마감"
-          }
-        />
-        {project.kind === "외주" && <Stat
-          label="계약 금액"
-          value={
-            project.contract_amount ? won(project.contract_amount) : "미등록"
-          }
-          sub="계약 기준 금액"
-        />}
-        {project.kind === "외주" && <Stat label="미입금" value={won(unpaid)} sub="청구 항목 잔액" />}
-      </div>
-      <div className="project-detail-tabs mt-3 flex gap-1 overflow-x-auto border-b border-black/[0.07]">
-        {(isInternalProjectKind(project.kind) ? ["보드", "개요", "미팅", "링크·메모"] : ["보드", "개요", "미팅", "입금", "링크·메모"]).map((item) => (
-          <button
-            key={item}
-            onClick={() => setTab(item)}
-            className={`whitespace-nowrap border-b-2 px-4 py-3 text-xs font-semibold ${tab === item ? "border-[#6853d7] text-[#5035ba]" : "border-transparent text-[#9999a4] hover:text-[#555565]"}`}
-          >
-            {item}
-          </button>
-        ))}
-      </div>
+        {project.description && <p className="rd-project-desc" title={project.description}>{project.description}</p>}
+        {(project.next_action || project.waiting_reason || project.next_check_date) && (
+          <div className="rd-project-chips">
+            {project.next_action && <span className="rd-chip">다음 · {project.next_action}</span>}
+            {project.waiting_reason && <span className="rd-chip is-hot">대기 · {project.waiting_reason}</span>}
+            {project.next_check_date && <span className={`rd-chip ${project.next_check_date <= today() ? "is-danger" : ""}`}>{project.next_check_date <= today() ? "확인 필요" : "다음 확인"} · {project.next_check_date}</span>}
+          </div>
+        )}
+        <nav className="rd-underline-tabs" aria-label="프로젝트 화면">
+          {tabs.map((item) => (
+            <button key={item} type="button" aria-current={tab === item ? "page" : undefined} onClick={() => setTab(item)}>
+              {({ 보드: "작업", 미팅: "미팅·회의록", 입금: "견적·입금", "링크·메모": "메모" } as Record<string, string>)[item] || item}
+            </button>
+          ))}
+        </nav>
+      </header>
+      {errorBox}
       {tab === "보드" && (
-        <section className="mt-3">
-          <div className="mb-3 flex items-center justify-between">
-            <div>
-              <p className="text-[11px] text-[#737382]">
-                카드를 옮기거나 상태 메뉴를 사용하세요.
-              </p>
-            </div>
-            <span className="text-[11px] text-[#9b9ba7]">
-              {openTasks}개 진행 중
-            </span>
-          </div>
-          <div className="project-kanban grid grid-flow-col auto-cols-[minmax(270px,1fr)] items-start gap-3 overflow-x-auto pb-3 lg:auto-cols-auto lg:grid-flow-row lg:grid-cols-4">
+        <div className="rd-project-split">
+        <section className="rd-project-board">
+          <div className="rd-board-board">
             {columns.map((column) => {
               const lane = project.tasks
                 .filter((task) => task.status === column && !task.archived)
@@ -496,30 +436,26 @@ export default function AdminProject({ projectId }: { projectId: string }) {
                     );
                     if (task) void moveTask(task, column);
                   }}
-                  className="min-h-[260px] rounded-lg border border-black/[0.04] bg-[#f7f8fc] p-2"
+                  className="rd-lane rd-kanban-lane"
                 >
-                  <div className="flex items-center justify-between px-1 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`h-2 w-2 rounded-full ${column === "완료" ? "bg-emerald-500" : column === "확인 대기" ? "bg-orange-400" : column === "진행 중" ? "bg-blue-500" : "bg-gray-400"}`}
-                      />
-                      <span className="text-xs font-semibold">{column}</span>
-                      <span className="text-[10px] text-[#767676]">
-                        {lane.length}
-                      </span>
-                    </div>
+                  <header>
+                    <span>
+                      <i className="rd-lane-dot" style={{ background: column === "완료" ? "#22c55e" : column === "확인 대기" ? "#f59e0b" : column === "진행 중" ? "#3b82f6" : "#9ca3af" }} aria-hidden="true" />
+                      {column} <span className="rd-lane-count">{lane.length}</span>
+                    </span>
                     <button
+                      type="button"
                       onClick={() => {
                         setNewTaskStatus(column);
                         setNewTask(true);
                       }}
                       aria-label={`${column} 작업 추가`}
-                      className="rounded-lg p-1.5 text-[#93939e] hover:bg-white"
+                      className="rd-icon-plain"
                     >
                       <FiPlus />
                     </button>
-                  </div>
-                  <div className="space-y-2">
+                  </header>
+                  <div className="rd-lane-cards">
                     {lane.map((task) => (
                       <article
                         key={task.id}
@@ -539,88 +475,34 @@ export default function AdminProject({ projectId }: { projectId: string }) {
                           if (dragged) void moveTask(dragged, column, task.id);
                         }}
                         onClick={() => setSelected(task)}
-                        className="cursor-pointer rounded-xl border border-black/[0.045] bg-white p-3.5 shadow-[0_2px_7px_rgba(30,30,50,0.025)] hover:border-[#d7d5f8]"
+                        className="rd-task-card rd-kanban-card"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-base font-semibold leading-6">
-                            {task.title}
-                          </p>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelected(task);
-                            }}
-                            aria-label="작업 상세"
-                            className="shrink-0 text-[#aaaab3]"
-                          >
-                            <FiMoreHorizontal />
-                          </button>
-                        </div>
-                        {task.description && (
-                          <p className="mt-2 line-clamp-2 text-xs leading-5 text-[#767676]">
-                            {task.description}
-                          </p>
-                        )}
+                        <button type="button" className="rd-kanban-title" onClick={(e) => { e.stopPropagation(); setSelected(task); }}>{task.title}</button>
                         <TaskRelationBadges task={task} tasks={project.tasks} />
-                        <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                          {task.due_date && (
-                            <span
-                              className={`inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[9px] ${task.due_date < today() && column !== "완료" ? "bg-red-50 text-red-600" : "bg-[#f5f5f8] text-[#777783]"}`}
-                            >
-                              <FiCalendar />
-                              {dateLabel(task.due_date)}
+                        <div className="rd-kanban-meta">
+                          {task.due_date ? (
+                            <span className={`rd-due ${task.due_date < today() && column !== "완료" ? "is-danger" : ""}`}>
+                              <FiCalendar aria-hidden="true" /> {dateLabel(task.due_date)}
                             </span>
-                          )}
-                          <span className={task.priority === "높음" ? "task-priority-high" : "task-priority-normal"}>
-                            우선순위 {task.priority}
+                          ) : <span />}
+                          <span className="rd-kanban-tags">
+                            {task.priority === "높음" && <span className="rd-chip is-hot">우선</span>}
+                            {task.checklist.length > 0 && (
+                              <span className="rd-chip"><FiCheckSquare aria-hidden="true" /> {task.checklist.filter((item) => item.done).length}/{task.checklist.length}</span>
+                            )}
                           </span>
-                          {task.checklist.length > 0 && (
-                            <span className="inline-flex items-center gap-1 text-[9px] text-[#858591]">
-                              <FiCheckSquare />
-                              {
-                                task.checklist.filter((item) => item.done)
-                                  .length
-                              }
-                              /{task.checklist.length}
-                            </span>
-                          )}
                         </div>
                         {column === "확인 대기" && task.waiting_since && (
-                          <p className="mt-2 text-[9px] text-orange-600">
-                            {Math.max(
-                              0,
-                              Math.floor(
-                                (Date.now() -
-                                  new Date(task.waiting_since).getTime()) /
-                                  86400000,
-                              ),
-                            )}
-                            일째 기다리는 중
-                          </p>
+                          <span className="rd-eyebrow">{Math.max(0, Math.floor((Date.now() - new Date(task.waiting_since).getTime()) / 86400000))}일째 기다리는 중</span>
                         )}
-                        <div
-                          className="mt-3 border-t border-black/[0.05] pt-2"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <select
-                            value={column}
-                            onChange={(e) =>
-                              void moveTask(task, e.target.value)
-                            }
-                            className="w-full bg-transparent text-[10px] text-[#858591] outline-none"
-                          >
-                            {columns.map((s) => (
-                              <option key={s}>{s}</option>
-                            ))}
-                          </select>
-                        </div>
                       </article>
                     ))}
                   </div>
                   {lane.length === 0 && (
                     <button
-                      onClick={() => setNewTask(true)}
-                      className="flex w-full items-center justify-center rounded-xl border border-dashed border-black/10 py-7 text-[10px] text-[#767676] hover:bg-white/60"
+                      type="button"
+                      onClick={() => { setNewTaskStatus(column); setNewTask(true); }}
+                      className="rd-lane-add"
                     >
                       작업 추가
                     </button>
@@ -630,6 +512,16 @@ export default function AdminProject({ projectId }: { projectId: string }) {
             })}
           </div>
         </section>
+        <ProjectAside
+          projectId={project.id}
+          isClient={project.kind === "외주"}
+          contractAmount={project.contract_amount}
+          invoices={project.invoices}
+          onOpenPayments={() => setTab("입금")}
+          aiFolder={project.ai_folder || ""}
+          onAiFolderSaved={(ai_folder, updated_at) => setProject((current) => current && { ...current, ai_folder, updated_at })}
+        />
+        </div>
       )}
       {tab === "개요" && (
         <ProjectOverview
@@ -701,6 +593,9 @@ export default function AdminProject({ projectId }: { projectId: string }) {
                         예정 {dateLabel(invoice.due_date)} · 청구{" "}
                         {won(invoice.amount)}
                       </p>
+                      <div className="mt-2">
+                        <InvoiceEdit invoice={invoice} onSaved={load} onError={setError} />
+                      </div>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold">
@@ -837,29 +732,10 @@ export default function AdminProject({ projectId }: { projectId: string }) {
           {toast}
         </div>
       )}
-    </>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  sub,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-black/[0.055] bg-white p-4 sm:p-5">
-      <p className="text-[10px] text-[#92929f]">{label}</p>
-      <p className="mt-1 truncate text-sm font-semibold tracking-tight tabular-nums">
-        {value}
-      </p>
-      <p className="sr-only">{sub}</p>
     </div>
   );
 }
+
 function Modal({
   title,
   close,

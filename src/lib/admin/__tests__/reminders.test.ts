@@ -116,16 +116,16 @@ describe("buildReminders", () => {
       invoices: [invoice({ id: "pay", title: "잔금", due_date: "2026-09-26", amount: 1000, paid: 200 })],
     });
     const report = result.find((item) => item.key === "digest:2026-09-25")?.text || "";
-    expect(report).toContain("아침 업무 보고");
-    expect(report).toContain("14:00 [A사] 킥오프");
-    expect(report).toContain("메인 화면 수정 — 오늘 마감");
-    expect(report).toContain("시안 피드백 — 5일째 대기");
-    expect(report).toContain("로그인 화면 완료");
+    expect(report).toContain("<b>9월 25일 (금) 오늘 브리핑</b>");
+    expect(report).toContain("📌 오늘 3  ⏳ 대기 1  💰 800원");
+    expect(report).toContain("🕑 14:00 <a href=\"https://joowonkim.me/admin/meetings?view=list&amp;project=p1&amp;meeting=m1\">킥오프</a>");
+    expect(report).toContain(">메인 화면 수정</a> <i>A사 · 오늘 마감</i>");
+    expect(report).toContain("<i>A사 · 5일째 대기</i>");
+    expect(report).toContain("<b>✅ 어제 완료 1</b>\n로그인 화면");
     expect(report).toContain("고객에게 연락");
-    expect(report).toContain("프로젝트 — 내일 마감");
-    expect(report).toContain("잔액 800원");
-    expect(report).toContain("https://joowonkim.me/admin/projects/p1?task=due");
-    expect(report).not.toContain("오늘 일정");
+    expect(report).toContain("프로젝트 마감");
+    expect(report).toContain("800원");
+    expect(report).toContain('href="https://joowonkim.me/admin/projects/p1?task=due"');
   });
 
   it("알림 대상이 없는 날도 하루 한 번 빈 업무 보고를 만든다", () => {

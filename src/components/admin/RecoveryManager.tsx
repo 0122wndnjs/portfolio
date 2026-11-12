@@ -52,7 +52,7 @@ export default function RecoveryManager() {
     <section className="mt-5 rounded-2xl border border-black/[0.055] bg-white p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold">계정 복구 코드</h2>
+          <h2 id="settings-recovery" className="text-sm font-semibold">계정 복구 코드</h2>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-[#92929f]">
             패스키를 모두 잃었을 때 쓰는 일회용 코드입니다. 새로 발급하면 기존
             코드는 전부 무효화됩니다.

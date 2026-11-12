@@ -19,6 +19,7 @@ import {
 } from "react-icons/fi";
 import { api } from "@/components/admin/api";
 import SettingsView from "@/components/admin/SettingsView";
+import { TaskEditor, type Task as EditorTask } from "@/components/admin/AdminProject";
 import { Button, Field, PageTitle, Toast, dateLabel } from "@/components/admin/ui";
 
 type Project = {
@@ -150,6 +151,7 @@ export default function AdminView({
     [expandedInvoiceId, setExpandedInvoiceId] = useState<string | null>(null),
     [saving, setSaving] = useState(false),
     [toast, setToast] = useState(""),
+    [openTaskId, setOpenTaskId] = useState<string | null>(null),
     [renderedAt] = useState(() => Date.now());
   const load = useCallback(async () => {
     setLoading(true);
@@ -811,6 +813,12 @@ export default function AdminView({
                           <Link
                             href={`/admin/projects/${task.project_id}?task=${task.id}`}
                             className="task-item-title"
+                            onClick={(event) => {
+                              if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+                              event.preventDefault();
+                              setOpenTaskId(task.id);
+                            }}
+                            aria-current={openTaskId === task.id ? "true" : undefined}
                           >
                             {task.title}
                           </Link>
@@ -888,6 +896,20 @@ export default function AdminView({
             detail="프로젝트 보드에서 해야 할 일을 추가하면 여기에 모여요."
           />
         )}
+        {(() => {
+          const openTask = tasks.find((task) => task.id === openTaskId);
+          return openTask ? (
+            <TaskEditor
+              key={openTask.id}
+              task={openTask as unknown as EditorTask}
+              close={() => setOpenTaskId(null)}
+              refresh={load}
+              onError={setError}
+              onToast={setToast}
+            />
+          ) : null;
+        })()}
+        {toast && <Toast text={toast} />}
       </>
     );
 

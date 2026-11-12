@@ -11,6 +11,8 @@ import {
 } from "@/lib/admin/reminders";
 import { getPreferences, getSetting, sendTelegram } from "@/lib/admin/settings";
 import { addDays, seoulDate, seoulTime } from "@/lib/admin/validation";
+import { buildWeeklyReport } from "@/lib/admin/weekly";
+import { loadWeekly } from "@/lib/admin/weekly-data";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -97,7 +99,10 @@ async function run(forceDigest: boolean) {
     let ok = false;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const response = await sendTelegram(chatId, adminUrl ? `${item.text}\n${adminUrl}/admin` : item.text);
+        const response = await sendTelegram(chatId, item.text, {
+          html: true,
+          button: adminUrl && /^https:\/\//.test(adminUrl) ? { text: "작업실 열기", url: `${adminUrl}/admin` } : undefined,
+        });
         ok = response.ok;
         // 4xx(차단·잘못된 채팅 등)는 재시도해도 같은 결과이므로 중단한다.
         if (response.ok || response.status < 500) break;
@@ -112,8 +117,31 @@ async function run(forceDigest: boolean) {
   return NextResponse.json({ sent, total: deliver.length });
 }
 
+async function runWeekly() {
+  const chatId = await getSetting("telegram_chat_id");
+  if (!chatId || !process.env.TELEGRAM_BOT_TOKEN) return NextResponse.json({ sent: 0, skipped: "telegram not connected" });
+  const preferences = await getPreferences();
+  if (!preferences.notifications || !preferences.weeklyReport) return NextResponse.json({ sent: 0, skipped: "weekly disabled" });
+  const today = seoulDate();
+  const data = await loadWeekly(today);
+  const key = `weekly:${data.start}`;
+  const adminUrl = process.env.ADMIN_ORIGIN?.replace(/\/$/, "");
+  const text = buildWeeklyReport(data, adminUrl);
+  const claimed = (await db.prepare(
+    "INSERT INTO notification_log(id,dedupe_key,message,sent_at,result) VALUES(?,?,?,?, 'sending') ON CONFLICT (dedupe_key) DO NOTHING",
+  ).run(randomBytes(16).toString("hex"), key, text, new Date().toISOString())).changes === 1;
+  if (!claimed) return NextResponse.json({ sent: 0, skipped: "already sent" });
+  const response = await sendTelegram(chatId, text, {
+    html: true,
+    button: adminUrl && /^https:\/\//.test(adminUrl) ? { text: "작업실 열기", url: `${adminUrl}/admin` } : undefined,
+  }).catch(() => null);
+  await db.prepare("UPDATE notification_log SET sent_at=?,result=? WHERE dedupe_key=?").run(new Date().toISOString(), response?.ok ? "sent" : "failed", key);
+  return NextResponse.json({ sent: response?.ok ? 1 : 0 });
+}
+
 export async function GET(request: Request) {
   if (!authorized(request)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (new URL(request.url).searchParams.get("kind") === "weekly") return runWeekly();
   return run(true);
 }
 
