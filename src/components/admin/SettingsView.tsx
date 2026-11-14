@@ -45,6 +45,18 @@ export default function SettingsView({
   const [quoteNote, setQuoteNote] = useState("");
   const [quoteNoteSaving, setQuoteNoteSaving] = useState(false);
   const [quoteNoteLoaded, setQuoteNoteLoaded] = useState(false);
+  const [google, setGoogle] = useState<{ configured: boolean; connected: boolean; email: string } | null>(null);
+  const loadGoogle = useCallback(() => api<{ configured: boolean; connected: boolean; email: string }>("/api/admin/google/status").then(setGoogle).catch(() => setGoogle(null)), []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadGoogle();
+      const result = new URLSearchParams(window.location.search).get("google");
+      if (result === "connected") setToast("Google 캘린더를 연결했어요.");
+      if (result === "error") onError("Google 연결에 실패했어요. 다시 시도하세요.");
+      if (result) window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadGoogle, onError]);
   const refresh = useCallback(async () => {
     try {
       setSettings(await api("/api/admin/settings"));
@@ -167,7 +179,7 @@ export default function SettingsView({
       </header>
       <div className="rd-settings">
       <nav className="rd-settings-nav" aria-label="설정 항목">
-        {[["settings-passkey", "보안·패스키"], ["settings-recovery", "복구 코드"], ["settings-telegram", "텔레그램"], ["settings-alerts", "알림"], ["settings-quote", "견적 기본값"], ["settings-backup", "백업"]].map(([id, label]) => (
+        {[["settings-passkey", "보안·패스키"], ["settings-recovery", "복구 코드"], ["settings-telegram", "텔레그램"], ["settings-google", "Google 캘린더"], ["settings-alerts", "알림"], ["settings-quote", "견적 기본값"], ["settings-backup", "백업"]].map(([id, label]) => (
           <a key={id} href={`#${id}`}>{label}</a>
         ))}
       </nav>
@@ -235,6 +247,69 @@ export default function SettingsView({
             >
               다른 모든 기기에서 로그아웃
             </button>
+          </div>
+        </section>
+        <section className="rounded-2xl border border-black/[0.055] bg-white p-5 sm:p-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 id="settings-google" className="text-sm font-semibold">Google 캘린더</h2>
+              <p className="mt-1 text-xs text-[#767676]">미팅을 구글 캘린더에 올리고 Meet 링크·초대를 만들어요.</p>
+            </div>
+            <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${google?.connected ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
+              {google?.connected ? "연결됨" : "연결 안 됨"}
+            </span>
+          </div>
+          <p className="mt-5 rounded-xl bg-[#f7f7f9] p-3 text-xs leading-5 text-[#777783]">
+            {google?.connected
+              ? `${google.email || "Google 계정"}의 기본 캘린더에 미팅이 저장돼요. 맥·아이폰 캘린더에 이 계정을 추가하면 같이 보여요.`
+              : google?.configured
+                ? "연결하면 미팅을 저장할 때 Google 캘린더에도 반영돼요."
+                : "서버에 GOOGLE_CLIENT_ID · GOOGLE_CLIENT_SECRET · GOOGLE_TOKEN_KEY를 설정해야 연결할 수 있어요."}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {google?.connected ? (
+              <>
+                {([false, true] as const).map((includePast) => (
+                  <Button
+                    key={String(includePast)}
+                    kind="light"
+                    disabled={busy}
+                    onClick={async () => {
+                      if (includePast && !confirm("지난 미팅까지 모두 Google 캘린더에 올릴까요? 초대 메일은 보내지 않아요.")) return;
+                      setBusy(true);
+                      try {
+                        const r = await api<{ synced: number; failed: number; total: number }>("/api/admin/google/sync-meetings", "POST", { include_past: includePast });
+                        setToast(r.total === 0 ? "올릴 미팅이 없어요. 이미 모두 캘린더에 있어요." : `${r.synced}개 올렸어요.${r.failed ? ` ${r.failed}개 실패` : ""}`);
+                      } catch (e) {
+                        onError(e instanceof Error ? e.message : "동기화 실패");
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
+                  >
+                    {includePast ? "지난 미팅까지 올리기" : "다가오는 미팅 올리기"}
+                  </Button>
+                ))}
+                <Button kind="quiet" onClick={() => window.location.assign("/api/admin/google/connect")}>다시 연결</Button>
+                <Button
+                  kind="quiet"
+                  onClick={async () => {
+                    if (!confirm("Google 캘린더 연결을 해제할까요? 이미 만든 일정은 캘린더에 남아요.")) return;
+                    try {
+                      await api("/api/admin/google", "DELETE");
+                      await loadGoogle();
+                      setToast("Google 연결을 해제했어요.");
+                    } catch (e) {
+                      onError(e instanceof Error ? e.message : "연결 해제 실패");
+                    }
+                  }}
+                >
+                  연결 해제
+                </Button>
+              </>
+            ) : google?.configured ? (
+              <Button onClick={() => window.location.assign("/api/admin/google/connect")}>Google 계정 연결 ↗</Button>
+            ) : null}
           </div>
         </section>
         <section className="rounded-2xl border border-black/[0.055] bg-white p-5 sm:p-6">

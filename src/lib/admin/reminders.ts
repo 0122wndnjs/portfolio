@@ -66,6 +66,7 @@ export type ReminderMeeting = {
   title: string;
   start_time: string;
   agenda: string;
+  meet_url?: string;
 };
 export type ReminderProject = {
   id: string;
@@ -120,7 +121,7 @@ function dailyReport({
       .map((task) => line(task.title, taskPath(task), [task.project_name, `${md(task.due_date!)} 마감`]))
     : [];
   const todayItems = [
-    ...meetings.map((meeting) => line(meeting.title, `/admin/meetings?view=list&project=${meeting.project_id}&meeting=${meeting.id}`, [meeting.project_name, meeting.agenda ? short(meeting.agenda, 30) : ""], `🕑 ${meeting.start_time.slice(0, 5)}`)),
+    ...meetings.map((meeting) => line(meeting.title, `/admin/meetings?view=list&project=${meeting.project_id}&meeting=${meeting.id}`, [meeting.project_name, meeting.agenda ? short(meeting.agenda, 30) : ""], `🕑 ${meeting.start_time.slice(0, 5)}`) + (meeting.meet_url && /^https:\/\/meet\.google\.com\//.test(meeting.meet_url) ? ` · <a href="${escapeHtml(meeting.meet_url)}">Meet</a>` : "")),
     ...(preferences.deadlineAlerts ? active.filter((task) => task.due_date === today).map((task) => line(task.title, taskPath(task), [task.project_name, "오늘 마감"])) : []),
     ...projects.filter((project) => (preferences.deadlineAlerts && project.due_date && project.due_date <= today) || (project.next_check_date && project.next_check_date <= today)).map((project) => {
       const details: string[] = [];

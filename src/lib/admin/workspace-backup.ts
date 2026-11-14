@@ -13,13 +13,13 @@ const keys: Record<Table, string[]> = {
   meeting_task_links: ["meeting_id", "task_id"], admin_trash: ["id"],
 };
 const columns: Record<Table, string[]> = {
-  projects: ["id", "name", "client", "description", "contact", "email", "kind", "status", "start_date", "due_date", "contract_amount", "memo", "links", "created_at", "updated_at", "next_action", "waiting_reason", "next_check_date"],
+  projects: ["id", "name", "client", "description", "contact", "email", "kind", "status", "start_date", "due_date", "contract_amount", "memo", "links", "created_at", "updated_at", "next_action", "waiting_reason", "next_check_date", "ai_folder"],
   tasks: ["id", "project_id", "title", "description", "status", "priority", "due_date", "position", "checklist", "links", "waiting_since", "completed_at", "archived", "created_at", "updated_at", "parent_id", "depends_on_id"],
   invoices: ["id", "project_id", "title", "amount", "due_date", "memo", "created_at"],
   payments: ["id", "invoice_id", "amount", "withholding_amount", "paid_at", "memo", "created_at"],
   quotes: ["id", "project_id", "number", "title", "sender", "recipient", "issue_date", "valid_until", "status", "items", "tax_amount", "note", "created_at", "updated_at"],
   quote_task_links: ["quote_id", "item_index", "task_id"],
-  meetings: ["id", "project_id", "title", "meeting_date", "start_time", "attendees", "location", "agenda", "decisions", "created_at", "updated_at"],
+  meetings: ["id", "project_id", "title", "meeting_date", "start_time", "attendees", "location", "agenda", "decisions", "created_at", "updated_at", "duration_minutes", "guest_emails", "google_event_id", "meet_url", "google_error"],
   meeting_task_links: ["meeting_id", "task_id"],
   admin_trash: ["id", "entity", "title", "payload", "deleted_at"],
 };

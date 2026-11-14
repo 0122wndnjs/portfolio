@@ -57,7 +57,7 @@ async function run(forceDigest: boolean) {
       `SELECT t.id,t.project_id,t.title,t.status,t.due_date,t.waiting_since,p.name AS project_name FROM tasks t JOIN projects p ON p.id=t.project_id WHERE t.archived=0 AND t.status='완료' AND t.completed_at>=? AND t.completed_at<? ORDER BY t.completed_at DESC`,
     ).all(yesterdayStart, todayStart) as Promise<ReminderTask[]> : Promise.resolve([]),
     reportDue ? db.prepare(
-      `SELECT m.id,m.project_id,m.title,m.start_time,m.agenda,p.name AS project_name FROM meetings m JOIN projects p ON p.id=m.project_id WHERE m.meeting_date=? ORDER BY m.start_time,m.title`,
+      `SELECT m.id,m.project_id,m.title,m.start_time,m.agenda,m.meet_url,p.name AS project_name FROM meetings m JOIN projects p ON p.id=m.project_id WHERE m.meeting_date=? ORDER BY m.start_time,m.title`,
     ).all(today) as Promise<ReminderMeeting[]> : Promise.resolve([]),
     reportDue ? db.prepare(
       `SELECT id,name,due_date,next_action,next_check_date FROM projects WHERE status IN ('준비 중','진행 중','보류') AND (due_date<=? OR next_check_date<=?) ORDER BY COALESCE(next_check_date,due_date),name`,

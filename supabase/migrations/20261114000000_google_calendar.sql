@@ -1,0 +1,14 @@
+-- 미팅 ↔ Google 캘린더 연동 (1단계: 관리자 → 구글 단방향)
+BEGIN;
+
+ALTER TABLE meetings ADD COLUMN IF NOT EXISTS duration_minutes INTEGER NOT NULL DEFAULT 60;
+ALTER TABLE meetings ADD COLUMN IF NOT EXISTS guest_emails TEXT NOT NULL DEFAULT '';
+ALTER TABLE meetings ADD COLUMN IF NOT EXISTS google_event_id TEXT NOT NULL DEFAULT '';
+ALTER TABLE meetings ADD COLUMN IF NOT EXISTS meet_url TEXT NOT NULL DEFAULT '';
+ALTER TABLE meetings ADD COLUMN IF NOT EXISTS google_error TEXT NOT NULL DEFAULT '';
+
+DO $$ BEGIN
+  ALTER TABLE meetings ADD CONSTRAINT meetings_duration_check CHECK (duration_minutes BETWEEN 5 AND 1440);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+COMMIT;

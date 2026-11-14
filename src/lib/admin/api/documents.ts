@@ -17,6 +17,39 @@ import {
   parse,
 } from "./common";
 import { insertTask } from "./tasks";
+import { deleteMeetingEvent, googleConnected, parseEmails, upsertMeetingEvent, type CalendarMeeting } from "@/lib/admin/google";
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** 저장된 미팅을 구글 캘린더에 반영한다. 실패해도 미팅 저장은 유지하고 오류만 기록한다. */
+export async function syncMeeting(meetingId: string, body: Body) {
+  if (body.google_sync === false || !(await googleConnected())) return { google: "off" as const };
+  const meeting = await db.prepare(
+    `SELECT m.id,m.project_id,m.title,m.meeting_date,m.start_time,m.duration_minutes,m.location,m.agenda,m.decisions,m.attendees,m.guest_emails,m.google_event_id,m.meet_url,
+      p.name AS project_name,p.client AS project_client,p.status AS project_status,p.due_date AS project_due,p.next_action AS project_next_action,p.description AS project_description
+     FROM meetings m JOIN projects p ON p.id=m.project_id WHERE m.id=?`,
+  ).get(meetingId) as (CalendarMeeting & { project_id: string }) | undefined;
+  if (!meeting) return { google: "off" as const };
+  const [followups, openTasks] = await Promise.all([
+    db.prepare("SELECT t.title,t.status,t.due_date FROM meeting_task_links l JOIN tasks t ON t.id=l.task_id WHERE l.meeting_id=? AND t.archived=0 ORDER BY t.due_date NULLS LAST LIMIT 10").all(meetingId),
+    db.prepare("SELECT title,status,due_date FROM tasks WHERE project_id=? AND archived=0 AND status<>'완료' ORDER BY due_date NULLS LAST, position LIMIT 8").all(meeting.project_id),
+  ]) as [CalendarMeeting["followups"], CalendarMeeting["open_tasks"]];
+  meeting.followups = followups;
+  meeting.open_tasks = openTasks;
+  try {
+    const result = await upsertMeetingEvent(meeting, {
+      createMeet: body.create_meet === true,
+      sendInvites: body.send_invites === true,
+      adminUrl: process.env.ADMIN_ORIGIN?.replace(/\/$/, ""),
+    });
+    await db.prepare("UPDATE meetings SET google_event_id=?,meet_url=?,google_error='' WHERE id=?").run(result.eventId, result.meetUrl, meetingId);
+    return { google: "synced" as const, meet_url: result.meetUrl };
+  } catch (error) {
+    const message = error instanceof Error ? error.message.slice(0, 300) : "Google 캘린더 동기화 실패";
+    await db.prepare("UPDATE meetings SET google_error=? WHERE id=?").run(message, meetingId);
+    return { google: "failed" as const, google_error: message };
+  }
+}
 
 async function quoteInput(body: Body) {
   const projectId = String(body.project_id || "");
@@ -78,6 +111,12 @@ async function meetingInput(body: Body) {
   const location = String(body.location || "").trim();
   const agenda = String(body.agenda || "").trim();
   const decisions = String(body.decisions || "").trim();
+  const durationMinutes = Number(body.duration_minutes ?? 60);
+  const guestEmails = parseEmails(String(body.guest_emails || ""));
+  if (!Number.isSafeInteger(durationMinutes) || durationMinutes < 5 || durationMinutes > 1440)
+    throw new HttpError(400, "미팅 길이는 5분~24시간으로 입력하세요.");
+  if (guestEmails.length > 50 || guestEmails.some((email) => !EMAIL.test(email) || email.length > 200))
+    throw new HttpError(400, "초대할 이메일 주소를 확인하세요.");
   if (!(await db.prepare("SELECT 1 FROM projects WHERE id=?").get(projectId)))
     throw new HttpError(400, "프로젝트를 선택하세요.");
   if (!title || title.length > 160) throw new HttpError(400, "미팅 제목은 1~160자로 입력하세요.");
@@ -85,7 +124,7 @@ async function meetingInput(body: Body) {
   if (!validTime(startTime)) throw new HttpError(400, "미팅 시간을 확인하세요.");
   if (attendees.length > 500 || location.length > 1000 || agenda.length > 10000 || decisions.length > 10000)
     throw new HttpError(400, "미팅 내용이 너무 깁니다.");
-  return { projectId, title, meetingDate, startTime, attendees, location, agenda, decisions };
+  return { projectId, title, meetingDate, startTime, attendees, location, agenda, decisions, durationMinutes, guestEmails: guestEmails.join(", ") };
 }
 
 export const documentRoutes: Route[] = [
@@ -205,10 +244,10 @@ export const documentRoutes: Route[] = [
       const meetingId = newId();
       const timestamp = now();
       await db.prepare(
-        "INSERT INTO meetings(id,project_id,title,meeting_date,start_time,attendees,location,agenda,decisions,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
-      ).run(meetingId, meeting.projectId, meeting.title, meeting.meetingDate, meeting.startTime, meeting.attendees, meeting.location, meeting.agenda, meeting.decisions, timestamp, timestamp);
+        "INSERT INTO meetings(id,project_id,title,meeting_date,start_time,attendees,location,agenda,decisions,duration_minutes,guest_emails,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+      ).run(meetingId, meeting.projectId, meeting.title, meeting.meetingDate, meeting.startTime, meeting.attendees, meeting.location, meeting.agenda, meeting.decisions, meeting.durationMinutes, meeting.guestEmails, timestamp, timestamp);
       await audit("meeting.created", { meetingId, projectId: meeting.projectId });
-      return json({ id: meetingId }, 201);
+      return json({ id: meetingId, ...(await syncMeeting(meetingId, body)) }, 201);
     },
   },
   {
@@ -230,12 +269,28 @@ export const documentRoutes: Route[] = [
       const timestamp = now();
       const result = await db
         .prepare(
-          `UPDATE meetings SET project_id=?,title=?,meeting_date=?,start_time=?,attendees=?,location=?,agenda=?,decisions=?,updated_at=? WHERE id=?${expected ? " AND updated_at=?" : ""}`,
+          `UPDATE meetings SET project_id=?,title=?,meeting_date=?,start_time=?,attendees=?,location=?,agenda=?,decisions=?,duration_minutes=?,guest_emails=?,updated_at=? WHERE id=?${expected ? " AND updated_at=?" : ""}`,
         )
-        .run(meeting.projectId, meeting.title, meeting.meetingDate, meeting.startTime, meeting.attendees, meeting.location, meeting.agenda, meeting.decisions, timestamp, params.id, ...(expected ? [expected] : []));
+        .run(meeting.projectId, meeting.title, meeting.meetingDate, meeting.startTime, meeting.attendees, meeting.location, meeting.agenda, meeting.decisions, meeting.durationMinutes, meeting.guestEmails, timestamp, params.id, ...(expected ? [expected] : []));
       if (!result.changes) throw new HttpError(409, CONFLICT_MESSAGE, "conflict");
       await audit("meeting.updated", { meetingId: params.id });
-      return json({ ok: true, updated_at: timestamp });
+      return json({ ok: true, updated_at: timestamp, ...(await syncMeeting(params.id, body)) });
+    },
+  },
+  {
+    method: "DELETE",
+    path: "meetings/:id",
+    async handler({ params, url }) {
+      const meeting = await db.prepare("SELECT * FROM meetings WHERE id=?").get(params.id) as Row | undefined;
+      if (!meeting) throw new HttpError(404, "미팅을 찾을 수 없습니다.");
+      if (await db.prepare("SELECT 1 FROM meeting_task_links WHERE meeting_id=? LIMIT 1").get(params.id))
+        throw new HttpError(409, "후속 작업이 연결된 미팅은 삭제할 수 없습니다.");
+      // 구글 이벤트를 먼저 지운다. 실패하면 미팅도 남겨 둬서 다시 시도할 수 있게 한다.
+      if (meeting.google_event_id && (await googleConnected()))
+        await deleteMeetingEvent(String(meeting.google_event_id), url.searchParams.get("notify") === "1");
+      await db.prepare("DELETE FROM meetings WHERE id=?").run(params.id);
+      await audit("meeting.deleted", { meetingId: params.id, title: meeting.title });
+      return json({ ok: true });
     },
   },
   {
