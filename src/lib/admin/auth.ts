@@ -1,4 +1,5 @@
 import "server-only";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { db } from "@/lib/admin/db";
@@ -8,6 +9,15 @@ import { relyingParty } from "@/lib/admin/webauthn";
 export const SESSION_COOKIE = "admin_session";
 const SESSION_DAYS = 7;
 const REAUTH_WINDOW_MS = 5 * 60_000;
+export const DEVICE_TOKEN_PREFIX = "jkos_";
+export const DEVICE_DAYS = 90;
+const DEVICE_TOUCH_MS = 10 * 60_000;
+
+/** 현재 요청이 브라우저 세션인지 기기 토큰인지. 기기 토큰이면 인증 수단 변경을 막는다. */
+type AuthContext = { kind: "session" } | { kind: "device"; deviceId: string };
+const authContext = new AsyncLocalStorage<AuthContext>();
+export const runWithAuth = <T>(context: AuthContext, fn: () => Promise<T>) => authContext.run(context, fn);
+export const currentAuth = () => authContext.getStore();
 
 export function hash(value: string) {
   return createHash("sha256").update(value).digest("hex");
@@ -92,6 +102,8 @@ export async function isAuthenticated() {
  * 복구 직후처럼 등록된 패스키가 없으면 재인증할 수단이 없으므로 통과시킨다.
  */
 export async function requireRecentAuth() {
+  if (currentAuth()?.kind === "device")
+    throw new HttpError(403, "JKOS 기기 토큰으로는 할 수 없는 작업입니다. 작업실에서 직접 하세요.", "device_forbidden");
   const { rpID } = await relyingParty();
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = token
@@ -134,4 +146,27 @@ export function requestAddress(request: Request) {
   return (
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
   );
+}
+
+/**
+ * `Authorization: Bearer jkos_…` 기기 토큰을 확인한다.
+ * 헤더가 없으면 undefined(세션 인증으로 진행), 있는데 틀리면 null.
+ * 사용 중이면 만료일을 DEVICE_DAYS 만큼 뒤로 민다(10분에 한 번만 기록).
+ */
+export async function authenticateDevice(request: Request) {
+  const header = request.headers.get("authorization");
+  if (!header) return undefined;
+  const match = header.match(/^Bearer\s+(\S+)$/i);
+  if (!match || !match[1].startsWith(DEVICE_TOKEN_PREFIX)) return null;
+  const { rpID } = await relyingParty();
+  const device = await db
+    .prepare("SELECT id,name,last_used_at,expires_at FROM admin_devices WHERE token_hash=? AND rp_id=? AND revoked_at IS NULL")
+    .get(hash(match[1]), rpID) as { id: string; name: string; last_used_at: string | null; expires_at: string } | undefined;
+  const nowIso = new Date().toISOString();
+  if (!device || device.expires_at < nowIso) return null;
+  if (!device.last_used_at || Date.now() - new Date(device.last_used_at).getTime() > DEVICE_TOUCH_MS)
+    await db.prepare("UPDATE admin_devices SET last_used_at=?, expires_at=? WHERE id=?").run(
+      nowIso, new Date(Date.now() + DEVICE_DAYS * 86_400_000).toISOString(), device.id,
+    );
+  return { id: device.id, name: device.name };
 }

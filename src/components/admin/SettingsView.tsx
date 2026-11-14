@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { startRegistration } from "@simplewebauthn/browser";
 import { FiDownload, FiPlus } from "react-icons/fi";
+import DevicesSection from "@/components/admin/DevicesSection";
 import RecoveryManager from "@/components/admin/RecoveryManager";
 import { api } from "@/components/admin/api";
 import { Button, Field, PageTitle, Toast, dateLabel } from "@/components/admin/ui";
@@ -179,7 +180,7 @@ export default function SettingsView({
       </header>
       <div className="rd-settings">
       <nav className="rd-settings-nav" aria-label="설정 항목">
-        {[["settings-passkey", "보안·패스키"], ["settings-recovery", "복구 코드"], ["settings-telegram", "텔레그램"], ["settings-google", "Google 캘린더"], ["settings-alerts", "알림"], ["settings-quote", "견적 기본값"], ["settings-backup", "백업"]].map(([id, label]) => (
+        {[["settings-passkey", "보안·패스키"], ["settings-recovery", "복구 코드"], ["settings-telegram", "텔레그램"], ["settings-google", "Google 캘린더"], ["settings-devices", "JKOS 기기"], ["settings-alerts", "알림"], ["settings-quote", "견적 기본값"], ["settings-backup", "백업"]].map(([id, label]) => (
           <a key={id} href={`#${id}`}>{label}</a>
         ))}
       </nav>
@@ -312,6 +313,7 @@ export default function SettingsView({
             ) : null}
           </div>
         </section>
+        <DevicesSection onError={onError} onToast={setToast} />
         <section className="rounded-2xl border border-black/[0.055] bg-white p-5 sm:p-6">
           <div className="flex items-start justify-between">
             <div>

@@ -1,4 +1,4 @@
-import { isAuthenticated } from "@/lib/admin/auth";
+import { authenticateDevice, isAuthenticated, runWithAuth } from "@/lib/admin/auth";
 import { billingRoutes } from "@/lib/admin/api/billing";
 import type { Body, Method } from "@/lib/admin/api/common";
 import { documentRoutes } from "@/lib/admin/api/documents";
@@ -8,6 +8,7 @@ import { findRoute } from "@/lib/admin/api/router";
 import { taskRoutes } from "@/lib/admin/api/tasks";
 import { workspaceRoutes } from "@/lib/admin/api/workspace";
 import { googleRoutes } from "@/lib/admin/api/google";
+import { deviceRoutes } from "@/lib/admin/api/devices";
 import { errorResponse, fail } from "@/lib/admin/http";
 import { assertOrigin, relyingParty } from "@/lib/admin/webauthn";
 
@@ -16,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 type Context = { params: Promise<{ path: string[] }> };
 
-const routes = [...projectRoutes, ...taskRoutes, ...billingRoutes, ...documentRoutes, ...workspaceRoutes, ...productivityRoutes, ...googleRoutes];
+const routes = [...projectRoutes, ...taskRoutes, ...billingRoutes, ...documentRoutes, ...workspaceRoutes, ...productivityRoutes, ...googleRoutes, ...deviceRoutes];
 const fallbackMessage: Record<Method, string> = {
   GET: "불러오지 못했습니다.",
   POST: "저장하지 못했습니다.",
@@ -25,8 +26,11 @@ const fallbackMessage: Record<Method, string> = {
 };
 
 async function handle(method: Method, request: Request, context: Context) {
-  if (!(await isAuthenticated())) return fail("로그인이 필요합니다.", 401);
-  if (method !== "GET") {
+  // 기기 토큰(Bearer)은 쿠키를 쓰지 않으므로 출처 검사(CSRF 방어)가 필요 없다.
+  const device = await authenticateDevice(request);
+  if (device === null) return fail("기기 연결이 만료됐거나 해제됐습니다.", 401);
+  if (!device && !(await isAuthenticated())) return fail("로그인이 필요합니다.", 401);
+  if (!device && method !== "GET") {
     try {
       await assertOrigin(request);
     } catch {
@@ -39,13 +43,14 @@ async function handle(method: Method, request: Request, context: Context) {
   const body = method === "GET" ? {} : ((await request.json().catch(() => ({}))) as Body);
   try {
     const { rpID } = await relyingParty();
-    return await match.route.handler({
+    const auth = device ? { kind: "device" as const, deviceId: device.id } : { kind: "session" as const };
+    return await runWithAuth(auth, () => match.route.handler({
       request,
       url: new URL(request.url),
       params: match.params,
       body: body && typeof body === "object" ? body : {},
       rpID,
-    });
+    }));
   } catch (error) {
     return errorResponse(error, fallbackMessage[method]);
   }
