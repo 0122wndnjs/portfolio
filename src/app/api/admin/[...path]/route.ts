@@ -9,6 +9,7 @@ import { taskRoutes } from "@/lib/admin/api/tasks";
 import { workspaceRoutes } from "@/lib/admin/api/workspace";
 import { googleRoutes } from "@/lib/admin/api/google";
 import { deviceRoutes } from "@/lib/admin/api/devices";
+import { jkosRoutes } from "@/lib/admin/api/jkos";
 import { errorResponse, fail } from "@/lib/admin/http";
 import { assertOrigin, relyingParty } from "@/lib/admin/webauthn";
 
@@ -17,7 +18,7 @@ export const dynamic = "force-dynamic";
 
 type Context = { params: Promise<{ path: string[] }> };
 
-const routes = [...projectRoutes, ...taskRoutes, ...billingRoutes, ...documentRoutes, ...workspaceRoutes, ...productivityRoutes, ...googleRoutes, ...deviceRoutes];
+const routes = [...projectRoutes, ...taskRoutes, ...billingRoutes, ...documentRoutes, ...workspaceRoutes, ...productivityRoutes, ...googleRoutes, ...deviceRoutes, ...jkosRoutes];
 const fallbackMessage: Record<Method, string> = {
   GET: "불러오지 못했습니다.",
   POST: "저장하지 못했습니다.",
