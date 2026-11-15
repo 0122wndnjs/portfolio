@@ -89,6 +89,17 @@ export const jkosRoutes: Route[] = [
     },
   },
   {
+    // 맥 앱 → 내 텔레그램으로 짧은 알림(승인 처리 결과 등). 받는 사람은 연결된 내 채팅뿐이다.
+    method: "POST",
+    path: "jkos/notify",
+    async handler({ body }) {
+      const text = String(body.text ?? "").slice(0, 1000);
+      if (!text) throw new HttpError(400, "내용이 없습니다.");
+      await say(text);
+      return json({ ok: true });
+    },
+  },
+  {
     // 결정된 승인을 맥 앱이 한 번만 가져간다.
     method: "GET",
     path: "jkos/approvals",
