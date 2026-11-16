@@ -41,6 +41,12 @@ const EDITABLE = [
   "memo",
   "links",
   "ai_folder",
+  "weekly_report",
+  "report_name",
+  "report_title",
+  "repo_full_name",
+  "repo_branch",
+  "report_roadmap",
 ] as const;
 
 async function projectTasks(projectId: string) {
@@ -204,6 +210,21 @@ export const projectRoutes: Route[] = [
       }
       if (body.next_check_date !== undefined && !validDate(body.next_check_date))
         throw new HttpError(400, "다음 확인일을 확인하세요.");
+      if (body.weekly_report !== undefined && typeof body.weekly_report !== "boolean")
+        throw new HttpError(400, "주간 보고서 설정이 올바르지 않습니다.");
+      for (const key of ["report_name", "report_title"]) {
+        if (body[key] !== undefined && (typeof body[key] !== "string" || body[key].length > 100))
+          throw new HttpError(400, "보고서 이름·제목은 100자 이내로 입력하세요.");
+      }
+      if (body.repo_full_name !== undefined && (typeof body.repo_full_name !== "string" || (body.repo_full_name !== "" && !/^[\w.-]+\/[\w.-]+$/.test(body.repo_full_name))))
+        throw new HttpError(400, "레포는 owner/repo 형식으로 입력하세요.");
+      if (body.repo_branch !== undefined && (typeof body.repo_branch !== "string" || !/^[\w./-]{1,100}$/.test(body.repo_branch)))
+        throw new HttpError(400, "브랜치 이름이 올바르지 않습니다.");
+      if (body.report_roadmap !== undefined) {
+        let ok = typeof body.report_roadmap === "string" && body.report_roadmap.length <= 5000;
+        try { ok = ok && Array.isArray(JSON.parse(String(body.report_roadmap))); } catch { ok = false; }
+        if (!ok) throw new HttpError(400, "로드맵 형식이 올바르지 않습니다.");
+      }
       if (body.ai_folder !== undefined && (typeof body.ai_folder !== "string" || body.ai_folder.length > 100 || /[\\/]/.test(body.ai_folder)))
         throw new HttpError(400, "로컬 폴더는 슬래시 없이 폴더 이름만 100자 이내로 입력하세요.");
       if (!updates.length) throw new HttpError(400, "수정할 항목이 없습니다.");

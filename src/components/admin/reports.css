@@ -1,0 +1,50 @@
+.reports, .rv { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; display: flex; flex-direction: column; gap: 20px; }
+.reports-head h1 { margin: 0; font-size: 22px; }
+.reports-head p, .reports-empty, .rv-hint { margin: 4px 0 0; color: var(--muted, #6b7280); font-size: 13px; }
+.reports h2 { font-size: 15px; margin: 0 0 10px; } .reports h2 small { color: var(--muted, #6b7280); font-weight: 400; margin-left: 6px; }
+.reports-msg, .rv-msg { padding: 8px 12px; border: 1px solid currentColor; font-size: 13px; }
+.reports-table { overflow-x: auto; }
+.reports-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.reports-table th, .reports-table td { padding: 6px 8px; border-bottom: 1px solid rgba(128,128,128,.25); text-align: left; white-space: nowrap; }
+.reports-table input:not([type]) { width: 100%; min-width: 120px; padding: 5px 7px; background: transparent; color: inherit; border: 1px solid rgba(128,128,128,.35); font: inherit; }
+.reports button, .rv button { padding: 5px 12px; border: 1px solid rgba(128,128,128,.45); background: transparent; color: inherit; font: inherit; font-size: 13px; cursor: pointer; }
+.reports button:disabled { opacity: .5; }
+.reports-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.reports-list li { display: flex; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(128,128,128,.2); font-size: 14px; }
+.reports-list small { color: #c2410c; }
+.reports-status { font-size: 11.5px; padding: 1px 7px; border: 1px solid currentColor; }
+.s-review { color: #b45309; } .s-confirmed { color: #15803d; } .s-failed { color: #b91c1c; } .s-generating { color: #2563eb; }
+.rv-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; font-size: 14px; }
+.rv-actions { margin-left: auto; display: flex; gap: 8px; }
+/* document: always paper-like, regardless of admin theme */
+.rv-doc { background: #fff; color: #15181a; padding: 48px clamp(20px, 5vw, 60px); box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 10px 30px -18px rgba(0,0,0,.35); font-size: 14px; line-height: 1.7; }
+.rv-period { font: 500 13px ui-monospace, monospace; color: #5d666b; }
+.rv-doc h1 { margin: 6px 0 22px; font-size: 26px; letter-spacing: -.02em; } .rv-doc h1 span { color: #5d666b; font-weight: 500; }
+.rv-doc h2 { margin: 34px 0 10px; font-size: 17px; } .rv-doc h2 small { font: 400 12px ui-monospace, monospace; color: #5d666b; margin-left: 8px; }
+.rv-doc h3 { margin: 20px 0 8px; font-size: 14px; }
+.rv-wrap { overflow-x: auto; }
+.rv-doc table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.rv-doc th, .rv-doc td { border: 1px solid #d9dedd; padding: 8px 11px; vertical-align: top; text-align: left; }
+.rv-doc th { background: #f3f5f4; font-size: 12.5px; white-space: nowrap; }
+.rv-doc td:first-child { font-weight: 600; white-space: nowrap; width: 1%; }
+.rv-meta td:first-child { background: #f3f5f4; width: 22%; }
+.rv-st { width: 1%; white-space: nowrap; text-align: center; }
+.rv-chip { display: inline-block; padding: 1px 8px; font-size: 12px; font-weight: 600; }
+.rv-chip.ok { background: #e5f3eb; color: #1f7a4d; } .rv-chip.wait { background: #fbf1d9; color: #9a6a00; } .rv-chip.plan { background: #e8ecf8; color: #3a4fa0; }
+.rv-doc > p { margin: 0; padding: 14px 16px; background: #f3f5f4; border: 1px solid #d9dedd; }
+.rv-note, .rv-foot-note, .rv-none { margin: 10px 0 0; font-size: 13px; color: #5d666b; } .rv-note b { color: #15181a; margin-right: 6px; }
+.rv-refs { display: block; margin-top: 4px; font: 11px ui-monospace, monospace; color: #8a8f92; }
+.rv-shots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.rv-shots figure { margin: 0; } .rv-shots img { width: 100%; border: 1px solid #d9dedd; }
+.rv-shots figcaption { font-size: 12.5px; color: #5d666b; } .rv-shots figcaption b { display: block; color: #15181a; }
+.rv-foot { margin-top: 36px; padding-top: 12px; border-top: 1px solid #d9dedd; font: 11.5px ui-monospace, monospace; color: #5d666b; }
+.rv-edit { outline: none; cursor: text; } .rv-edit:hover { background: #fffbe6; } .rv-edit:focus { background: #fff7cc; box-shadow: 0 0 0 1px #e0b400; }
+.rv-sources { font-size: 13px; } .rv-sources ul { margin: 8px 0 0; padding-left: 18px; }
+@media print {
+  @page { size: A4; margin: 14mm; }
+  body * { visibility: hidden !important; }
+  .rv-doc, .rv-doc * { visibility: visible !important; }
+  .rv-doc { position: absolute; inset: 0 auto auto 0; width: 100%; box-shadow: none; padding: 0; }
+  .rv-refs { display: none; }
+  .rv-doc tr, .rv-shots figure { break-inside: avoid; }
+}

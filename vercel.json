@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/admin-reminders?kind=weekly",
       "schedule": "0 13 * * 0"
+    },
+    {
+      "path": "/api/cron/weekly-work-report",
+      "schedule": "0 15 * * 0"
     }
   ]
 }

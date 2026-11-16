@@ -17,6 +17,7 @@ import {
   FiMenu,
   FiMic,
   FiMoon,
+  FiFileText,
   FiSettings,
   FiSun,
   FiTool,
@@ -47,6 +48,7 @@ function isActive(pathname: string, href: string) {
 }
 
 const secondaryLinks = [
+  { href: "/admin/reports", label: "주간 보고서", icon: FiFileText },
   { href: "/admin/tools", label: "업무 도구", icon: FiTool },
   { href: "/admin/settings", label: "설정", icon: FiSettings },
 ];
