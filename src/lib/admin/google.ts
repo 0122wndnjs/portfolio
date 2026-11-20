@@ -3,7 +3,8 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:
 import { getSetting, setSetting } from "@/lib/admin/settings";
 import { HttpError } from "@/lib/admin/http";
 
-const SCOPES = ["openid", "email", "https://www.googleapis.com/auth/calendar.events"];
+// documents.readonly: Gemini 회의록(캘린더 첨부 문서)을 읽어 후속 작업을 뽑는다.
+const SCOPES = ["openid", "email", "https://www.googleapis.com/auth/calendar.events", "https://www.googleapis.com/auth/documents.readonly"];
 const CAL = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
 // 복사할 때 딸려온 공백·줄바꿈 때문에 invalid_client가 나지 않도록 잘라서 쓴다.
 const clientId = () => (process.env.GOOGLE_CLIENT_ID || "").trim();
@@ -203,4 +204,30 @@ export async function deleteMeetingEvent(eventId: string, sendInvites: boolean) 
   });
   if (!response.ok && response.status !== 404 && response.status !== 410)
     throw new HttpError(502, `Google 캘린더 삭제 실패: ${response.status}`);
+}
+
+type DocNode = { paragraph?: { elements?: { textRun?: { content?: string } }[] }; table?: { tableRows?: { tableCells?: { content?: DocNode[] }[] }[] } };
+const nodesText = (nodes: DocNode[] = []): string => nodes.map((n) =>
+  n.paragraph ? (n.paragraph.elements ?? []).map((e) => e.textRun?.content ?? "").join("")
+  : n.table ? (n.table.tableRows ?? []).flatMap((r) => r.tableCells ?? []).map((c) => nodesText(c.content)).join("\n") : "").join("");
+
+/** 캘린더 일정에 붙은 Gemini 회의록(첫 탭 = 요약)을 텍스트로. 없으면 null. */
+export async function meetingNotes(eventId: string): Promise<string | null> {
+  const token = await accessToken();
+  const ev = await fetch(`${CAL}/${encodeURIComponent(eventId)}?fields=attachments`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15_000) });
+  if (!ev.ok) return null;
+  const { attachments = [] } = await ev.json() as { attachments?: { fileId?: string; title?: string; mimeType?: string }[] };
+  const docs = attachments.filter((a) => a.fileId && a.mimeType === "application/vnd.google-apps.document");
+  const doc = docs.find((a) => /gemini|회의록|notes/i.test(a.title ?? "")) ?? docs[0];
+  return doc?.fileId ? docText(doc.fileId) : null;
+}
+
+/** Google Docs 문서(첫 탭)를 텍스트로. 읽을 수 없으면 null. */
+export async function docText(fileId: string): Promise<string | null> {
+  const token = await accessToken();
+  const res = await fetch(`https://docs.googleapis.com/v1/documents/${encodeURIComponent(fileId)}`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15_000) });
+  if (res.status === 403) throw new HttpError(409, "Google 회의록 읽기 권한이 없어요. 설정에서 Google을 다시 연결하세요.");
+  if (!res.ok) return null;
+  const text = nodesText(((await res.json()) as { body?: { content?: DocNode[] } }).body?.content).trim();
+  return text || null;
 }
