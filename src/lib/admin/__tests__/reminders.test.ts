@@ -128,6 +128,21 @@ describe("buildReminders", () => {
     expect(report).toContain('href="https://joowonkim.me/admin/projects/p1?task=due"');
   });
 
+  it("2주 안 마감 프로젝트의 남은 작업이 하루 1.5개를 넘으면 마감 위험으로 표시한다", () => {
+    const projects = [
+      { id: "p1", name: "A사", due_date: "2026-09-27", next_action: "", next_check_date: null },
+      { id: "p2", name: "B사", due_date: "2026-10-05", next_action: "", next_check_date: null },
+    ];
+    const tasks = [
+      ...["a", "b", "c", "d"].map((id) => task({ id, due_date: id === "a" ? "2026-09-20" : null })),
+      ...["e", "f", "g"].map((id) => task({ id, project_id: "p2", project_name: "B사" })),
+    ];
+    const report = buildReminders({ ...base, forceDigest: true, tasks, invoices: [], projects }).find((item) => item.key === "digest:2026-09-25")?.text || "";
+    expect(report).toContain("⚠️ 마감 위험 1");
+    expect(report).toContain("9/27 마감 · 2일 남음 · 남은 작업 4개 (지연 1)");
+    expect(report).not.toContain(">B사<");
+  });
+
   it("알림 대상이 없는 날도 하루 한 번 빈 업무 보고를 만든다", () => {
     expect(buildReminders({ ...base, time: "08:00", tasks: [], invoices: [] })).toEqual([]);
     const result = buildReminders({ ...base, time: "10:00", tasks: [], invoices: [] });

@@ -151,10 +151,20 @@ function dailyReport({
     ...projects.filter((project) => project.due_date === tomorrow).map((project) => line(project.name, `/admin/projects/${project.id}`, ["프로젝트 마감"])),
   ] : [];
 
+  // 2주 안에 마감인 프로젝트 중 남은 작업이 하루 1.5개를 넘으면 위험으로 본다.
+  const riskItems = preferences.deadlineAlerts ? projects.filter((project) => project.due_date && project.due_date >= today && project.due_date <= addDays(today, 14)).flatMap((project) => {
+    const open = tasks.filter((task) => task.project_id === project.id);
+    const daysLeft = Math.max(1, Math.round((Date.parse(`${project.due_date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000));
+    if (open.length < 3 || open.length / daysLeft <= 1.5) return [];
+    const late = open.filter((task) => task.due_date && task.due_date < today).length;
+    return [line(project.name, `/admin/projects/${project.id}`, [`${md(project.due_date!)} 마감 · ${daysLeft}일 남음`, `남은 작업 ${open.length}개${late ? ` (지연 ${late})` : ""}`])];
+  }) : [];
+
   const weekday = WEEKDAY[new Date(`${today}T00:00:00Z`).getUTCDay()];
   const lines = [`☀️ <b>${Number(today.slice(5, 7))}월 ${Number(today.slice(8))}일 (${weekday}) 오늘 브리핑</b>`];
   const summary = [
     overdue.length && `🔴 지연 ${overdue.length}`,
+    riskItems.length && `⚠️ 위험 ${riskItems.length}`,
     todayItems.length && `📌 오늘 ${todayItems.length}`,
     waitingItems.length && `⏳ 대기 ${waitingItems.length}`,
     unpaid.length && `💰 ${won(unpaidTotal)}`,
@@ -166,6 +176,7 @@ function dailyReport({
     if (items.length > limit) lines.push(`<i>  외 ${items.length - limit}건</i>`);
   };
   addSection(`🔴 지연 ${overdue.length}`, overdue);
+  addSection(`⚠️ 마감 위험 ${riskItems.length}`, riskItems);
   addSection(`📌 오늘 ${todayItems.length}`, todayItems);
   addSection(`⏳ 확인 대기 ${waitingItems.length}`, waitingItems);
   addSection(`💰 정산 확인 · ${won(unpaidTotal)}`, moneyItems);

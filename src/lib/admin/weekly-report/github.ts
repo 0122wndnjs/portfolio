@@ -16,7 +16,7 @@ const MAX_COMMITS = 60;
 const PATCH_PER_FILE = 3500;
 const PATCH_TOTAL = 90_000;
 
-async function gh<T>(path: string): Promise<T> {
+export async function gh<T>(path: string): Promise<T> {
   const token = process.env.GITHUB_REPORT_TOKEN;
   if (!token) throw new Error("GITHUB_REPORT_TOKEN 환경변수가 필요합니다.");
   const res = await fetch(`https://api.github.com${path}`, {

@@ -61,7 +61,7 @@ async function run(forceDigest: boolean) {
     ).all(today) as Promise<ReminderMeeting[]> : Promise.resolve([]),
     reportDue ? db.prepare(
       `SELECT id,name,due_date,next_action,next_check_date FROM projects WHERE status IN ('준비 중','진행 중','보류') AND (due_date<=? OR next_check_date<=?) ORDER BY COALESCE(next_check_date,due_date),name`,
-    ).all(addDays(today, 1), today) as Promise<ReminderProject[]> : Promise.resolve([]),
+    ).all(addDays(today, 14), today) as Promise<ReminderProject[]> : Promise.resolve([]),
   ]);
   const adminUrl = process.env.ADMIN_ORIGIN?.replace(/\/$/, "");
   const messages = buildReminders({
